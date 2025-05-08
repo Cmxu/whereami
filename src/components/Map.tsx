@@ -34,6 +34,13 @@ const MapClickHandler = ({ onLocationSelect, isGuessingPhase }: MapClickHandlerP
   // Track drag state
   const [isDragging, setIsDragging] = useState(false);
   const [hasDragged, setHasDragged] = useState(false);
+  // Track if we're on a touch device
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  
+  // Detect touch device
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
   
   const map = useMapEvents({
     // Set flag at the start of drag
@@ -43,6 +50,9 @@ const MapClickHandler = ({ onLocationSelect, isGuessingPhase }: MapClickHandlerP
     },
     // Process click events
     click: (e) => {
+      // On touch devices, we'll handle clicks differently to avoid double-fire issues
+      if (isTouchDevice) return;
+      
       // Only process click if not dragging, not recently dragged, and in guessing phase
       if (onLocationSelect && !isDragging && !hasDragged && isGuessingPhase) {
         onLocationSelect({ lat: e.latlng.lat, lng: e.latlng.lng });
@@ -67,6 +77,43 @@ const MapClickHandler = ({ onLocationSelect, isGuessingPhase }: MapClickHandlerP
       }
     }
   });
+  
+  // Add a custom touch handler
+  useEffect(() => {
+    if (!map || !isTouchDevice) return;
+    
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!isDragging && !hasDragged && isGuessingPhase && onLocationSelect) {
+        // Get the touch position from the event
+        const touch = e.changedTouches[0];
+        const containerPoint = new L.Point(touch.clientX, touch.clientY);
+        
+        // Convert to map point and get latlng
+        try {
+          const mapEl = map.getContainer();
+          const rect = mapEl.getBoundingClientRect();
+          const point = new L.Point(
+            touch.clientX - rect.left,
+            touch.clientY - rect.top
+          );
+          const latlng = map.containerPointToLatLng(point);
+          
+          // Call the onLocationSelect with the latlng
+          onLocationSelect({ lat: latlng.lat, lng: latlng.lng });
+        } catch (err) {
+          console.error('Error processing touch event:', err);
+        }
+      }
+    };
+    
+    // Add touch event listener to the map container
+    const container = map.getContainer();
+    container.addEventListener('touchend', handleTouchEnd);
+    
+    return () => {
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [map, isDragging, hasDragged, isGuessingPhase, onLocationSelect, isTouchDevice]);
   
   return null;
 };
@@ -208,13 +255,32 @@ const MapDragFix = () => {
       }
     };
     
+    // Handle touch events more explicitly
+    const handleTouchEnd = () => {
+      // Force ending any potential stuck drag operation
+      map.fire('touchend');
+      
+      // Type-safe way to access internal properties if they exist
+      const dragging = map.dragging as any;
+      if (dragging._draggable && typeof dragging._draggable._onUp === 'function') {
+        dragging._draggable._onUp();
+      }
+    };
+    
+    // Additional touch handler to prevent stuck touch states
+    const handleTouchCancel = () => {
+      handleTouchEnd();
+    };
+    
     document.addEventListener('mouseup', handleMouseUp, { capture: true });
-    document.addEventListener('touchend', handleMouseUp, { capture: true });
+    document.addEventListener('touchend', handleTouchEnd, { capture: true });
+    document.addEventListener('touchcancel', handleTouchCancel, { capture: true });
     document.addEventListener('mousemove', handleMouseMove);
     
     return () => {
       document.removeEventListener('mouseup', handleMouseUp, { capture: true });
-      document.removeEventListener('touchend', handleMouseUp, { capture: true });
+      document.removeEventListener('touchend', handleTouchEnd, { capture: true });
+      document.removeEventListener('touchcancel', handleTouchCancel, { capture: true });
       document.removeEventListener('mousemove', handleMouseMove);
     };
   }, [map]);
@@ -328,7 +394,7 @@ export const Map = ({
     return formatDistance(distance);
   }, [calculateDistance]);
 
-  const toggleExpanded = (e: React.MouseEvent) => {
+  const toggleExpanded = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     e.preventDefault();
     const newExpandedState = !isExpanded;
@@ -381,15 +447,19 @@ export const Map = ({
       {!hideExpandButton && (
         <button 
           className="map-expand-button" 
-          onClick={toggleExpanded}
+          onClick={toggleExpanded as any}
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+            toggleExpanded(e);
+          }}
           title={isExpanded ? "Show image" : "Show map"}
           style={{
             position: 'absolute',
             top: '10px',
             left: '10px',
             zIndex: 1000,
-            width: '30px',
-            height: '30px',
+            width: '40px',
+            height: '40px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -443,9 +513,7 @@ export const Map = ({
         {selectedLocation && (
           <>
             <Marker position={[selectedLocation.lat, selectedLocation.lng]}>
-              <Popup>
-                Your guess
-              </Popup>
+
             </Marker>
           </>
         )}

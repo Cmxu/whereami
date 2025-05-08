@@ -707,6 +707,28 @@ h2 {
   .round-score p {
     font-size: 1rem;
   }
+
+  /* Make buttons and interactive elements more tappable */
+  .map-expand-button {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
+  }
+  
+  /* Ensure taps work properly */
+  .leaflet-marker-icon,
+  .leaflet-marker-shadow,
+  .leaflet-interactive {
+    pointer-events: auto !important;
+  }
+  
+  /* Improve tap targets */
+  .leaflet-control-zoom a,
+  .leaflet-control-layers-toggle,
+  .leaflet-interactive {
+    min-width: 36px;
+    min-height: 36px;
+  }
 }
 
 /* Add smooth scrolling and touch events for mobile */
@@ -724,7 +746,10 @@ button,
 }
 
 .leaflet-container {
-  touch-action: pan-x pan-y;
+  cursor: grab;
+  height: 100%;
+  width: 100%;
+  touch-action: manipulation;
 }
 
 /* Preserve existing styles for components */
@@ -1117,13 +1142,6 @@ header {
   max-height: 100%;
   width: 100%;
   object-fit: cover;
-}
-
-.leaflet-container {
-  cursor: grab;
-  height: 100%;
-  width: 100%;
-  touch-action: none;
 }
 
 .leaflet-container:active {
@@ -1776,4 +1794,16 @@ a, button {
   .option-button {
     width: 100%;
   }
+}
+
+/* Add improved touch handling */
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+  border: 2px solid rgba(0,0,0,0.2);
+  border-radius: 6px;
+}
+
+/* Mobile tap highlight handling */
+* {
+  -webkit-tap-highlight-color: transparent;
 }

@@ -1,6 +1,5 @@
-
 // Plain text version for places where JSX can't be used
-export const CREATED_BY_TEXT = "Created by Calvin with Cursor, maps by Leaflet - V1.0";
+export const CREATED_BY_TEXT = "Created by Calvin with Cursor, maps by Leaflet - V1.02";
 
 // Creator information
 export const CREATOR = {
@@ -12,4 +11,4 @@ export const CREATOR = {
 };
 
 // App version
-export const APP_VERSION = "1.01"; 
+export const APP_VERSION = "1.02"; 
