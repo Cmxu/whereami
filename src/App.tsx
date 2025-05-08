@@ -30,7 +30,7 @@ function App() {
     setRoundCount(rounds);
     setShowWelcome(false);
     setShowInstructions(false); // Don't show instructions
-    resetGame(rounds);
+    resetGame(rounds); // This will trigger loading the images
   };
 
   // Close instructions when the game is loaded

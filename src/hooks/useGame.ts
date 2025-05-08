@@ -209,12 +209,15 @@ export const useGame = (initialNumRounds = DEFAULT_NUM_ROUNDS) => {
     totalScore: 0,
     gameComplete: false
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetTrigger, setResetTrigger] = useState(0);
 
-  // Initialize the game
+  // Initialize the game only when resetGame is triggered
   useEffect(() => {
+    // Skip initial load, we'll wait for resetGame to be called
+    if (resetTrigger === 0) return;
+    
     const initGame = async () => {
       try {
         setIsLoading(true);

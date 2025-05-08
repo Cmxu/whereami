@@ -12,4 +12,4 @@ export const CREATOR = {
 };
 
 // App version
-export const APP_VERSION = "1.0"; 
+export const APP_VERSION = "1.01"; 
