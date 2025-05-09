@@ -55,6 +55,39 @@ export const GameRound = ({
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
+  // Utility function to clamp drag position based on zoom level with a smoother transition
+  const clampDragPosition = (x: number, y: number, currentZoom: number): { x: number, y: number } => {
+    // If zoom level is 1 (minimum), always center the image
+    if (currentZoom <= 1) {
+      return { x: 0, y: 0 };
+    }
+    
+    // Calculate the maximum allowed drag distance based on zoom level
+    const container = imageContainerRef.current;
+    const image = imageRef.current;
+    
+    if (!container || !image) {
+      return { x, y }; // Can't clamp without references
+    }
+    
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    
+    // Calculate the scaled dimensions of the image
+    const scaledWidth = image.naturalWidth * currentZoom;
+    const scaledHeight = image.naturalHeight * currentZoom;
+    
+    // Calculate the maximum allowed drag in each direction
+    const maxDragX = Math.max(0, (scaledWidth - containerWidth) / 2);
+    const maxDragY = Math.max(0, (scaledHeight - containerHeight) / 2);
+    
+    // Simple clamping to ensure the image stays within the allowed range
+    return {
+      x: Math.min(maxDragX, Math.max(-maxDragX, x)),
+      y: Math.min(maxDragY, Math.max(-maxDragY, y))
+    };
+  };
+
   // Reset state when round changes
   useEffect(() => {
     setSelectedLocation(round.userGuess);
@@ -111,41 +144,135 @@ export const GameRound = ({
     setImageError(true);
   };
 
+  // Simplified zoom in handler
   const handleZoomIn = () => {
     setZoomLevel(prev => {
       const newZoom = Math.min(prev + 0.2, 10);
+      
+      // Only update if zoom level actually changed
       if (newZoom !== prev) {
-        // Reset drag position when zooming
-        setDragPosition({ x: 0, y: 0 });
+        // When zooming in, scale from the current center point
+        const scaleFactor = newZoom / prev;
+        
+        // Scale drag position relative to current position
+        const scaledX = dragPosition.x * scaleFactor;
+        const scaledY = dragPosition.y * scaleFactor;
+        
+        // Ensure image stays in bounds
+        const clampedPos = clampDragPosition(scaledX, scaledY, newZoom);
+        setDragPosition(clampedPos);
       }
+      
       return newZoom;
     });
   };
 
+  // Simplified zoom out handler
   const handleZoomOut = () => {
     setZoomLevel(prev => {
-      // Set minimum zoom to 1 (100%)
       const newZoom = Math.max(prev - 0.2, 1);
+      
+      // Only update if zoom level actually changed
       if (newZoom !== prev) {
-        // Reset drag position when zooming
-        setDragPosition({ x: 0, y: 0 });
+        if (newZoom <= 1) {
+          // At minimum zoom, always center
+          setDragPosition({ x: 0, y: 0 });
+        } else {
+          // Scale drag position relative to current position 
+          const scaleFactor = newZoom / prev;
+          
+          // When approaching min zoom, gradually reduce drag amount
+          const centeringFactor = Math.min(1, Math.max(0, 1 - (newZoom - 1)));
+          const scaledX = dragPosition.x * scaleFactor * (1 - centeringFactor);
+          const scaledY = dragPosition.y * scaleFactor * (1 - centeringFactor);
+          
+          // Ensure image stays in bounds
+          const clampedPos = clampDragPosition(scaledX, scaledY, newZoom);
+          setDragPosition(clampedPos);
+        }
       }
+      
       return newZoom;
     });
   };
 
+  // Revised wheel handler for smoother zoom
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (e.deltaY < 0) {
-      handleZoomIn();
-    } else {
-      handleZoomOut();
+    e.preventDefault(); // Prevent default page scrolling
+    
+    // Use a smaller zoom step for wheel events to make it smoother
+    const zoomStep = 0.1;
+    
+    // Calculate zoom change - limit the step size for smoother zooming
+    const delta = Math.sign(-e.deltaY) * zoomStep;
+    const newZoomLevel = Math.max(1, Math.min(10, zoomLevel + delta));
+    
+    // Only process if zoom level actually changed
+    if (newZoomLevel !== zoomLevel) {
+      const container = imageContainerRef.current;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        
+        // Get mouse position relative to container
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Center point of container
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        if (delta > 0) {
+          // ZOOMING IN: Focus on the point under the mouse
+          const scaleFactor = newZoomLevel / zoomLevel;
+          
+          // Calculate offsets
+          const offsetX = (mouseX - centerX);
+          const offsetY = (mouseY - centerY); 
+          
+          // Calculate new position that keeps the point under the mouse in the same relative position
+          const newX = dragPosition.x * scaleFactor + (offsetX * (1 - scaleFactor));
+          const newY = dragPosition.y * scaleFactor + (offsetY * (1 - scaleFactor));
+          
+          // Apply clamping
+          const clampedPos = clampDragPosition(newX, newY, newZoomLevel);
+          
+          // Update state
+          setDragPosition(clampedPos);
+        } else {
+          // ZOOMING OUT: Move gradually toward center
+          if (newZoomLevel <= 1) {
+            // At minimum zoom, always center
+            setDragPosition({ x: 0, y: 0 });
+          } else {
+            // Scale the position
+            const scaleFactor = newZoomLevel / zoomLevel;
+            
+            // Apply centering factor as we approach zoom level 1
+            // This gets stronger as we get closer to zoom level 1
+            const centeringFactor = Math.min(1, Math.max(0, 1 - (newZoomLevel - 1)));
+            const newX = dragPosition.x * scaleFactor * (1 - centeringFactor);
+            const newY = dragPosition.y * scaleFactor * (1 - centeringFactor);
+            
+            // Apply clamping
+            const clampedPos = clampDragPosition(newX, newY, newZoomLevel);
+            setDragPosition(clampedPos);
+          }
+        }
+      }
+      
+      // Update zoom level
+      setZoomLevel(newZoomLevel);
     }
-    // Prevent page scrolling when hovering over the image
+    
     e.stopPropagation();
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (zoomLevel <= 1) return; // Only allow dragging when zoomed in
+    if (zoomLevel <= 1) {
+      // Don't allow dragging when fully zoomed out
+      setDragPosition({ x: 0, y: 0 }); // Ensure position is reset
+      return;
+    }
     
     setIsDragging(true);
     setStartDragPosition({
@@ -164,7 +291,10 @@ export const GameRound = ({
     const newX = e.clientX - startDragPosition.x;
     const newY = e.clientY - startDragPosition.y;
     
-    setDragPosition({ x: newX, y: newY });
+    // Apply clamping when setting the new position
+    const clampedPosition = clampDragPosition(newX, newY, zoomLevel);
+    setDragPosition(clampedPosition);
+    
     e.preventDefault();
     e.stopPropagation();
   };
@@ -184,7 +314,11 @@ export const GameRound = ({
 
   // Implement touch support for mobile devices
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (zoomLevel <= 1) return;
+    if (zoomLevel <= 1) {
+      // Don't allow dragging when fully zoomed out
+      setDragPosition({ x: 0, y: 0 }); // Ensure position is reset
+      return;
+    }
     
     setIsDragging(true);
     setStartDragPosition({
@@ -201,7 +335,10 @@ export const GameRound = ({
     const newX = e.touches[0].clientX - startDragPosition.x;
     const newY = e.touches[0].clientY - startDragPosition.y;
     
-    setDragPosition({ x: newX, y: newY });
+    // Apply clamping when setting the new position
+    const clampedPosition = clampDragPosition(newX, newY, zoomLevel);
+    setDragPosition(clampedPosition);
+    
     e.preventDefault();
     e.stopPropagation();
   };
@@ -280,7 +417,7 @@ export const GameRound = ({
                     style={{ 
                       transform: `scale(${zoomLevel})`,
                       transformOrigin: 'center center',
-                      transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+                      transition: isDragging ? 'none' : 'transform 0.2s ease-out, left 0.2s ease-out, top 0.2s ease-out',
                       position: 'relative',
                       left: `${dragPosition.x}px`,
                       top: `${dragPosition.y}px`
@@ -296,6 +433,12 @@ export const GameRound = ({
                         pointerEvents: 'none'
                       }}
                     />
+                  </div>
+
+                  {/* Add zoom controls */}
+                  <div className="zoom-controls">
+                    <button className="zoom-button" onClick={handleZoomIn} title="Zoom In">+</button>
+                    <button className="zoom-button" onClick={handleZoomOut} title="Zoom Out">-</button>
                   </div>
 
                   {/* Add the map overlay for guessing phase */}
@@ -343,6 +486,11 @@ export const GameRound = ({
                     <div className="legend-marker actual-location"></div>
                     <span>Actual location</span>
                   </div>
+                </div>
+                {/* Add zoom controls */}
+                <div className="zoom-controls">
+                  <button className="zoom-button" onClick={handleZoomIn} title="Zoom In">+</button>
+                  <button className="zoom-button" onClick={handleZoomOut} title="Zoom Out">-</button>
                 </div>
               </div>
             </div>
@@ -433,7 +581,7 @@ export const GameRound = ({
                   style={{ 
                     transform: `scale(${zoomLevel})`,
                     transformOrigin: 'center center',
-                    transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+                    transition: isDragging ? 'none' : 'transform 0.2s ease-out, left 0.2s ease-out, top 0.2s ease-out',
                     position: 'relative',
                     left: `${dragPosition.x}px`,
                     top: `${dragPosition.y}px`
@@ -449,6 +597,12 @@ export const GameRound = ({
                       pointerEvents: 'none'
                     }}
                   />
+                </div>
+
+                {/* Add zoom controls */}
+                <div className="zoom-controls">
+                  <button className="zoom-button" onClick={handleZoomIn} title="Zoom In">+</button>
+                  <button className="zoom-button" onClick={handleZoomOut} title="Zoom Out">-</button>
                 </div>
 
                 {/* Add the map overlay for guessing phase */}
