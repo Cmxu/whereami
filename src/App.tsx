@@ -20,7 +20,6 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [roundCount, setRoundCount] = useState(3);
   const { gameState, isLoading, error, submitGuess, proceedToNextRound, resetGame } = useGame(roundCount);
-  const [showInstructions, setShowInstructions] = useState(false);
   const [roundComplete, setRoundComplete] = useState(false);
   const [roundResultData, setRoundResultData] = useState<RoundResultData | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<Location | undefined>(undefined);
@@ -29,16 +28,8 @@ function App() {
   const handleStartGame = (rounds: number) => {
     setRoundCount(rounds);
     setShowWelcome(false);
-    setShowInstructions(false); // Don't show instructions
     resetGame(rounds); // This will trigger loading the images
   };
-
-  // Close instructions when the game is loaded
-  useEffect(() => {
-    if (!isLoading && gameState.rounds.length > 0) {
-      setShowInstructions(false);
-    }
-  }, [isLoading, gameState.rounds.length]);
 
   // Reset roundComplete when the current round changes
   useEffect(() => {
@@ -242,12 +233,8 @@ function App() {
           <GameRound
             round={gameState.rounds[gameState.currentRound]}
             onSubmitGuess={handleLocationSelect}
-            isLastRound={gameState.currentRound === gameState.rounds.length - 1}
             roundComplete={roundComplete}
             resultData={roundResultData}
-            onContinue={handleContinue}
-            roundNumber={gameState.currentRound + 1}
-            totalRounds={gameState.rounds.length}
           />
         )}
 

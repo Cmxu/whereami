@@ -14,33 +14,15 @@ interface RoundResultData {
 interface GameRoundProps {
   round: Round;
   onSubmitGuess: (location: Location) => void;
-  isLastRound: boolean;
   roundComplete: boolean;
   resultData: RoundResultData | null;
-  onContinue: () => void;
-  roundNumber?: number;
-  totalRounds?: number;
-  guessLocation?: Location | undefined;
-  actualLocation?: Location | undefined;
-  score?: number;
-  distance?: number | undefined;
-  onViewMap?: () => void;
 }
 
 export const GameRound = ({ 
   round, 
   onSubmitGuess, 
-  isLastRound,
   roundComplete,
-  resultData,
-  onContinue,
-  roundNumber,
-  totalRounds,
-  guessLocation,
-  actualLocation,
-  score,
-  distance,
-  onViewMap
+  resultData
 }: GameRoundProps) => {
   const [selectedLocation, setSelectedLocation] = useState<Location | undefined>(round.userGuess);
   const [isGuessing, setIsGuessing] = useState(!roundComplete);
