@@ -1,77 +1,155 @@
-# WhereAmI - A Geography Guessing Game
+# WhereAmI 2.0
 
-WhereAmI is a web-based geography guessing game inspired by GeoGuessr. The game shows you images from around the world, and you need to guess where they were taken by clicking on a map. The closer your guess is to the actual location, the more points you earn!
+A modern geography guessing game built with SvelteKit, TypeScript, and Tailwind CSS. Players guess the locations of photos to test their geographical knowledge.
 
-## Features
+## 🎯 Project Overview
 
-- 3-round gameplay with random images each time
-- Interactive world map for making guesses
-- Scoring based on the distance between your guess and the actual location
-- Detailed results showing your performance for each round
-- Responsive design that works on both desktop and mobile devices
+WhereAmI 2.0 is a complete rewrite of the original React-based game, featuring:
 
-## How to Play
+- **Frontend**: SvelteKit + TypeScript + Tailwind CSS
+- **Backend**: Cloudflare Workers + Hono (planned)
+- **Storage**: Cloudflare R2 (images) + KV (metadata) (planned)
+- **Maps**: Leaflet for interactive mapping
+- **Deployment**: Cloudflare Pages + Workers (planned)
 
-1. For each image shown, examine it carefully for clues about its location
-2. Click on the world map to place your guess
-3. Submit your guess to see how close you were to the actual location
-4. Each round is worth up to 10,000 points, with points decreasing as distance increases
-5. After 3 rounds, you'll see your total score and detailed results
+## 🚀 Development Status
 
-## Tech Stack
+### ✅ Phase 1: Core Infrastructure (COMPLETED)
 
-- React with TypeScript
-- Vite for fast development and building
-- Leaflet for interactive maps
-- Exifr for extracting GPS coordinates from image metadata
+- [x] SvelteKit project setup with TypeScript and Tailwind
+- [x] Core type definitions and game logic
+- [x] Reactive game state management with Svelte stores
+- [x] Basic UI components (Welcome, Game, Results)
+- [x] Map integration with Leaflet
+- [x] Game flow and scoring system
 
-## Development
+### 🔄 Phase 2: Core Game Features (IN PROGRESS)
 
-### Prerequisites
+- [ ] Random game mode with fallback data
+- [ ] Enhanced map component with better UX
+- [ ] Game sessions and state persistence
+- [ ] Mobile optimization and responsive design
 
-- Node.js (version 14 or higher)
-- npm or yarn
+### 📋 Phase 3: User Features (PLANNED)
 
-### Installation
+- [ ] Image upload interface with location editing
+- [ ] EXIF GPS extraction (client-side)
+- [ ] Image management dashboard
+- [ ] Image validation and optimization
 
-1. Clone the repository
-2. Install dependencies:
+### 📋 Phase 4: Custom Games (PLANNED)
+
+- [ ] Custom game creation interface
+- [ ] Game sharing with unique URLs
+- [ ] Game discovery and public game listing
+- [ ] Social features and analytics
+
+### 📋 Phase 5: Backend & Deployment (PLANNED)
+
+- [ ] Cloudflare Workers API setup
+- [ ] R2 and KV integration
+- [ ] Authentication and user management
+- [ ] Production deployment
+
+## 🛠️ Development Setup
 
 ```bash
+# Install dependencies
 npm install
-```
 
-3. Start the development server:
-
-```bash
+# Start development server
 npm run dev
-```
 
-4. Open your browser and navigate to `http://localhost:5173`
+# Type checking
+npm run check
 
-### Adding Your Own Images
-
-To use your own images with location data:
-
-1. Add image files with embedded GPS metadata to the `public/images/` directory
-2. The app will automatically extract location data from the image EXIF metadata
-3. If an image doesn't have GPS data, a fallback random location will be used
-
-## Build for Production
-
-To build the application for production:
-
-```bash
+# Build for production
 npm run build
 ```
 
-The built files will be in the `dist` directory.
+## 🎮 Game Features
 
-## License
+### Current Features
 
-MIT
+- **Welcome Screen**: Choose between Quick Game (3 rounds) or Full Game (10 rounds)
+- **Interactive Gameplay**: Click on map to make location guesses
+- **Scoring System**: Distance-based scoring with exponential decay (max 10,000 points per round)
+- **Results Screen**: Detailed breakdown with performance rating and tips
+- **Responsive Design**: Works on desktop and mobile devices
 
-## Acknowledgements
+### Planned Features
 
-- Map data © OpenStreetMap contributors
-- Leaflet - an open-source JavaScript library for mobile-friendly interactive maps
+- **Custom Games**: Create games with your own photos
+- **Image Upload**: Upload photos with GPS location data
+- **Game Sharing**: Share custom games via unique URLs
+- **Public Gallery**: Browse and play community-created games
+- **Advanced Analytics**: Track performance and improvement over time
+
+## 🏗️ Architecture
+
+### Frontend Structure
+
+```
+src/
+├── lib/
+│   ├── components/          # Svelte components
+│   │   ├── WelcomeScreen.svelte
+│   │   ├── GameRound.svelte
+│   │   ├── GameResults.svelte
+│   │   └── Map.svelte
+│   ├── stores/              # Reactive state management
+│   │   └── gameStore.ts
+│   ├── utils/               # Utility functions
+│   │   ├── gameLogic.ts     # Core game mechanics
+│   │   └── api.ts           # API client
+│   └── types/               # TypeScript definitions
+│       └── index.ts
+├── routes/                  # SvelteKit routes
+│   ├── +layout.svelte
+│   ├── +page.svelte
+│   ├── upload/
+│   ├── create/
+│   └── browse/
+└── app.css                  # Global styles
+```
+
+### Game Logic
+
+- **Distance Calculation**: Haversine formula for great-circle distance
+- **Scoring Algorithm**: Exponential decay based on distance (0-10,000 points)
+- **State Management**: Reactive Svelte stores for game state
+- **Performance Ratings**: Percentage-based performance feedback
+
+## 🎨 Design System
+
+The game uses a modern, clean design with:
+
+- **Color Palette**: Blue primary, gray neutrals, green success
+- **Typography**: System fonts for optimal performance
+- **Components**: Reusable button and card styles
+- **Animations**: Smooth transitions and micro-interactions
+- **Responsive**: Mobile-first design approach
+
+## 🔧 Technical Decisions
+
+### Why SvelteKit?
+
+- **Performance**: Smaller bundle sizes and faster runtime
+- **Developer Experience**: Simpler state management and reactivity
+- **Modern**: Built-in TypeScript support and excellent tooling
+- **Scalable**: Easy to add SSR and API routes
+
+### Why Cloudflare?
+
+- **Global CDN**: Fast image delivery worldwide
+- **Serverless**: Scalable backend without server management
+- **Cost-Effective**: Pay-per-use pricing model
+- **Integrated**: R2, KV, Workers, and Pages work seamlessly together
+
+## 📝 Contributing
+
+This is currently a personal project, but contributions and feedback are welcome! Please check the development phases above to see what's currently being worked on.
+
+## 📄 License
+
+MIT License - feel free to use this code for your own projects!

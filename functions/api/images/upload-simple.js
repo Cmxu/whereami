@@ -1,0 +1,219 @@
+import { requireAuth, getUserData, saveUserData, upsertUserProfile } from '../auth.ts';
+
+// Handle CORS preflight requests
+export async function onRequestOptions() {
+	return new Response(null, {
+		status: 200,
+		headers: {
+			'Access-Control-Allow-Origin': '*',
+			'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+			'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+		}
+	});
+}
+
+export async function onRequestPost(context) {
+	try {
+		const { request, env } = context;
+		
+		// Require authentication
+		const { user, error } = await requireAuth(request, env);
+		if (error) {
+			return error;
+		}
+
+		// Ensure user profile exists
+		await upsertUserProfile(user, env);
+		
+		// Check if R2 bucket is available
+		if (!env.IMAGES_BUCKET) {
+			console.error('IMAGES_BUCKET R2 binding not found');
+			return new Response(JSON.stringify({ 
+				error: 'Server configuration error: R2 bucket not configured' 
+			}), {
+				status: 500,
+				headers: {
+					'Content-Type': 'application/json',
+					'Access-Control-Allow-Origin': '*',
+				}
+			});
+		}
+
+		// Parse form data
+		const formData = await request.formData();
+		const imageFile = formData.get('image');
+		const locationStr = formData.get('location');
+		
+		if (!imageFile) {
+			return new Response(JSON.stringify({ 
+				error: 'No image file provided' 
+			}), {
+				status: 400,
+				headers: {
+					'Content-Type': 'application/json',
+					'Access-Control-Allow-Origin': '*',
+				}
+			});
+		}
+
+		if (!locationStr) {
+			return new Response(JSON.stringify({ 
+				error: 'Location data required' 
+			}), {
+				status: 400,
+				headers: {
+					'Content-Type': 'application/json',
+					'Access-Control-Allow-Origin': '*',
+				}
+			});
+		}
+
+		// Parse location
+		let location;
+		try {
+			location = JSON.parse(locationStr);
+		} catch {
+			return new Response(JSON.stringify({ 
+				error: 'Invalid location data format' 
+			}), {
+				status: 400,
+				headers: {
+					'Content-Type': 'application/json',
+					'Access-Control-Allow-Origin': '*',
+				}
+			});
+		}
+
+		// Validate file type and size
+		const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+		if (!allowedTypes.includes(imageFile.type)) {
+			return new Response(JSON.stringify({ 
+				error: `Invalid file type. Allowed types: ${allowedTypes.join(', ')}` 
+			}), {
+				status: 400,
+				headers: {
+					'Content-Type': 'application/json',
+					'Access-Control-Allow-Origin': '*',
+				}
+			});
+		}
+
+		// Check file size (10MB limit)
+		const maxSizeBytes = 10 * 1024 * 1024; // 10MB
+		if (imageFile.size > maxSizeBytes) {
+			return new Response(JSON.stringify({ 
+				error: `File too large. Maximum size: ${maxSizeBytes / 1024 / 1024}MB` 
+			}), {
+				status: 400,
+				headers: {
+					'Content-Type': 'application/json',
+					'Access-Control-Allow-Origin': '*',
+				}
+			});
+		}
+
+		// Generate unique ID and filename
+		const uniqueId = crypto.randomUUID();
+		const fileExtension = imageFile.name.split('.').pop() || 'jpg';
+		const sanitizedName = imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+		const r2Key = `images/${uniqueId}/${sanitizedName}`;
+
+		try {
+			// Upload to R2
+			await env.IMAGES_BUCKET.put(r2Key, await imageFile.arrayBuffer(), {
+				httpMetadata: {
+					contentType: imageFile.type,
+					cacheControl: 'public, max-age=31536000', // 1 year cache
+				},
+				customMetadata: {
+					originalFilename: imageFile.name,
+					uploadedAt: new Date().toISOString(),
+					locationLat: String(location.lat),
+					locationLng: String(location.lng),
+					uploadedBy: user.id, // Track who uploaded this image
+				},
+			});
+
+			// Construct the image URL
+			const imageUrl = `/api/images/${uniqueId}/${sanitizedName}`;
+
+			// Prepare metadata for response and KV storage
+			const metadata = {
+				id: uniqueId,
+				filename: sanitizedName,
+				r2Key: r2Key,
+				location: location,
+				uploadedAt: new Date().toISOString(),
+				uploadedBy: user.id,
+				uploadedByUsername: user.username || user.email?.split('@')[0] || 'User',
+				fileSize: imageFile.size,
+				mimeType: imageFile.type,
+				url: imageUrl,
+				isPublic: true // Default to public, can be changed later
+			};
+
+			// Store image metadata in KV
+			await env.GAME_METADATA.put(`image:${uniqueId}`, JSON.stringify(metadata));
+
+			// Update user's upload count
+			const userData = await getUserData(user.id, env);
+			if (userData) {
+				userData.imagesUploaded = (userData.imagesUploaded || 0) + 1;
+				userData.updatedAt = new Date().toISOString();
+				await saveUserData(user.id, userData, env);
+			}
+
+			// Add to user's images list
+			const userImagesKey = `user:${user.id}:images`;
+			const userImages = await env.USER_DATA.get(userImagesKey);
+			const imagesList = userImages ? JSON.parse(userImages) : [];
+			imagesList.unshift(uniqueId); // Add to beginning of list
+			
+			// Keep only the last 1000 images per user
+			if (imagesList.length > 1000) {
+				imagesList.splice(1000);
+			}
+			
+			await env.USER_DATA.put(userImagesKey, JSON.stringify(imagesList));
+
+			return new Response(JSON.stringify({
+				success: true,
+				message: 'Image uploaded successfully',
+				imageUrl: imageUrl,
+				metadata: metadata
+			}), {
+				status: 201,
+				headers: {
+					'Content-Type': 'application/json',
+					'Access-Control-Allow-Origin': '*',
+				}
+			});
+
+		} catch (uploadError) {
+			console.error('Upload error:', uploadError);
+			return new Response(JSON.stringify({ 
+				error: 'Failed to upload image to storage',
+				details: uploadError.message 
+			}), {
+				status: 500,
+				headers: {
+					'Content-Type': 'application/json',
+					'Access-Control-Allow-Origin': '*',
+				}
+			});
+		}
+
+	} catch (error) {
+		console.error('Server error:', error);
+		return new Response(JSON.stringify({ 
+			error: 'Internal server error',
+			details: error.message 
+		}), {
+			status: 500,
+			headers: {
+				'Content-Type': 'application/json',
+				'Access-Control-Allow-Origin': '*',
+			}
+		});
+	}
+} 
