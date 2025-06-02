@@ -44,8 +44,8 @@
 	<title>Profile - WhereAmI</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-	<div class="container mx-auto px-4 py-8">
+<div class="profile-page min-h-screen" style="background-color: var(--bg-secondary);">
+	<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 		<!-- Header -->
 		<div class="flex justify-between items-center mb-8">
 			<div>
@@ -61,51 +61,62 @@
 		</div>
 
 		{#if $isAuthenticated && $user}
-			<!-- User Info -->
-			<div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-				<div class="flex items-center gap-4">
+			<!-- Profile Header -->
+			<div class="rounded-xl shadow-sm p-6 mb-8" style="background-color: var(--bg-primary);">
+				<div class="flex items-center space-x-6">
+					<!-- Avatar -->
 					<div
 						class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl font-semibold"
 					>
 						{$user.user_metadata?.first_name?.[0] || $user.email?.[0]?.toUpperCase() || '?'}
 					</div>
-					<div>
-						<h2 class="text-xl font-semibold text-gray-900">
+
+					<!-- Profile Info -->
+					<div class="flex-1">
+						<h1 class="text-2xl font-bold" style="color: var(--text-primary);">
 							{$user.user_metadata?.full_name || $user.user_metadata?.first_name || 'User'}
-						</h2>
-						<p class="text-gray-600">{$user.email}</p>
-						<p class="text-sm text-gray-500">
+						</h1>
+						<p class="text-lg" style="color: var(--text-secondary);">{$user.email}</p>
+						<p class="text-sm mt-1" style="color: var(--text-tertiary);">
 							Member since {new Date($user.created_at).toLocaleDateString()}
 						</p>
 					</div>
 				</div>
 			</div>
 
-			<!-- Stats -->
+			<!-- Statistics Grid -->
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-				<div class="bg-white rounded-xl shadow-sm p-6">
-					<div class="text-2xl font-bold text-blue-600">{$userStats.imagesUploaded}</div>
-					<div class="text-gray-600">Images Uploaded</div>
-				</div>
-				<div class="bg-white rounded-xl shadow-sm p-6">
-					<div class="text-2xl font-bold text-green-600">{$userStats.gamesCreated}</div>
-					<div class="text-gray-600">Games Created</div>
-				</div>
-				<div class="bg-white rounded-xl shadow-sm p-6">
-					<div class="text-2xl font-bold text-purple-600">{$userStats.gamesPlayed}</div>
-					<div class="text-gray-600">Games Played</div>
-				</div>
-				<div class="bg-white rounded-xl shadow-sm p-6">
-					<div class="text-2xl font-bold text-orange-600">
-						{$userStats.averageScore > 0 ? $userStats.averageScore.toFixed(0) : '0'}
+				<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
+					<div class="text-center">
+						<div class="text-3xl font-bold text-blue-600 mb-2">{$userStats.imagesUploaded}</div>
+						<div class="text-sm" style="color: var(--text-secondary);">Images Uploaded</div>
 					</div>
-					<div class="text-gray-600">Average Score</div>
+				</div>
+				<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
+					<div class="text-center">
+						<div class="text-3xl font-bold text-green-600 mb-2">{$userStats.gamesCreated}</div>
+						<div class="text-sm" style="color: var(--text-secondary);">Games Created</div>
+					</div>
+				</div>
+				<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
+					<div class="text-center">
+						<div class="text-3xl font-bold text-purple-600 mb-2">{$userStats.gamesPlayed}</div>
+						<div class="text-sm" style="color: var(--text-secondary);">Games Played</div>
+					</div>
+				</div>
+				<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
+					<div class="text-center">
+						<div class="text-3xl font-bold text-orange-600 mb-2">
+							{$userStats.averageScore > 0 ? $userStats.averageScore.toFixed(0) : '0'}
+						</div>
+						<div class="text-sm" style="color: var(--text-secondary);">Average Score</div>
+					</div>
 				</div>
 			</div>
 
-			<!-- Actions -->
-			<div class="bg-white rounded-xl shadow-sm p-6">
-				<h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+			<!-- Quick Actions -->
+			<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
+				<h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Quick Actions</h3>
 				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 					<button on:click={() => goto('/gallery?tab=upload')} class="btn-primary text-center">
 						📸 Upload Photos
@@ -120,7 +131,7 @@
 			</div>
 
 			<!-- Danger Zone -->
-			<div class="bg-white rounded-xl shadow-sm p-6 mt-8 border border-red-200">
+			<div class="rounded-xl shadow-sm p-6 mt-8 border border-red-200">
 				<h3 class="text-lg font-semibold text-red-900 mb-4">Account Actions</h3>
 				<button on:click={handleLogout} disabled={loading} class="btn-danger">
 					{loading ? 'Signing out...' : 'Sign Out'}

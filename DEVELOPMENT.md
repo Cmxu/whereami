@@ -16,12 +16,10 @@
 ## 🚀 Development Tasks & Features
 
 - [x] Fix TypeScript accessibility warnings in components
-- [ ] Optimize image loading and compression
-- [ ] Add proper error boundaries for API failures
-- [ ] Implement retry logic for failed network requests
-- [ ] Create user profile customization (username/profile photo/etc)
-- [ ] Create dark mode theme
-- [ ] The search bar is 2 px taller than the rest of the buttons on its row (in the gallery tab)
+- [x] Create dark mode theme
+- [x] The search bar is 2 px taller than the rest of the buttons on its row (in the gallery tab)
+- [x] Dark mode does not affect the background on any tab, it should also affect the color of the welcome tab, it should also affect other colors like blue buttons etc
+- [x] The toggle should just be dark/light mode it can be a button or toggle that switches between them, the default behaviour should be system if the user has never modified the toggle
 - [ ] Upload more button does not actually switch tabs
 - [ ] Delete Image Functionality: modify R2 and KV for user/game data
 - [ ] When selecting photos for a new game, you should be able to click anywhere on the picture to select/deselect it
@@ -33,6 +31,9 @@
 - [ ] If the user is already on the Gallery page and logs in, the gallery page is not able to load their pictures until after a refresh
 - [ ] On profile page don't need the profile button of the extra username box between the profile button and the back to home button
 - [ ] The user should be able to select multiple images to upload at a time, currently if you select multiple images it only takes the first image
+- [ ] Optimize image loading and compression
+- [ ] Add proper error boundaries for API failures
+- [ ] Implement retry logic for failed network requests
 - [x] Change organization: Top level tabs should be Play/Gallery/Browse/Create. The play/default welcome screen should allow the user to start a random game or go to browse user created games. Gallery shows your current photos and gives you the ability to upload/delete/modify your photos (make sure to integrate the upload screen with the gallery). Browse should show a list of public games/your personal games. Create should allow you to create new games with your existing images (it should also have a button to redirect to gallery to upload new images)
 - [x] Fix multiple file selection in upload functionality - users can now select multiple images at once
 - [x] Remove separate upload page and integrate all upload functionality into Gallery upload tab

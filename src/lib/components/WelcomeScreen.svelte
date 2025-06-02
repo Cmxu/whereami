@@ -216,6 +216,11 @@
 		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 		position: relative;
 		overflow: hidden;
+		transition: background 0.3s ease;
+	}
+
+	:global(.dark) .welcome-screen {
+		background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
 	}
 
 	.welcome-screen::before {
@@ -240,6 +245,21 @@
 		animation: slidePattern 20s linear infinite;
 	}
 
+	:global(.dark) .welcome-screen::before {
+		background:
+			linear-gradient(45deg, rgba(148, 163, 184, 0.1) 25%, transparent 25%),
+			linear-gradient(-45deg, rgba(148, 163, 184, 0.1) 25%, transparent 25%),
+			linear-gradient(45deg, transparent 75%, rgba(148, 163, 184, 0.1) 75%),
+			linear-gradient(-45deg, transparent 75%, rgba(148, 163, 184, 0.1) 75%);
+		background-size: 60px 60px;
+		background-position:
+			0 0,
+			0 30px,
+			30px -30px,
+			-30px 0px;
+		opacity: 0.2;
+	}
+
 	@keyframes slidePattern {
 		0% {
 			transform: translateX(0);
@@ -256,17 +276,60 @@
 
 	.game-logo {
 		text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+		color: white;
+	}
+
+	:global(.dark) .game-logo {
+		text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+		color: #f1f5f9;
+	}
+
+	.tagline {
+		color: rgba(255, 255, 255, 0.9);
+	}
+
+	:global(.dark) .tagline {
+		color: rgba(241, 245, 249, 0.8);
 	}
 
 	.option-button {
 		border: 2px solid transparent;
 		transition: all 0.3s ease;
+		background: rgba(255, 255, 255, 0.95);
+		backdrop-filter: blur(10px);
+	}
+
+	:global(.dark) .option-button {
+		background: rgba(30, 41, 59, 0.95);
+		backdrop-filter: blur(10px);
 	}
 
 	.option-button:hover {
 		border-color: rgba(59, 130, 246, 0.3);
 		background: rgba(255, 255, 255, 0.98);
 		backdrop-filter: blur(20px);
+	}
+
+	:global(.dark) .option-button:hover {
+		border-color: rgba(96, 165, 250, 0.4);
+		background: rgba(30, 41, 59, 0.98);
+		backdrop-filter: blur(20px);
+	}
+
+	.option-title {
+		color: #1f2937;
+	}
+
+	:global(.dark) .option-title {
+		color: #f9fafb;
+	}
+
+	.rounds-info {
+		color: #6b7280;
+	}
+
+	:global(.dark) .rounds-info {
+		color: #d1d5db;
 	}
 
 	.option-icon {
@@ -277,12 +340,71 @@
 		transform: scale(1.1);
 	}
 
+	.custom-round-btn {
+		background: rgba(255, 255, 255, 0.2);
+		color: white;
+		transition: all 0.2s ease;
+	}
+
+	.custom-round-btn:hover {
+		background: rgba(255, 255, 255, 0.3);
+		transform: scale(1.05);
+	}
+
+	:global(.dark) .custom-round-btn {
+		background: rgba(148, 163, 184, 0.2);
+		color: #f1f5f9;
+	}
+
+	:global(.dark) .custom-round-btn:hover {
+		background: rgba(148, 163, 184, 0.3);
+	}
+
+	.stats-toggle, .option-link {
+		background: rgba(255, 255, 255, 0.2);
+		color: white;
+		text-decoration: none;
+		backdrop-filter: blur(10px);
+		transition: all 0.2s ease;
+	}
+
+	.stats-toggle:hover, .option-link:hover {
+		background: rgba(255, 255, 255, 0.3);
+		transform: translateY(-2px);
+	}
+
+	:global(.dark) .stats-toggle,
+	:global(.dark) .option-link {
+		background: rgba(148, 163, 184, 0.2);
+		color: #f1f5f9;
+	}
+
+	:global(.dark) .stats-toggle:hover,
+	:global(.dark) .option-link:hover {
+		background: rgba(148, 163, 184, 0.3);
+	}
+
+	.stats-panel {
+		background: rgba(255, 255, 255, 0.95);
+		backdrop-filter: blur(10px);
+		animation: slideInUp 0.3s ease-out;
+	}
+
+	:global(.dark) .stats-panel {
+		background: rgba(30, 41, 59, 0.95);
+		backdrop-filter: blur(10px);
+	}
+
 	.resume-notification {
 		animation: slideInDown 0.5s ease-out;
 	}
 
-	.stats-panel {
-		animation: slideInUp 0.3s ease-out;
+	.welcome-footer {
+		color: rgba(255, 255, 255, 0.6);
+	}
+
+	:global(.dark) .welcome-footer {
+		color: rgba(241, 245, 249, 0.5);
 	}
 
 	@keyframes slideInDown {
@@ -305,19 +427,6 @@
 			opacity: 1;
 			transform: translateY(0);
 		}
-	}
-
-	.custom-round-btn:hover {
-		transform: scale(1.05);
-	}
-
-	.option-link {
-		text-decoration: none;
-		backdrop-filter: blur(10px);
-	}
-
-	.option-link:hover {
-		transform: translateY(-2px);
 	}
 
 	.fade-in {

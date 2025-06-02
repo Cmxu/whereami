@@ -123,8 +123,8 @@
 	<div class="min-h-screen flex items-center justify-center p-4">
 		<div class="card max-w-md w-full text-center">
 			<div class="text-blue-500 text-6xl mb-6">🎯</div>
-			<h1 class="text-3xl font-bold text-gray-800 mb-4">Create Custom Game</h1>
-			<p class="text-gray-600 mb-6">
+			<h1 class="text-3xl font-bold mb-4" style="color: var(--text-primary);">Create Custom Game</h1>
+			<p class="mb-6" style="color: var(--text-secondary);">
 				Sign in to create custom geography games using your uploaded photos.
 			</p>
 			<button class="btn-primary w-full" on:click={handleLogin}> Sign In to Continue </button>
@@ -132,33 +132,18 @@
 	</div>
 {:else}
 	<!-- Authenticated state -->
-	<div class="create-page min-h-screen bg-gray-50">
+	<div class="create-page min-h-screen" style="background-color: var(--bg-secondary);">
 		<!-- Header -->
-		<div class="page-header bg-white border-b border-gray-200">
+		<div class="page-header border-b" style="background-color: var(--bg-primary); border-color: var(--border-color);">
 			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 					<div>
-						<h1 class="text-2xl font-bold text-gray-900">Create Custom Game</h1>
-						<p class="text-gray-600">
-							Select 3-20 photos from your gallery to create a geography game
-						</p>
+						<h1 class="text-3xl font-bold" style="color: var(--text-primary);">Create Game</h1>
+						<p style="color: var(--text-secondary);">Create your own geography guessing game using your photos</p>
 					</div>
-
-					<!-- Action buttons -->
-					<div class="flex gap-3">
-						<button class="btn-secondary" on:click={handleUploadPhotos}>
-							📤 Upload More Photos
-						</button>
-						{#if selectedImages.length > 0}
-							<button
-								class="btn-primary"
-								on:click={() => (showCreateGameModal = true)}
-								disabled={selectedImages.length < 3}
-							>
-								Create Game ({selectedImages.length})
-							</button>
-						{/if}
-					</div>
+					<a href="/gallery?tab=upload" class="btn-secondary">
+						📸 Upload Photos
+					</a>
 				</div>
 			</div>
 		</div>
@@ -167,15 +152,15 @@
 		<div class="create-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 			<!-- Selection info -->
 			{#if selectedImages.length > 0}
-				<div class="selection-info bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+				<div class="selection-info bg-blue-50-theme border border-blue-200-theme rounded-lg p-4 mb-6">
 					<div class="flex items-center justify-between">
 						<div class="flex items-center gap-3">
 							<div class="text-blue-600 text-xl">✅</div>
 							<div>
-								<p class="font-medium text-blue-900">
+								<p class="font-medium text-blue-900-theme">
 									{selectedImages.length} photo{selectedImages.length !== 1 ? 's' : ''} selected
 								</p>
-								<p class="text-sm text-blue-700">
+								<p class="text-sm text-blue-700-theme">
 									{selectedImages.length < 3
 										? `Select ${3 - selectedImages.length} more to create a game`
 										: 'Ready to create your game!'}
@@ -192,15 +177,15 @@
 					</div>
 				</div>
 			{:else}
-				<div class="instructions bg-white border border-gray-200 rounded-lg p-6 mb-6">
+				<div class="instructions border rounded-lg p-6 mb-6" style="background-color: var(--bg-primary); border-color: var(--border-color);">
 					<div class="text-center">
 						<div class="text-gray-400 text-5xl mb-4">🖼️</div>
-						<h3 class="text-lg font-semibold text-gray-900 mb-2">Select Photos for Your Game</h3>
-						<p class="text-gray-600 mb-4">
+						<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">Select Photos for Your Game</h3>
+						<p class="mb-4" style="color: var(--text-secondary);">
 							Choose 3-20 photos from your gallery below. Each photo will be a round in your custom
 							geography game.
 						</p>
-						<div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+						<div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm" style="color: var(--text-secondary);">
 							<div class="flex items-center justify-center gap-2">
 								<span class="text-green-600">✓</span>
 								<span>Minimum 3 photos</span>
@@ -232,17 +217,17 @@
 <!-- Create Game Modal -->
 {#if showCreateGameModal}
 	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-		<div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
-			<div class="modal-header p-6 border-b">
-				<h3 class="text-xl font-semibold text-gray-800">Create Custom Game</h3>
-				<p class="text-sm text-gray-600 mt-1">
+		<div class="rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden" style="background-color: var(--bg-primary);">
+			<div class="modal-header p-6 border-b" style="border-color: var(--border-color);">
+				<h3 class="text-xl font-semibold" style="color: var(--text-primary);">Create Custom Game</h3>
+				<p class="text-sm mt-1" style="color: var(--text-secondary);">
 					Creating a game with {selectedImages.length} photo{selectedImages.length !== 1 ? 's' : ''}
 				</p>
 			</div>
 
 			<div class="modal-content p-6 overflow-y-auto">
 				<div class="form-section mb-6">
-					<label for="game-name" class="block text-sm font-medium text-gray-700 mb-2">
+					<label for="game-name" class="block text-sm font-medium mb-2" style="color: var(--text-primary);">
 						Game Name *
 					</label>
 					<input
@@ -256,7 +241,7 @@
 				</div>
 
 				<div class="form-section mb-6">
-					<label for="game-description" class="block text-sm font-medium text-gray-700 mb-2">
+					<label for="game-description" class="block text-sm font-medium mb-2" style="color: var(--text-primary);">
 						Description (Optional)
 					</label>
 					<textarea
@@ -270,7 +255,7 @@
 				</div>
 
 				<div class="form-section mb-6">
-					<label for="game-difficulty" class="block text-sm font-medium text-gray-700 mb-2">
+					<label for="game-difficulty" class="block text-sm font-medium mb-2" style="color: var(--text-primary);">
 						Difficulty Level (Optional)
 					</label>
 					<select id="game-difficulty" class="input-field" bind:value={newGameDifficulty}>
@@ -282,7 +267,7 @@
 				</div>
 
 				<div class="form-section mb-6">
-					<label for="game-tags" class="block text-sm font-medium text-gray-700 mb-2">
+					<label for="game-tags" class="block text-sm font-medium mb-2" style="color: var(--text-primary);">
 						Tags (Optional) - Max 5 tags
 					</label>
 					<div class="tags-input">
@@ -298,7 +283,7 @@
 							<div class="tags-list flex flex-wrap gap-2 mt-2">
 								{#each newGameTags as tag}
 									<span
-										class="tag px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded-full flex items-center gap-1"
+										class="tag px-2 py-1 bg-blue-100-theme text-blue-700-theme text-sm rounded-full flex items-center gap-1"
 									>
 										{tag}
 										<button
@@ -322,7 +307,7 @@
 							class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
 							bind:checked={newGameIsPublic}
 						/>
-						<span class="ml-2 text-sm text-gray-700">
+						<span class="ml-2 text-sm" style="color: var(--text-primary);">
 							Make this game public (others can discover and play it)
 						</span>
 					</label>
@@ -330,10 +315,10 @@
 
 				<!-- Selected Images Preview -->
 				<div class="selected-images mb-6">
-					<h4 class="text-sm font-medium text-gray-700 mb-3">Selected Photos</h4>
+					<h4 class="text-sm font-medium mb-3" style="color: var(--text-primary);">Selected Photos</h4>
 					<div class="image-preview-grid grid grid-cols-6 gap-2">
 						{#each selectedImages.slice(0, 12) as image}
-							<div class="preview-item aspect-square bg-gray-100 rounded overflow-hidden">
+							<div class="preview-item aspect-square rounded overflow-hidden" style="background-color: var(--bg-secondary);">
 								<img
 									src={image.thumbnailUrl || `/api/images/${image.id}`}
 									alt={image.filename}
@@ -343,7 +328,8 @@
 						{/each}
 						{#if selectedImages.length > 12}
 							<div
-								class="preview-item aspect-square bg-gray-200 rounded flex items-center justify-center text-xs text-gray-600"
+								class="preview-item aspect-square rounded flex items-center justify-center text-xs"
+								style="background-color: var(--bg-tertiary); color: var(--text-secondary);"
 							>
 								+{selectedImages.length - 12} more
 							</div>
@@ -352,7 +338,7 @@
 				</div>
 			</div>
 
-			<div class="modal-footer p-6 border-t flex justify-end gap-3">
+			<div class="modal-footer p-6 border-t flex justify-end gap-3" style="border-color: var(--border-color);">
 				<button class="btn-secondary" on:click={cancelCreateGame} disabled={creating}>
 					Cancel
 				</button>

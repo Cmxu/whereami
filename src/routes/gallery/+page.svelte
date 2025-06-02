@@ -528,31 +528,50 @@
 	</div>
 {:else}
 	<!-- Authenticated state -->
-	<div class="gallery-container min-h-screen bg-gray-50">
+	<div class="gallery-container min-h-screen">
 		<!-- Header -->
-		<div class="gallery-header bg-white border-b border-gray-200">
-			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-					<div>
-						<h1 class="text-2xl font-bold text-gray-900">Photo Gallery</h1>
-						<p class="text-gray-600">Manage your photos and create geography games</p>
+		<div class="gallery-header border-b" style="background-color: var(--bg-primary); border-color: var(--border-color);">
+			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+				<div class="header-content py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+					<!-- Page title and description -->
+					<div class="header-text mb-4 sm:mb-0">
+						<h1 class="text-3xl font-bold" style="color: var(--text-primary);">Your Photo Gallery</h1>
+						<p class="text-lg mt-2" style="color: var(--text-secondary);">
+							Manage your uploaded photos and create custom geography games
+						</p>
 					</div>
 
-					<!-- Tab navigation -->
-					<div class="flex bg-gray-100 rounded-lg p-1">
-						<button
-							class="tab-button {activeTab === 'gallery' ? 'active' : ''}"
-							on:click={() => switchTab('gallery')}
-						>
-							🖼️ My Photos
-						</button>
-						<button
-							class="tab-button {activeTab === 'upload' ? 'active' : ''}"
-							on:click={() => switchTab('upload')}
-						>
-							📤 Upload
-						</button>
+					<!-- Action buttons -->
+					<div class="header-actions flex items-center gap-3">
+						{#if $isAuthenticated}
+							<button
+								class="action-btn btn-secondary"
+								on:click={handleCreateGame}
+								disabled={!$canUpload}
+							>
+								🎯 Create Game
+							</button>
+						{/if}
 					</div>
+				</div>
+
+				<!-- Tab navigation -->
+				<div class="tab-navigation flex border-b" style="border-color: var(--border-color);">
+					<button
+						class="tab-button px-6 py-3 font-medium transition-all duration-200"
+						class:active={activeTab === 'gallery'}
+						on:click={() => switchTab('gallery')}
+					>
+						📸 Gallery
+					</button>
+					<button
+						class="tab-button px-6 py-3 font-medium transition-all duration-200"
+						class:active={activeTab === 'upload'}
+						on:click={() => switchTab('upload')}
+						disabled={!$isAuthenticated}
+					>
+						⬆️ Upload
+					</button>
 				</div>
 			</div>
 		</div>
@@ -573,18 +592,20 @@
 							transition:fly={{ y: -20, duration: 300 }}
 						>
 							<div
-								class="stat-card bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100"
+								class="stat-card rounded-xl p-6 text-center shadow-sm border"
+								style="background-color: var(--bg-primary); border-color: var(--border-color);"
 							>
 								<div class="text-3xl font-bold text-blue-600 mb-2">{uploadFiles.length}</div>
-								<div class="text-sm font-medium text-gray-600">Total Photos</div>
+								<div class="text-sm font-medium" style="color: var(--text-secondary);">Total Photos</div>
 							</div>
 							<div
-								class="stat-card bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100"
+								class="stat-card rounded-xl p-6 text-center shadow-sm border"
+								style="background-color: var(--bg-primary); border-color: var(--border-color);"
 							>
 								<div class="text-3xl font-bold text-green-600 mb-2">{uploadedCount}</div>
-								<div class="text-sm font-medium text-gray-600">Uploaded</div>
+								<div class="text-sm font-medium" style="color: var(--text-secondary);">Uploaded</div>
 								{#if overallProgress > 0}
-									<div class="mt-2 bg-gray-200 rounded-full h-2">
+									<div class="mt-2 rounded-full h-2" style="background-color: var(--border-light);">
 										<div
 											class="bg-green-500 h-2 rounded-full transition-all duration-500"
 											style="width: {overallProgress}%"
@@ -593,16 +614,18 @@
 								{/if}
 							</div>
 							<div
-								class="stat-card bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100"
+								class="stat-card rounded-xl p-6 text-center shadow-sm border"
+								style="background-color: var(--bg-primary); border-color: var(--border-color);"
 							>
 								<div class="text-3xl font-bold text-amber-600 mb-2">{noLocationCount}</div>
-								<div class="text-sm font-medium text-gray-600">Need Location</div>
+								<div class="text-sm font-medium" style="color: var(--text-secondary);">Need Location</div>
 							</div>
 							<div
-								class="stat-card bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100"
+								class="stat-card rounded-xl p-6 text-center shadow-sm border"
+								style="background-color: var(--bg-primary); border-color: var(--border-color);"
 							>
 								<div class="text-3xl font-bold text-red-600 mb-2">{errorCount}</div>
-								<div class="text-sm font-medium text-gray-600">Errors</div>
+								<div class="text-sm font-medium" style="color: var(--text-secondary);">Errors</div>
 							</div>
 						</div>
 					{/if}
@@ -613,11 +636,12 @@
 							<!-- Drag & Drop Zone -->
 							<div class="upload-area-section">
 								<div
-									class="upload-area relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 bg-white shadow-sm min-h-80"
+									class="upload-area relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 shadow-sm min-h-80"
 									class:border-blue-400={dragActive}
 									class:bg-blue-50={dragActive}
 									class:border-gray-300={!dragActive}
 									class:scale-105={dragActive}
+									style="background-color: var(--bg-primary); border-color: {dragActive ? '#60a5fa' : 'var(--border-color)'};"
 									on:dragover={handleDragOver}
 									on:dragleave={handleDragLeave}
 									on:drop={handleDrop}
@@ -629,8 +653,8 @@
 									{#if processingFiles}
 										<div class="processing-indicator">
 											<div class="animate-spin text-4xl mb-4">⚙️</div>
-											<h3 class="text-lg font-semibold text-gray-800 mb-2">Processing Files...</h3>
-											<p class="text-gray-600">Extracting GPS data and creating previews</p>
+											<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">Processing Files...</h3>
+											<p style="color: var(--text-secondary);">Extracting GPS data and creating previews</p>
 										</div>
 									{:else}
 										<div class="upload-content">
@@ -640,21 +664,21 @@
 											>
 												{dragActive ? '⬇️' : '📸'}
 											</div>
-											<h3 class="text-xl font-semibold text-gray-800 mb-3">
+											<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">
 												{dragActive ? 'Drop your photos here!' : 'Upload Travel Photos'}
 											</h3>
-											<p class="text-gray-600 mb-6">
+											<p class="mb-6" style="color: var(--text-secondary);">
 												Drag and drop photos or click to browse your files
 											</p>
 
 											<div class="space-y-3">
 												<button
-													class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+													class="bg-blue-primary text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
 													on:click|stopPropagation={triggerFileSelect}
 												>
 													Choose Photos
 												</button>
-												<div class="text-sm text-gray-500">
+												<div class="text-sm" style="color: var(--text-tertiary);">
 													<p class="font-medium">Supported: JPG, PNG, WebP, HEIC</p>
 													<p>Max size: {MAX_FILE_SIZE / 1024 / 1024}MB per file</p>
 												</div>
@@ -677,13 +701,14 @@
 							<!-- Upload Actions -->
 							{#if hasFilesToUpload}
 								<div
-									class="upload-actions bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+									class="upload-actions rounded-2xl p-6 shadow-sm border"
+									style="background-color: var(--bg-primary); border-color: var(--border-color);"
 									transition:fly={{ y: 20, duration: 300 }}
 								>
 									<div class="flex justify-between items-center mb-4">
-										<h4 class="text-lg font-semibold text-gray-800">Ready to Upload</h4>
+										<h4 class="text-lg font-semibold" style="color: var(--text-primary);">Ready to Upload</h4>
 										<span
-											class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
+											class="bg-blue-100-theme text-blue-800-theme px-3 py-1 rounded-full text-sm font-medium"
 										>
 											{pendingCount} photo{pendingCount !== 1 ? 's' : ''}
 										</span>
@@ -718,15 +743,16 @@
 						<div class="xl:col-span-2">
 							{#if uploadFiles.length === 0}
 								<div
-									class="empty-state bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100"
+									class="empty-state rounded-2xl p-12 text-center shadow-sm border"
+									style="background-color: var(--bg-primary); border-color: var(--border-color);"
 								>
 									<div class="text-6xl mb-6">🌍</div>
-									<h3 class="text-xl font-semibold text-gray-800 mb-3">No photos yet</h3>
-									<p class="text-gray-600 mb-6">
+									<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">No photos yet</h3>
+									<p class="mb-6" style="color: var(--text-secondary);">
 										Upload photos with GPS data to start creating geography games
 									</p>
 									<button
-										class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors"
+										class="bg-blue-primary text-white px-6 py-3 rounded-xl font-medium transition-colors"
 										on:click={triggerFileSelect}
 									>
 										Get Started
@@ -736,7 +762,8 @@
 								<div class="photo-list space-y-4">
 									{#each uploadFiles as file, index (file.id)}
 										<div
-											class="photo-item bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
+											class="photo-item rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
+											style="background-color: var(--bg-primary); border-color: var(--border-color);"
 											transition:fly={{ x: -50, duration: 300, delay: index * 50 }}
 										>
 											<div class="flex flex-col sm:flex-row">
@@ -1047,29 +1074,37 @@
 <style>
 	.gallery-container {
 		min-height: calc(100vh - 64px); /* Account for navigation height */
+		background-color: var(--bg-secondary);
 	}
 
 	.tab-button {
-		padding: 0.5rem 1rem;
+		padding: 0.75rem 1.5rem;
 		font-size: 0.875rem;
 		font-weight: 500;
-		border-radius: 0.375rem;
+		border-radius: 0;
 		transition: all 0.2s;
-		color: #6b7280;
+		color: var(--text-secondary);
 		background: transparent;
 		border: none;
+		border-bottom: 2px solid transparent;
 		cursor: pointer;
+		position: relative;
 	}
 
-	.tab-button:hover {
-		color: #374151;
-		background: rgba(255, 255, 255, 0.5);
+	.tab-button:hover:not(:disabled) {
+		color: var(--text-primary);
+		background: var(--bg-tertiary);
 	}
 
 	.tab-button.active {
-		color: #1f2937;
-		background: white;
-		box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+		color: var(--btn-primary-bg);
+		border-bottom-color: var(--btn-primary-bg);
+		background: transparent;
+	}
+
+	.tab-button:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
 	.upload-area {
@@ -1100,17 +1135,17 @@
 	}
 
 	.photo-list::-webkit-scrollbar-track {
-		background: #f1f5f9;
+		background: var(--border-light);
 		border-radius: 4px;
 	}
 
 	.photo-list::-webkit-scrollbar-thumb {
-		background: #cbd5e1;
+		background: var(--border-color);
 		border-radius: 4px;
 	}
 
 	.photo-list::-webkit-scrollbar-thumb:hover {
-		background: #94a3b8;
+		background: var(--text-tertiary);
 	}
 
 	@media (max-width: 640px) {

@@ -222,21 +222,21 @@
 	</div>
 
 	<!-- Filters and Search -->
-	<div class="gallery-filters mb-6 p-4 bg-white rounded-lg border">
-		<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+	<div class="gallery-filters mb-6 p-4 rounded-lg border" style="background-color: var(--bg-primary); border-color: var(--border-color);">
+		<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
 			<!-- Search -->
 			<div class="search-field">
 				<input
 					type="text"
 					placeholder="Search photos..."
-					class="input-field"
+					class="input-field h-11"
 					bind:value={searchQuery}
 				/>
 			</div>
 
 			<!-- Sort -->
 			<div class="sort-field">
-				<select class="input-field" bind:value={sortBy}>
+				<select class="input-field h-11" bind:value={sortBy}>
 					<option value="newest">Newest First</option>
 					<option value="oldest">Oldest First</option>
 					<option value="name">Name A-Z</option>
@@ -245,7 +245,7 @@
 
 			<!-- Filter -->
 			<div class="filter-field">
-				<select class="input-field" bind:value={filterBy}>
+				<select class="input-field h-11" bind:value={filterBy}>
 					<option value="all">All Photos</option>
 					<option value="public">Public Only</option>
 					<option value="private">Private Only</option>
@@ -255,9 +255,9 @@
 			<!-- Batch Actions -->
 			<div class="batch-actions">
 				{#if selectable && multiSelect}
-					<button class="btn-secondary w-full text-sm" on:click={selectAll}> Select Page </button>
+					<button class="btn-secondary w-full text-sm h-11" on:click={selectAll}> Select Page </button>
 				{:else}
-					<button class="btn-primary w-full text-sm" on:click={() => goto('/gallery?tab=upload')}>
+					<button class="btn-primary w-full text-sm h-11" on:click={() => goto('/gallery?tab=upload')}>
 						Upload More
 					</button>
 				{/if}

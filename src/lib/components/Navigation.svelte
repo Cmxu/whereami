@@ -4,6 +4,7 @@
 	import { user, isAuthenticated, signOut } from '$lib/stores/authStore';
 	import { showSuccess, showError } from '$lib/stores/toastStore';
 	import AuthModal from './AuthModal.svelte';
+	import ThemeToggle from './ThemeToggle.svelte';
 
 	let showAuthModal = false;
 	let showUserMenu = false;
@@ -73,6 +74,9 @@
 
 			<!-- User authentication section -->
 			<div class="nav-right flex items-center space-x-4">
+				<!-- Theme toggle -->
+				<ThemeToggle />
+
 				{#if $isAuthenticated && $user}
 					<!-- Authenticated user menu -->
 					<div class="user-menu-container relative">
@@ -87,11 +91,11 @@
 							>
 								{$user.user_metadata?.first_name?.[0] || $user.email?.[0]?.toUpperCase() || '?'}
 							</div>
-							<span class="user-name hidden sm:block text-sm font-medium text-gray-700">
+							<span class="user-name hidden sm:block text-sm font-medium">
 								{$user.user_metadata?.first_name || $user.email?.split('@')[0] || 'User'}
 							</span>
 							<svg
-								class="user-menu-chevron w-4 h-4 text-gray-500 transition-transform {showUserMenu
+								class="user-menu-chevron w-4 h-4 transition-transform {showUserMenu
 									? 'rotate-180'
 									: ''}"
 								fill="none"
@@ -109,10 +113,10 @@
 
 						{#if showUserMenu}
 							<div
-								class="user-menu absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50"
+								class="user-menu absolute right-0 mt-2 w-64 rounded-lg shadow-lg py-2 z-50"
 							>
 								<!-- User info header -->
-								<div class="user-menu-header px-4 py-3 border-b border-gray-100">
+								<div class="user-menu-header px-4 py-3 border-b">
 									<div class="flex items-center space-x-3">
 										<div
 											class="user-avatar w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold"
@@ -122,12 +126,12 @@
 												'?'}
 										</div>
 										<div>
-											<div class="font-medium text-gray-900">
+											<div class="font-medium">
 												{$user.user_metadata?.full_name ||
 													$user.user_metadata?.first_name ||
 													'User'}
 											</div>
-											<div class="text-sm text-gray-500">{$user.email}</div>
+											<div class="text-sm">{$user.email}</div>
 										</div>
 									</div>
 								</div>
@@ -135,7 +139,7 @@
 								<!-- Menu items -->
 								<div class="user-menu-items py-1">
 									<button
-										class="user-menu-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-3"
+										class="user-menu-item w-full text-left px-4 py-2 text-sm flex items-center space-x-3"
 										on:click={handleProfileClick}
 									>
 										<span>⚙️</span>
@@ -143,7 +147,7 @@
 									</button>
 								</div>
 
-								<div class="border-t border-gray-100 py-1">
+								<div class="border-t py-1" style="border-color: var(--border-color);">
 									<button
 										class="user-menu-item w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-3"
 										on:click={handleLogout}
@@ -158,7 +162,7 @@
 				{:else}
 					<!-- Sign in button for unauthenticated users -->
 					<button
-						class="sign-in-btn px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+						class="sign-in-btn px-4 py-2 text-sm font-medium rounded-lg transition-colors"
 						on:click={handleLogin}
 					>
 						Sign In
@@ -167,10 +171,10 @@
 
 				<!-- Mobile menu button (if needed later) -->
 				<button
-					class="mobile-menu-btn md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+					class="mobile-menu-btn md:hidden p-2 rounded-lg transition-colors"
 					aria-label="Open menu"
 				>
-					<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
@@ -190,6 +194,9 @@
 <style>
 	.navigation {
 		backdrop-filter: blur(8px);
+		background-color: var(--bg-primary);
+		border-color: var(--border-color);
+		transition: background-color 0.2s ease, border-color 0.2s ease;
 	}
 
 	.nav-link {
@@ -198,32 +205,88 @@
 		padding: 0.5rem 0.75rem;
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: #6b7280;
+		color: var(--text-secondary);
 		text-decoration: none;
 		border-radius: 0.5rem;
 		transition: all 0.2s ease;
 	}
 
 	.nav-link:hover {
-		color: #374151;
-		background-color: #f3f4f6;
+		color: var(--text-primary);
+		background-color: var(--bg-tertiary);
 	}
 
 	.nav-link.active {
-		color: #2563eb;
-		background-color: #dbeafe;
+		color: var(--btn-primary-bg);
+		background-color: var(--blue-50);
+	}
+
+	:global(.dark) .nav-link.active {
+		color: var(--blue-600);
+		background-color: var(--blue-100);
+	}
+
+	.user-menu-trigger {
+		background-color: var(--bg-primary);
+		color: var(--text-primary);
+		border: 1px solid var(--border-color);
+	}
+
+	.user-menu-trigger:hover {
+		background-color: var(--bg-tertiary);
+	}
+
+	.user-name {
+		color: var(--text-secondary);
 	}
 
 	.user-menu-chevron {
+		color: var(--text-tertiary);
 		transition: transform 0.2s ease;
 	}
 
 	.user-menu {
+		background-color: var(--bg-primary);
+		border-color: var(--border-color);
+		box-shadow: var(--shadow-lg);
 		animation: fadeInDown 0.15s ease-out;
 	}
 
+	.user-menu-header {
+		border-color: var(--border-color);
+	}
+
+	.user-menu-header .font-medium {
+		color: var(--text-primary);
+	}
+
+	.user-menu-header .text-sm {
+		color: var(--text-secondary);
+	}
+
+	.user-menu-item {
+		color: var(--text-primary);
+	}
+
 	.user-menu-item:hover {
-		background-color: #f9fafb;
+		background-color: var(--bg-tertiary);
+	}
+
+	.sign-in-btn {
+		background-color: var(--btn-primary-bg);
+		color: var(--btn-primary-text);
+	}
+
+	.sign-in-btn:hover {
+		background-color: var(--btn-primary-hover);
+	}
+
+	.mobile-menu-btn {
+		color: var(--text-secondary);
+	}
+
+	.mobile-menu-btn:hover {
+		background-color: var(--bg-tertiary);
 	}
 
 	@keyframes fadeInDown {

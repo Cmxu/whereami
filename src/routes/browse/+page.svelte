@@ -187,120 +187,103 @@
 	/>
 </svelte:head>
 
-<div class="browse-page min-h-screen bg-gray-50">
+<div class="browse-page min-h-screen" style="background-color: var(--bg-secondary);">
 	<!-- Header -->
-	<div class="page-header bg-white border-b border-gray-200">
+	<div class="page-header border-b" style="background-color: var(--bg-primary); border-color: var(--border-color);">
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 				<div>
-					<h1 class="text-2xl font-bold text-gray-900">Browse Games</h1>
-					<p class="text-gray-600">Discover geography games created by the community</p>
+					<h1 class="text-3xl font-bold" style="color: var(--text-primary);">Browse Games</h1>
+					<p style="color: var(--text-secondary);">Discover and play community-created geography games</p>
 				</div>
-
-				<!-- Filter tabs -->
-				<div class="flex bg-gray-100 rounded-lg p-1">
-					<button
-						class="filter-tab {gameFilter === 'public' ? 'active' : ''}"
-						on:click={() => switchGameFilter('public')}
+				{#if $isAuthenticated}
+					<a
+						href="/create"
+						class="btn-primary flex items-center gap-2"
 					>
-						🌍 Public Games
-					</button>
-					<button
-						class="filter-tab {gameFilter === 'my-games' ? 'active' : ''}"
-						on:click={() => switchGameFilter('my-games')}
-						disabled={!$isAuthenticated}
-					>
-						🎮 My Games
-					</button>
-				</div>
+						<span>🎯</span>
+						Create Game
+					</a>
+				{/if}
 			</div>
 		</div>
 	</div>
 
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-		{#if gameFilter === 'public'}
-			<!-- Public Games Section -->
-			<!-- Search and Filter Controls -->
-			<div class="filters-section bg-white rounded-lg border border-gray-200 p-6 mb-8">
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-					<!-- Search -->
-					<div class="filter-group">
-						<label for="search-games" class="filter-label">Search Games</label>
-						<input
-							id="search-games"
-							type="text"
-							placeholder="Search by name or description..."
-							class="input-field"
-							bind:value={searchQuery}
-							on:input={handleSearch}
-						/>
-					</div>
-
-					<!-- Sort -->
-					<div class="filter-group">
-						<label for="sort-by" class="filter-label">Sort By</label>
-						<select
-							id="sort-by"
-							class="input-field"
-							bind:value={sortBy}
-							on:change={handleFilterChange}
+		<!-- Filters -->
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+			<div class="filters-section rounded-lg border p-6 mb-8" style="background-color: var(--bg-primary); border-color: var(--border-color);">
+				<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+					<!-- Filter tabs -->
+					<div class="flex rounded-lg p-1" style="background-color: var(--bg-tertiary);">
+						<button
+							class="filter-tab {gameFilter === 'public' ? 'active' : ''}"
+							on:click={() => switchGameFilter('public')}
 						>
-							<option value="newest">Newest First</option>
-							<option value="oldest">Oldest First</option>
-							<option value="popular">Most Popular</option>
-							<option value="rating">Highest Rated</option>
-						</select>
+							🌍 Public Games
+						</button>
+						<button
+							class="filter-tab {gameFilter === 'my-games' ? 'active' : ''}"
+							on:click={() => switchGameFilter('my-games')}
+							disabled={!$isAuthenticated}
+						>
+							🎮 My Games
+						</button>
 					</div>
 
-					<!-- Difficulty -->
-					<div class="filter-group">
-						<label for="difficulty-filter" class="filter-label">Difficulty</label>
+					<!-- Search and filters -->
+					<div class="flex flex-col sm:flex-row gap-4 flex-1 lg:max-w-xl">
+						<div class="flex-1">
+							<input
+								type="text"
+								placeholder="Search games..."
+								bind:value={searchQuery}
+								on:input={handleSearch}
+								class="input-field text-sm"
+							/>
+						</div>
+
 						<select
-							id="difficulty-filter"
-							class="input-field"
 							bind:value={difficultyFilter}
 							on:change={handleFilterChange}
+							class="input-field text-sm"
 						>
-							<option value="all">All Levels</option>
+							<option value="">All Difficulties</option>
 							<option value="easy">Easy</option>
 							<option value="medium">Medium</option>
 							<option value="hard">Hard</option>
 						</select>
-					</div>
 
-					<!-- Tags -->
-					<div class="filter-group">
-						<label for="tag-filter" class="filter-label">Tags</label>
-						<input
-							id="tag-filter"
-							type="text"
-							placeholder="Filter by tag..."
-							class="input-field"
-							bind:value={tagFilter}
-							on:input={handleFilterChange}
-						/>
+						<select bind:value={sortBy} on:change={handleFilterChange} class="input-field text-sm">
+							<option value="created_at">Newest</option>
+							<option value="play_count">Most Played</option>
+							<option value="average_rating">Highest Rated</option>
+						</select>
 					</div>
 				</div>
 			</div>
+		</div>
 
-			<!-- Public Games Grid -->
+		{#if gameFilter === 'public'}
+			<!-- Public Games Section -->
+			<!-- Search and Filter Controls -->
 			{#if loadingGames}
 				<div class="loading-state text-center py-12">
 					<div class="loading-spinner mx-auto mb-4"></div>
-					<p class="text-gray-600">Loading games...</p>
+					<p style="color: var(--text-secondary);">Loading games...</p>
 				</div>
 			{:else if gamesError}
 				<div class="error-state text-center py-12">
 					<div class="text-red-500 text-4xl mb-4">⚠️</div>
-					<h3 class="text-lg font-semibold text-gray-800 mb-2">Error Loading Games</h3>
-					<p class="text-gray-600 mb-4">{gamesError}</p>
+					<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">Error Loading Games</h3>
+					<p class="mb-4" style="color: var(--text-secondary);">{gamesError}</p>
 					<button class="btn-primary" on:click={loadPublicGames}>Try Again</button>
 				</div>
 			{:else if publicGames.length === 0}
 				<div class="empty-state text-center py-12">
 					<div class="text-gray-400 text-6xl mb-6">🎯</div>
-					<h3 class="text-xl font-semibold text-gray-800 mb-3">No Games Found</h3>
-					<p class="text-gray-600 mb-6">
+					<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">No Games Found</h3>
+					<p class="mb-6" style="color: var(--text-secondary);">
 						{searchQuery
 							? 'Try adjusting your search filters'
 							: 'Be the first to create a public game!'}
@@ -311,20 +294,22 @@
 				<!-- Games Grid -->
 				<div class="games-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
 					{#each publicGames as game (game.id)}
-						<div
-							class="game-card bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+						<a
+							href="/games/{game.id}"
+							class="game-card rounded-lg border overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+							style="background-color: var(--bg-primary); border-color: var(--border-color);"
 						>
-							<div class="game-header p-4 border-b border-gray-100">
-								<h3 class="font-semibold text-gray-900 mb-1">{game.name}</h3>
+							<div class="game-header p-4 border-b" style="border-color: var(--border-color);">
+								<h3 class="font-semibold mb-1" style="color: var(--text-primary);">{game.name}</h3>
 								{#if game.description}
-									<p class="text-sm text-gray-600">{game.description}</p>
+									<p class="text-sm" style="color: var(--text-secondary);">{game.description}</p>
 								{/if}
 							</div>
 
 							<div class="game-info p-4 space-y-3">
 								<div class="game-stats flex justify-between text-sm">
-									<span class="text-gray-600">{game.imageIds.length} photos</span>
-									<span class="text-gray-600">By {game.createdBy}</span>
+									<span style="color: var(--text-secondary);">{game.imageIds.length} photos</span>
+									<span style="color: var(--text-secondary);">By {game.createdBy}</span>
 								</div>
 
 								{#if game.difficulty}
@@ -343,7 +328,7 @@
 								{#if game.tags && game.tags.length > 0}
 									<div class="tags flex flex-wrap gap-1">
 										{#each game.tags.slice(0, 3) as tag}
-											<span class="tag bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+											<span class="tag bg-blue-100-theme text-blue-800-theme px-2 py-1 rounded text-xs">
 												{tag}
 											</span>
 										{/each}
@@ -361,7 +346,7 @@
 									<button class="btn-secondary" on:click={() => shareGame(game)}> 📤 </button>
 								</div>
 							</div>
-						</div>
+						</a>
 					{/each}
 				</div>
 
@@ -371,7 +356,7 @@
 						<button class="btn-secondary" disabled={currentPage === 1} on:click={prevPage}>
 							← Previous
 						</button>
-						<span class="text-sm text-gray-600">
+						<span class="text-sm" style="color: var(--text-secondary);">
 							Page {currentPage} of {Math.ceil(totalGames / itemsPerPage)}
 						</span>
 						<button
@@ -389,27 +374,27 @@
 			{#if !$isAuthenticated}
 				<div class="auth-notice text-center py-12">
 					<div class="text-blue-500 text-6xl mb-6">🔐</div>
-					<h3 class="text-xl font-semibold text-gray-800 mb-3">Sign In Required</h3>
-					<p class="text-gray-600 mb-6">Sign in to view and manage your custom games</p>
+					<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">Sign In Required</h3>
+					<p class="mb-6" style="color: var(--text-secondary);">Sign in to view and manage your custom games</p>
 					<button class="btn-primary" on:click={() => goto('/gallery')}> Sign In </button>
 				</div>
 			{:else if loadingGames}
 				<div class="loading-state text-center py-12">
 					<div class="loading-spinner mx-auto mb-4"></div>
-					<p class="text-gray-600">Loading your games...</p>
+					<p style="color: var(--text-secondary);">Loading your games...</p>
 				</div>
 			{:else if gamesError}
 				<div class="error-state text-center py-12">
 					<div class="text-red-500 text-4xl mb-4">⚠️</div>
-					<h3 class="text-lg font-semibold text-gray-800 mb-2">Error Loading Your Games</h3>
-					<p class="text-gray-600 mb-4">{gamesError}</p>
+					<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">Error Loading Your Games</h3>
+					<p class="mb-4" style="color: var(--text-secondary);">{gamesError}</p>
 					<button class="btn-primary" on:click={loadUserGames}>Try Again</button>
 				</div>
 			{:else if userGames.length === 0}
 				<div class="empty-state text-center py-12">
 					<div class="text-gray-400 text-6xl mb-6">🎮</div>
-					<h3 class="text-xl font-semibold text-gray-800 mb-3">No Games Yet</h3>
-					<p class="text-gray-600 mb-6">
+					<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">No Games Yet</h3>
+					<p class="mb-6" style="color: var(--text-secondary);">
 						You haven't created any custom games. Start by uploading some photos!
 					</p>
 					<div class="space-y-3">
@@ -423,25 +408,27 @@
 				<!-- User Games Grid -->
 				<div class="games-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					{#each userGames as game (game.id)}
-						<div
-							class="game-card bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+						<a
+							href="/games/{game.id}"
+							class="game-card rounded-lg border overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+							style="background-color: var(--bg-primary); border-color: var(--border-color);"
 						>
-							<div class="game-header p-4 border-b border-gray-100">
-								<h3 class="font-semibold text-gray-900 mb-1">{game.name}</h3>
+							<div class="game-header p-4 border-b" style="border-color: var(--border-color);">
+								<h3 class="font-semibold mb-1" style="color: var(--text-primary);">{game.name}</h3>
 								{#if game.description}
-									<p class="text-sm text-gray-600">{game.description}</p>
+									<p class="text-sm" style="color: var(--text-secondary);">{game.description}</p>
 								{/if}
 							</div>
 
 							<div class="game-info p-4 space-y-3">
 								<div class="game-stats flex justify-between text-sm">
-									<span class="text-gray-600">{game.imageIds.length} photos</span>
-									<span class="text-gray-600">Created {formatDate(game.createdAt)}</span>
+									<span style="color: var(--text-secondary);">{game.imageIds.length} photos</span>
+									<span style="color: var(--text-secondary);">Created {formatDate(game.createdAt)}</span>
 								</div>
 
 								<div
 									class="visibility-badge inline-block px-2 py-1 rounded text-xs font-medium
-									{game.isPublic ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}"
+									{game.isPublic ? 'bg-green-100 text-green-800' : 'bg-gray-100-theme text-gray-800-theme'}"
 								>
 									{game.isPublic ? '🌍 Public' : '🔒 Private'}
 								</div>
@@ -466,7 +453,7 @@
 									<button class="btn-secondary" on:click={() => shareGame(game)}> 📤 </button>
 								</div>
 							</div>
-						</div>
+						</a>
 					{/each}
 				</div>
 			{/if}
@@ -480,8 +467,49 @@
 {/if}
 
 <style>
+	.filter-tab {
+		padding: 0.5rem 1rem;
+		border-radius: 0.375rem;
+		font-weight: 500;
+		transition: all 0.2s;
+		color: var(--text-secondary);
+		background: transparent;
+		border: none;
+		cursor: pointer;
+	}
+
+	.filter-tab:hover:not(:disabled) {
+		color: var(--text-primary);
+		background-color: var(--bg-secondary);
+	}
+
+	.filter-tab.active {
+		color: var(--btn-primary-bg);
+		background-color: var(--bg-primary);
+		box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+	}
+
+	.filter-tab:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
 	.game-card:hover {
 		transform: translateY(-2px);
+	}
+
+	.loading-spinner {
+		width: 2rem;
+		height: 2rem;
+		border: 3px solid var(--border-color);
+		border-top: 3px solid var(--btn-primary-bg);
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+	}
+
+	@keyframes spin {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
 	}
 
 	@media (max-width: 768px) {

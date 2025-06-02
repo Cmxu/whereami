@@ -6,11 +6,15 @@
 	import { api } from '$lib/utils/api';
 	import { user } from '$lib/stores/authStore';
 	import { supabase } from '$lib/supabase';
+	import { theme } from '$lib/stores/themeStore';
 	import { onMount } from 'svelte';
 
 	// Initialize Supabase auth when the app loads
 	onMount(() => {
 		initAuth();
+		
+		// Initialize theme
+		theme.init();
 	});
 
 	// Set up automatic auth token management
@@ -66,7 +70,8 @@
 
 	.main-content {
 		flex: 1;
-		background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+		background-color: var(--bg-secondary);
+		transition: background-color 0.2s ease;
 	}
 
 	/* Leaflet map styles */
