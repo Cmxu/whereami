@@ -6,15 +6,15 @@ import {
 	generateId,
 	getImageMetadata,
 	saveGameMetadata,
-	logAnalytics,
+	logAnalytics
 } from '../utils';
 import { requireAuth, getUserData, saveUserData } from '../auth';
 
 // Handle CORS preflight requests
 export async function onRequestOptions(): Promise<Response> {
-	return new Response(null, { 
+	return new Response(null, {
 		status: 200,
-		headers: corsHeaders() 
+		headers: corsHeaders()
 	});
 }
 
@@ -29,7 +29,7 @@ export async function onRequestPost(context: any): Promise<Response> {
 		}
 
 		// Parse request body
-		const gameData: CreateGameRequest = await request.json() as CreateGameRequest;
+		const gameData: CreateGameRequest = (await request.json()) as CreateGameRequest;
 
 		// Validate required fields
 		if (!gameData.name || !gameData.imageIds || !Array.isArray(gameData.imageIds)) {
@@ -45,16 +45,16 @@ export async function onRequestPost(context: any): Promise<Response> {
 		}
 
 		// Validate that all images exist and belong to the user
-		const imagePromises = gameData.imageIds.map(id => getImageMetadata(id, env));
+		const imagePromises = gameData.imageIds.map((id) => getImageMetadata(id, env));
 		const imageResults = await Promise.all(imagePromises);
-		const validImages = imageResults.filter(img => img !== null);
+		const validImages = imageResults.filter((img) => img !== null);
 
 		if (validImages.length !== gameData.imageIds.length) {
 			return createErrorResponse('One or more images not found', 400);
 		}
 
 		// Check if all images belong to the user
-		const unauthorizedImages = validImages.filter(img => img!.uploadedBy !== user.id);
+		const unauthorizedImages = validImages.filter((img) => img!.uploadedBy !== user.id);
 		if (unauthorizedImages.length > 0) {
 			return createErrorResponse('You can only create games with your own photos', 403);
 		}
@@ -73,7 +73,7 @@ export async function onRequestPost(context: any): Promise<Response> {
 			isPublic: gameData.isPublic || false,
 			playCount: 0,
 			rating: 0,
-			ratingCount: 0,
+			ratingCount: 0
 		};
 
 		// Save game metadata
@@ -95,12 +95,12 @@ export async function onRequestPost(context: any): Promise<Response> {
 		const userGames = await env.USER_DATA.get(userGamesKey);
 		const gamesList = userGames ? JSON.parse(userGames) : [];
 		gamesList.unshift(gameId); // Add to beginning of list
-		
+
 		// Keep only the last 1000 games per user
 		if (gamesList.length > 1000) {
 			gamesList.splice(1000);
 		}
-		
+
 		await env.USER_DATA.put(userGamesKey, JSON.stringify(gamesList));
 
 		// Log analytics
@@ -111,7 +111,7 @@ export async function onRequestPost(context: any): Promise<Response> {
 				userId: user.id,
 				imageCount: gameData.imageIds.length,
 				isPublic: game.isPublic,
-				timestamp: new Date().toISOString(),
+				timestamp: new Date().toISOString()
 			},
 			env
 		);
@@ -125,4 +125,4 @@ export async function onRequestPost(context: any): Promise<Response> {
 		console.error('Error creating game:', error);
 		return createErrorResponse('Internal server error', 500);
 	}
-} 
+}

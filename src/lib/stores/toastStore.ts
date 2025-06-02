@@ -27,12 +27,12 @@ export function addToast(toast: Omit<Toast, 'id'>): string {
 		...toast
 	};
 
-	toasts.update(current => [...current, newToast]);
+	toasts.update((current) => [...current, newToast]);
 	return id;
 }
 
 export function removeToast(id: string): void {
-	toasts.update(current => current.filter(toast => toast.id !== id));
+	toasts.update((current) => current.filter((toast) => toast.id !== id));
 }
 
 export function clearAllToasts(): void {
@@ -40,29 +40,41 @@ export function clearAllToasts(): void {
 }
 
 // Convenience methods
-export function showSuccess(message: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'message'>>): string {
+export function showSuccess(
+	message: string,
+	options?: Partial<Omit<Toast, 'id' | 'type' | 'message'>>
+): string {
 	return addToast({ type: 'success', message, ...options });
 }
 
-export function showError(message: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'message'>>): string {
+export function showError(
+	message: string,
+	options?: Partial<Omit<Toast, 'id' | 'type' | 'message'>>
+): string {
 	return addToast({ type: 'error', message, duration: 7000, ...options });
 }
 
-export function showWarning(message: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'message'>>): string {
+export function showWarning(
+	message: string,
+	options?: Partial<Omit<Toast, 'id' | 'type' | 'message'>>
+): string {
 	return addToast({ type: 'warning', message, duration: 6000, ...options });
 }
 
-export function showInfo(message: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'message'>>): string {
+export function showInfo(
+	message: string,
+	options?: Partial<Omit<Toast, 'id' | 'type' | 'message'>>
+): string {
 	return addToast({ type: 'info', message, ...options });
 }
 
 // Auto-cleanup old toasts (prevent memory leaks)
 const MAX_TOASTS = 5;
 
-toasts.subscribe(current => {
+toasts.subscribe((current) => {
 	if (current.length > MAX_TOASTS) {
 		const excess = current.length - MAX_TOASTS;
 		const toRemove = current.slice(0, excess);
-		toRemove.forEach(toast => removeToast(toast.id));
+		toRemove.forEach((toast) => removeToast(toast.id));
 	}
-}); 
+});

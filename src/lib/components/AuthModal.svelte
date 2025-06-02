@@ -1,5 +1,11 @@
 <script lang="ts">
-	import { signInWithEmail, signUpWithEmail, resetPassword, authLoading, authError } from '$lib/stores/authStore';
+	import {
+		signInWithEmail,
+		signUpWithEmail,
+		resetPassword,
+		authLoading,
+		authError
+	} from '$lib/stores/authStore';
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher<{
@@ -7,7 +13,7 @@
 	}>();
 
 	export let isOpen = false;
-	
+
 	let mode: 'signin' | 'signup' | 'reset' = 'signin';
 	let email = '';
 	let password = '';
@@ -37,7 +43,7 @@
 					loading = false;
 					return;
 				}
-				
+
 				const result = await signUpWithEmail(email, password, { firstName, lastName });
 				if (result.success) {
 					success = 'Account created! Please check your email to verify your account.';
@@ -66,6 +72,13 @@
 		}
 	}
 
+	function handleBackdropClick(event: MouseEvent) {
+		// Only close if clicking on the backdrop itself, not on the modal content
+		if (event.target === event.currentTarget && !loading) {
+			dispatch('close');
+		}
+	}
+
 	function switchMode(newMode: typeof mode) {
 		mode = newMode;
 		error = '';
@@ -76,10 +89,18 @@
 </script>
 
 {#if isOpen}
-	<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" on:click={handleClose}>
-		<div class="bg-white rounded-lg p-6 w-full max-w-md mx-4" on:click|stopPropagation>
+	<div
+		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+		on:click={handleBackdropClick}
+		on:keydown={(e) => e.key === 'Escape' && handleClose()}
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="modal-title"
+		tabindex="-1"
+	>
+		<div class="bg-white rounded-lg p-6 w-full max-w-md mx-4" role="document">
 			<div class="flex justify-between items-center mb-6">
-				<h2 class="text-2xl font-bold text-gray-900">
+				<h2 id="modal-title" class="text-2xl font-bold text-gray-900">
 					{#if mode === 'signin'}
 						Sign In
 					{:else if mode === 'signup'}
@@ -88,10 +109,11 @@
 						Reset Password
 					{/if}
 				</h2>
-				<button 
+				<button
 					on:click={handleClose}
 					class="text-gray-400 hover:text-gray-600 text-2xl"
 					disabled={loading}
+					aria-label="Close modal"
 				>
 					×
 				</button>
@@ -142,9 +164,7 @@
 				{/if}
 
 				<div>
-					<label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-						Email
-					</label>
+					<label for="email" class="block text-sm font-medium text-gray-700 mb-1"> Email </label>
 					<input
 						id="email"
 						type="email"
@@ -197,9 +217,25 @@
 				>
 					{#if loading}
 						<span class="inline-flex items-center">
-							<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+							<svg
+								class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+							>
+								<circle
+									class="opacity-25"
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									stroke-width="4"
+								></circle>
+								<path
+									class="opacity-75"
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+								></path>
 							</svg>
 							Processing...
 						</span>
@@ -216,9 +252,9 @@
 			<div class="mt-6 text-center text-sm">
 				{#if mode === 'signin'}
 					<p class="text-gray-600">
-						Don't have an account? 
-						<button 
-							on:click={() => switchMode('signup')} 
+						Don't have an account?
+						<button
+							on:click={() => switchMode('signup')}
 							class="text-blue-600 hover:text-blue-800 font-medium"
 							disabled={loading}
 						>
@@ -226,8 +262,8 @@
 						</button>
 					</p>
 					<p class="text-gray-600 mt-2">
-						<button 
-							on:click={() => switchMode('reset')} 
+						<button
+							on:click={() => switchMode('reset')}
 							class="text-blue-600 hover:text-blue-800 font-medium"
 							disabled={loading}
 						>
@@ -236,9 +272,9 @@
 					</p>
 				{:else if mode === 'signup'}
 					<p class="text-gray-600">
-						Already have an account? 
-						<button 
-							on:click={() => switchMode('signin')} 
+						Already have an account?
+						<button
+							on:click={() => switchMode('signin')}
 							class="text-blue-600 hover:text-blue-800 font-medium"
 							disabled={loading}
 						>
@@ -247,9 +283,9 @@
 					</p>
 				{:else}
 					<p class="text-gray-600">
-						Remember your password? 
-						<button 
-							on:click={() => switchMode('signin')} 
+						Remember your password?
+						<button
+							on:click={() => switchMode('signin')}
 							class="text-blue-600 hover:text-blue-800 font-medium"
 							disabled={loading}
 						>
@@ -260,4 +296,4 @@
 			</div>
 		</div>
 	</div>
-{/if} 
+{/if}

@@ -102,4 +102,4 @@ export interface AnalyticsEvent {
 	score?: number;
 	duration?: number;
 	timestamp: string;
-} 
+}

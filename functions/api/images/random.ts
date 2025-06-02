@@ -5,14 +5,14 @@ import {
 	createErrorResponse,
 	getImageMetadata,
 	getPublicImages,
-	logAnalytics,
+	logAnalytics
 } from '../utils';
 
 // Handle CORS preflight requests
 export async function onRequestOptions(): Promise<Response> {
-	return new Response(null, { 
+	return new Response(null, {
 		status: 200,
-		headers: corsHeaders() 
+		headers: corsHeaders()
 	});
 }
 
@@ -27,7 +27,7 @@ export async function onRequestGet(context: any): Promise<Response> {
 	try {
 		// Get public images list
 		const publicImageIds = await getPublicImages(env);
-		
+
 		if (publicImageIds.length === 0) {
 			return createErrorResponse('No public images available. Upload some images first!', 404);
 		}
@@ -37,11 +37,11 @@ export async function onRequestGet(context: any): Promise<Response> {
 		const selectedIds = shuffled.slice(0, Math.min(count, shuffled.length));
 
 		// Fetch metadata for selected images
-		const imagePromises = selectedIds.map(id => getImageMetadata(id, env));
+		const imagePromises = selectedIds.map((id) => getImageMetadata(id, env));
 		const imageResults = await Promise.all(imagePromises);
 
 		// Filter out any null results (deleted images)
-		const validImages = imageResults.filter(img => img !== null) as ImageMetadata[];
+		const validImages = imageResults.filter((img) => img !== null) as ImageMetadata[];
 
 		// Return error if we don't have enough valid images
 		if (validImages.length === 0) {
@@ -53,7 +53,7 @@ export async function onRequestGet(context: any): Promise<Response> {
 			{
 				type: 'game_start',
 				imageCount: validImages.length,
-				timestamp: new Date().toISOString(),
+				timestamp: new Date().toISOString()
 			},
 			env
 		);
@@ -63,4 +63,4 @@ export async function onRequestGet(context: any): Promise<Response> {
 		console.error('Error getting random images:', error);
 		return createErrorResponse('Failed to get random images', 500);
 	}
-} 
+}

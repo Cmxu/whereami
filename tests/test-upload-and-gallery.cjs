@@ -7,57 +7,62 @@ const path = require('path');
 const TEST_AUTH_TOKEN = 'YOUR_AUTH_TOKEN_HERE';
 
 const testUploadAndGallery = async () => {
-    const baseUrl = 'http://localhost:5173'; // or your dev server URL
-    
-    console.log('🧪 Testing Upload and Gallery Functionality');
-    console.log('===========================================');
-    
-    try {
-        // Step 1: Test authentication requirement
-        console.log('\n1. Testing authentication requirement...');
-        const unauthedResponse = await fetch(`${baseUrl}/api/images/user`, {
-            headers: { 'Content-Type': 'application/json' }
-        });
-        
-        if (unauthedResponse.status === 401) {
-            console.log('✅ Gallery correctly requires authentication');
-        } else {
-            console.log('❌ Gallery should require authentication but got status:', unauthedResponse.status);
-        }
-        
-        // Step 2: Test authenticated gallery access
-        console.log('\n2. Testing authenticated gallery access...');
-        if (TEST_AUTH_TOKEN === 'YOUR_AUTH_TOKEN_HERE') {
-            console.log('⚠️  Please set a real auth token in the script to test authenticated functionality');
-            console.log('   You can get this from your browser dev tools after logging in');
-            return;
-        }
-        
-        const galleryResponse = await fetch(`${baseUrl}/api/images/user`, {
-            headers: { 
-                'Authorization': `Bearer ${TEST_AUTH_TOKEN}`,
-                'Content-Type': 'application/json' 
-            }
-        });
-        
-        if (galleryResponse.ok) {
-            const galleryData = await galleryResponse.json();
-            console.log('✅ Gallery API working - found', galleryData.images?.length || 0, 'images');
-            console.log('   Response structure:', Object.keys(galleryData));
-        } else {
-            console.log('❌ Gallery API failed with status:', galleryResponse.status);
-            const errorData = await galleryResponse.json().catch(() => null);
-            if (errorData) console.log('   Error:', errorData);
-        }
-        
-        // Step 3: Test file upload (commented out - requires actual file)
-        console.log('\n3. Testing file upload...');
-        console.log('ℹ️  Upload test requires a real image file and is commented out for safety');
-        console.log('   To test uploads:');
-        console.log('   - Use the web interface');
-        console.log('   - Or uncomment the upload test below and provide a test image');
-        
-        /*
+	const baseUrl = 'http://localhost:5173'; // or your dev server URL
+
+	console.log('🧪 Testing Upload and Gallery Functionality');
+	console.log('===========================================');
+
+	try {
+		// Step 1: Test authentication requirement
+		console.log('\n1. Testing authentication requirement...');
+		const unauthedResponse = await fetch(`${baseUrl}/api/images/user`, {
+			headers: { 'Content-Type': 'application/json' }
+		});
+
+		if (unauthedResponse.status === 401) {
+			console.log('✅ Gallery correctly requires authentication');
+		} else {
+			console.log(
+				'❌ Gallery should require authentication but got status:',
+				unauthedResponse.status
+			);
+		}
+
+		// Step 2: Test authenticated gallery access
+		console.log('\n2. Testing authenticated gallery access...');
+		if (TEST_AUTH_TOKEN === 'YOUR_AUTH_TOKEN_HERE') {
+			console.log(
+				'⚠️  Please set a real auth token in the script to test authenticated functionality'
+			);
+			console.log('   You can get this from your browser dev tools after logging in');
+			return;
+		}
+
+		const galleryResponse = await fetch(`${baseUrl}/api/images/user`, {
+			headers: {
+				Authorization: `Bearer ${TEST_AUTH_TOKEN}`,
+				'Content-Type': 'application/json'
+			}
+		});
+
+		if (galleryResponse.ok) {
+			const galleryData = await galleryResponse.json();
+			console.log('✅ Gallery API working - found', galleryData.images?.length || 0, 'images');
+			console.log('   Response structure:', Object.keys(galleryData));
+		} else {
+			console.log('❌ Gallery API failed with status:', galleryResponse.status);
+			const errorData = await galleryResponse.json().catch(() => null);
+			if (errorData) console.log('   Error:', errorData);
+		}
+
+		// Step 3: Test file upload (commented out - requires actual file)
+		console.log('\n3. Testing file upload...');
+		console.log('ℹ️  Upload test requires a real image file and is commented out for safety');
+		console.log('   To test uploads:');
+		console.log('   - Use the web interface');
+		console.log('   - Or uncomment the upload test below and provide a test image');
+
+		/*
         // Uncomment this section to test actual file upload
         const testImagePath = './test-image.jpg'; // Add a test image file
         if (fs.existsSync(testImagePath)) {
@@ -85,17 +90,16 @@ const testUploadAndGallery = async () => {
             console.log('⚠️  Test image not found at', testImagePath);
         }
         */
-        
-    } catch (error) {
-        console.error('❌ Test failed with error:', error);
-    }
-    
-    console.log('\n🏁 Test completed!');
-    console.log('\nNext steps:');
-    console.log('1. Make sure you\'re signed in to the web app');
-    console.log('2. Try uploading photos through the web interface');
-    console.log('3. Check if they appear in your gallery');
-    console.log('4. Look at browser dev tools console for any errors');
+	} catch (error) {
+		console.error('❌ Test failed with error:', error);
+	}
+
+	console.log('\n🏁 Test completed!');
+	console.log('\nNext steps:');
+	console.log("1. Make sure you're signed in to the web app");
+	console.log('2. Try uploading photos through the web interface');
+	console.log('3. Check if they appear in your gallery');
+	console.log('4. Look at browser dev tools console for any errors');
 };
 
 // Instructions
@@ -114,7 +118,7 @@ console.log('');
 
 // Only run the test if this file is executed directly
 if (require.main === module) {
-    testUploadAndGallery();
+	testUploadAndGallery();
 }
 
-module.exports = { testUploadAndGallery }; 
+module.exports = { testUploadAndGallery };

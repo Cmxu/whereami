@@ -6,14 +6,14 @@ import {
 	getImageMetadata,
 	saveImageMetadata,
 	getPublicImages,
-	logAnalytics,
+	logAnalytics
 } from '../utils';
 
 // Handle CORS preflight requests
 export async function onRequestOptions(): Promise<Response> {
-	return new Response(null, { 
+	return new Response(null, {
 		status: 200,
-		headers: corsHeaders() 
+		headers: corsHeaders()
 	});
 }
 
@@ -38,13 +38,13 @@ export async function onRequestGet(context: any): Promise<Response> {
 
 		try {
 			// Determine which image to serve
-			const r2Key = isThumbnail 
+			const r2Key = isThumbnail
 				? `thumbnails/${imageId}.${metadata.filename.split('.').pop()}`
 				: metadata.r2Key;
 
 			// Get image from R2
 			const object = await env.IMAGES_BUCKET.get(r2Key);
-			
+
 			if (!object) {
 				return createErrorResponse('Image file not found', 404);
 			}
@@ -55,7 +55,7 @@ export async function onRequestGet(context: any): Promise<Response> {
 					type: 'image_view',
 					imageId: imageId,
 					isThumbnail: isThumbnail,
-					timestamp: new Date().toISOString(),
+					timestamp: new Date().toISOString()
 				},
 				env
 			);
@@ -65,9 +65,9 @@ export async function onRequestGet(context: any): Promise<Response> {
 				headers: {
 					'Content-Type': metadata.mimeType || 'image/jpeg',
 					'Cache-Control': 'public, max-age=31536000', // 1 year
-					'ETag': object.etag || `"${imageId}"`,
-					...corsHeaders(),
-				},
+					ETag: object.etag || `"${imageId}"`,
+					...corsHeaders()
+				}
 			});
 		} catch (storageError) {
 			console.error('Error retrieving image from R2:', storageError);
@@ -137,7 +137,7 @@ export async function onRequestDelete(context: any): Promise<Response> {
 		try {
 			// Delete from R2
 			await env.IMAGES_BUCKET.delete(metadata.r2Key);
-			
+
 			// Delete thumbnail
 			const thumbnailKey = `thumbnails/${imageId}.${metadata.filename.split('.').pop()}`;
 			await env.IMAGES_BUCKET.delete(thumbnailKey);
@@ -148,7 +148,7 @@ export async function onRequestDelete(context: any): Promise<Response> {
 			// Remove from public images index if it was public
 			if (metadata.isPublic) {
 				const publicImages = await getPublicImages(env);
-				const filteredImages = publicImages.filter(id => id !== imageId);
+				const filteredImages = publicImages.filter((id) => id !== imageId);
 				await env.GAME_METADATA.put('public_images', JSON.stringify(filteredImages));
 			}
 
@@ -161,4 +161,4 @@ export async function onRequestDelete(context: any): Promise<Response> {
 		console.error('Error deleting image:', error);
 		return createErrorResponse('Internal server error', 500);
 	}
-} 
+}

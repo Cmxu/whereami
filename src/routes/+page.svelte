@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
 	import GameRound from '$lib/components/GameRound.svelte';
 	import GameResults from '$lib/components/GameResults.svelte';
@@ -49,6 +50,10 @@
 		showWelcome = true;
 	}
 
+	function handleBrowseGames() {
+		goto('/browse');
+	}
+
 	onMount(() => {
 		// Check for saved games on app start
 		checkForSavedGame();
@@ -67,7 +72,11 @@
 
 <div class="app-container">
 	{#if showWelcome}
-		<WelcomeScreen on:startGame={handleStartGame} on:resumeGame={handleResumeGame} />
+		<WelcomeScreen
+			on:startGame={handleStartGame}
+			on:resumeGame={handleResumeGame}
+			on:browseGames={handleBrowseGames}
+		/>
 	{:else if $isLoading}
 		<!-- Loading screen -->
 		<div class="loading-screen min-h-screen flex items-center justify-center">
@@ -100,7 +109,11 @@
 		<GameRound on:gameComplete={handleGameComplete} on:backToHome={handleBackToWelcome} />
 	{:else}
 		<!-- Fallback -->
-		<WelcomeScreen on:startGame={handleStartGame} on:resumeGame={handleResumeGame} />
+		<WelcomeScreen
+			on:startGame={handleStartGame}
+			on:resumeGame={handleResumeGame}
+			on:browseGames={handleBrowseGames}
+		/>
 	{/if}
 </div>
 

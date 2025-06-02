@@ -18,7 +18,9 @@
 		if ($user) {
 			try {
 				// Get the current session token from Supabase
-				const { data: { session } } = await supabase.auth.getSession();
+				const {
+					data: { session }
+				} = await supabase.auth.getSession();
 				if (session?.access_token) {
 					api.setAuthToken(session.access_token);
 				}
@@ -34,7 +36,7 @@
 <div class="app-layout">
 	<!-- Global Navigation -->
 	<Navigation />
-	
+
 	<!-- Main content -->
 	<main class="main-content">
 		<slot />
@@ -94,8 +96,12 @@
 	}
 
 	@keyframes fadeIn {
-		from { opacity: 0; }
-		to { opacity: 1; }
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
 	}
 
 	@media (max-width: 768px) {

@@ -4,14 +4,14 @@ import {
 	createResponse,
 	createErrorResponse,
 	getPublicGames,
-	getGameMetadata,
+	getGameMetadata
 } from '../utils';
 
 // Handle CORS preflight requests
 export async function onRequestOptions(): Promise<Response> {
-	return new Response(null, { 
+	return new Response(null, {
 		status: 200,
-		headers: corsHeaders() 
+		headers: corsHeaders()
 	});
 }
 
@@ -24,28 +24,29 @@ export async function onRequestGet(context: any): Promise<Response> {
 		const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '20')));
 		const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0'));
 		const search = url.searchParams.get('search')?.trim();
-		const sortBy = url.searchParams.get('sortBy') as 'newest' | 'popular' | 'rating' || 'newest';
+		const sortBy = (url.searchParams.get('sortBy') as 'newest' | 'popular' | 'rating') || 'newest';
 
 		// Get public games list
 		const publicGameIds = await getPublicGames(env);
-		
+
 		if (publicGameIds.length === 0) {
 			return createResponse([], 200);
 		}
 
 		// Get game metadata for all public games
-		const gamePromises = publicGameIds.map(id => getGameMetadata(id, env));
+		const gamePromises = publicGameIds.map((id) => getGameMetadata(id, env));
 		const gameResults = await Promise.all(gamePromises);
-		
+
 		// Filter out null results (deleted games)
-		let validGames = gameResults.filter(game => game !== null) as CustomGame[];
+		let validGames = gameResults.filter((game) => game !== null) as CustomGame[];
 
 		// Apply search filter if provided
 		if (search) {
 			const searchLower = search.toLowerCase();
-			validGames = validGames.filter(game => 
-				game.name.toLowerCase().includes(searchLower) ||
-				game.description?.toLowerCase().includes(searchLower)
+			validGames = validGames.filter(
+				(game) =>
+					game.name.toLowerCase().includes(searchLower) ||
+					game.description?.toLowerCase().includes(searchLower)
 			);
 		}
 
@@ -63,7 +64,9 @@ export async function onRequestGet(context: any): Promise<Response> {
 				break;
 			case 'newest':
 			default:
-				validGames.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+				validGames.sort(
+					(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+				);
 				break;
 		}
 
@@ -71,21 +74,24 @@ export async function onRequestGet(context: any): Promise<Response> {
 		const paginatedGames = validGames.slice(offset, offset + limit);
 
 		// Add computed fields
-		const enrichedGames = paginatedGames.map(game => ({
+		const enrichedGames = paginatedGames.map((game) => ({
 			...game,
 			averageRating: (game.ratingCount || 0) > 0 ? (game.rating || 0) / (game.ratingCount || 1) : 0,
-			imageCount: game.imageIds.length,
+			imageCount: game.imageIds.length
 		}));
 
-		return createResponse({
-			games: enrichedGames,
-			total: validGames.length,
-			limit,
-			offset,
-			hasMore: offset + limit < validGames.length,
-		}, 200);
+		return createResponse(
+			{
+				games: enrichedGames,
+				total: validGames.length,
+				limit,
+				offset,
+				hasMore: offset + limit < validGames.length
+			},
+			200
+		);
 	} catch (error) {
 		console.error('Error getting public games:', error);
 		return createErrorResponse('Internal server error', 500);
 	}
-} 
+}

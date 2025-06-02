@@ -53,18 +53,9 @@
 				<p class="text-gray-600 mt-1">Manage your account and view your stats</p>
 			</div>
 			<div class="flex items-center gap-4">
-				<button 
-					on:click={() => goto('/')}
-					class="btn-secondary"
-				>
-					← Back to Home
-				</button>
+				<button on:click={() => goto('/')} class="btn-secondary"> ← Back to Home </button>
 				{#if $isAuthenticated}
-					<AuthButton 
-						on:logout={handleLogout}
-						on:login={handleLogin}
-						on:profile={() => {}}
-					/>
+					<AuthButton on:logout={handleLogout} on:login={handleLogin} on:profile={() => {}} />
 				{/if}
 			</div>
 		</div>
@@ -73,7 +64,9 @@
 			<!-- User Info -->
 			<div class="bg-white rounded-xl shadow-sm p-6 mb-8">
 				<div class="flex items-center gap-4">
-					<div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl font-semibold">
+					<div
+						class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl font-semibold"
+					>
 						{$user.user_metadata?.first_name?.[0] || $user.email?.[0]?.toUpperCase() || '?'}
 					</div>
 					<div>
@@ -114,22 +107,13 @@
 			<div class="bg-white rounded-xl shadow-sm p-6">
 				<h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
 				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-					<button 
-						on:click={() => goto('/upload')}
-						class="btn-primary text-center"
-					>
+					<button on:click={() => goto('/gallery?tab=upload')} class="btn-primary text-center">
 						📸 Upload Photos
 					</button>
-					<button 
-						on:click={() => goto('/create')}
-						class="btn-secondary text-center"
-					>
+					<button on:click={() => goto('/create')} class="btn-secondary text-center">
 						🎮 Create Game
 					</button>
-					<button 
-						on:click={() => goto('/browse')}
-						class="btn-secondary text-center"
-					>
+					<button on:click={() => goto('/browse')} class="btn-secondary text-center">
 						🌍 Browse Games
 					</button>
 				</div>
@@ -138,11 +122,7 @@
 			<!-- Danger Zone -->
 			<div class="bg-white rounded-xl shadow-sm p-6 mt-8 border border-red-200">
 				<h3 class="text-lg font-semibold text-red-900 mb-4">Account Actions</h3>
-				<button 
-					on:click={handleLogout}
-					disabled={loading}
-					class="btn-danger"
-				>
+				<button on:click={handleLogout} disabled={loading} class="btn-danger">
 					{loading ? 'Signing out...' : 'Sign Out'}
 				</button>
 			</div>
@@ -152,16 +132,11 @@
 				<div class="text-6xl mb-4">🔐</div>
 				<h2 class="text-2xl font-bold text-gray-900 mb-2">Sign In Required</h2>
 				<p class="text-gray-600 mb-6">You need to sign in to view your profile</p>
-				<button 
-					on:click={handleLogin}
-					class="btn-primary"
-				>
-					Sign In
-				</button>
+				<button on:click={handleLogin} class="btn-primary"> Sign In </button>
 			</div>
 		{/if}
 	</div>
 </div>
 
 <!-- Authentication Modal -->
-<AuthModal isOpen={showAuthModal} on:close={handleAuthModalClose} /> 
+<AuthModal isOpen={showAuthModal} on:close={handleAuthModalClose} />

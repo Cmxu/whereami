@@ -96,9 +96,7 @@
 			<div class="share-header p-6 border-b">
 				<div class="flex justify-between items-center">
 					<h3 class="text-lg font-semibold text-gray-800">Share Game</h3>
-					<button class="text-gray-500 hover:text-gray-700" on:click={closeModal}>
-						✕
-					</button>
+					<button class="text-gray-500 hover:text-gray-700" on:click={closeModal}> ✕ </button>
 				</div>
 				<p class="text-sm text-gray-600 mt-1">
 					Share "{game.name}" with friends
@@ -127,11 +125,12 @@
 				<!-- Share URL -->
 				{#if shareUrl}
 					<div class="share-url mb-6">
-						<label class="block text-sm font-medium text-gray-700 mb-2">
+						<label for="share-url-input" class="block text-sm font-medium text-gray-700 mb-2">
 							Share URL
 						</label>
 						<div class="flex gap-2">
 							<input
+								id="share-url-input"
 								type="text"
 								readonly
 								value={shareUrl}
@@ -141,6 +140,7 @@
 								class="btn-secondary text-sm"
 								disabled={copying}
 								on:click={() => copyToClipboard(shareUrl)}
+								aria-label="Copy share URL to clipboard"
 							>
 								{copying ? '📋' : '📋'}
 							</button>
@@ -168,7 +168,9 @@
 								disabled={!shareUrl && platform.id !== 'copy'}
 								on:click={() => handleShare(platform.id)}
 							>
-								<div class="share-icon w-8 h-8 {platform.color} rounded-lg flex items-center justify-center text-white text-sm">
+								<div
+									class="share-icon w-8 h-8 {platform.color} rounded-lg flex items-center justify-center text-white text-sm"
+								>
 									{platform.icon}
 								</div>
 								<span class="text-sm font-medium text-gray-700">{platform.name}</span>
@@ -207,7 +209,11 @@
 	}
 
 	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
 	}
-</style> 
+</style>

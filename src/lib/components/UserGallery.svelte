@@ -55,17 +55,16 @@
 		// Apply search filter
 		if (searchQuery.trim()) {
 			const query = searchQuery.toLowerCase();
-			filtered = filtered.filter(img => 
-				img.filename.toLowerCase().includes(query) ||
-				img.tags?.some(tag => tag.toLowerCase().includes(query))
+			filtered = filtered.filter(
+				(img) =>
+					img.filename.toLowerCase().includes(query) ||
+					img.tags?.some((tag) => tag.toLowerCase().includes(query))
 			);
 		}
 
 		// Apply visibility filter
 		if (filterBy !== 'all') {
-			filtered = filtered.filter(img => 
-				filterBy === 'public' ? img.isPublic : !img.isPublic
-			);
+			filtered = filtered.filter((img) => (filterBy === 'public' ? img.isPublic : !img.isPublic));
 		}
 
 		// Apply sorting
@@ -109,7 +108,7 @@
 
 	function selectAll() {
 		const pageImages = getPaginatedImages();
-		pageImages.forEach(img => {
+		pageImages.forEach((img) => {
 			if (selectedImages.size < maxSelection) {
 				selectedImages.add(img.id);
 			}
@@ -139,7 +138,7 @@
 
 		try {
 			await api.deleteImage(image.id);
-			images = images.filter(img => img.id !== image.id);
+			images = images.filter((img) => img.id !== image.id);
 			selectedImages.delete(image.id);
 			selectedImages = new Set(selectedImages);
 			updateFilteredImages();
@@ -151,9 +150,9 @@
 	async function updateImageLocation(image: ImageMetadata, location: Location) {
 		try {
 			await api.updateImageLocation(image.id, location);
-			
+
 			// Update local data
-			const imageIndex = images.findIndex(img => img.id === image.id);
+			const imageIndex = images.findIndex((img) => img.id === image.id);
 			if (imageIndex !== -1) {
 				images[imageIndex].location = location;
 				images = [...images];
@@ -189,7 +188,7 @@
 	}
 
 	function createGameFromSelected() {
-		const selected = images.filter(img => selectedImages.has(img.id));
+		const selected = images.filter((img) => selectedImages.has(img.id));
 		dispatch('createGame', selected);
 	}
 
@@ -207,7 +206,7 @@
 				<h2 class="text-2xl font-bold text-gray-800">Your Photo Gallery</h2>
 				<p class="text-gray-600">{images.length} photos uploaded</p>
 			</div>
-			
+
 			{#if selectable && multiSelect && selectedCount > 0}
 				<div class="selection-actions flex gap-2">
 					<span class="text-sm text-gray-600 self-center">{selectedCount} selected</span>
@@ -256,12 +255,10 @@
 			<!-- Batch Actions -->
 			<div class="batch-actions">
 				{#if selectable && multiSelect}
-					<button class="btn-secondary w-full text-sm" on:click={selectAll}>
-						Select Page
-					</button>
+					<button class="btn-secondary w-full text-sm" on:click={selectAll}> Select Page </button>
 				{:else}
-					<button class="btn-primary w-full text-sm" on:click={() => goto('/upload')}>
-						+ Upload More
+					<button class="btn-primary w-full text-sm" on:click={() => goto('/gallery?tab=upload')}>
+						Upload More
 					</button>
 				{/if}
 			</div>
@@ -292,7 +289,7 @@
 			<div class="text-6xl mb-6">📸</div>
 			<h3 class="text-xl font-semibold text-gray-800 mb-4">No Photos Yet</h3>
 			<p class="text-gray-600 mb-6">Upload your first photos to start creating custom games</p>
-			<button class="btn-primary" on:click={() => goto('/upload')}>
+			<button class="btn-primary" on:click={() => goto('/gallery?tab=upload')}>
 				Upload Photos
 			</button>
 		</div>
@@ -302,7 +299,7 @@
 	{#if !loading && !error && filteredImages.length > 0}
 		<div class="gallery-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
 			{#each getPaginatedImages() as image}
-				<div 
+				<div
 					class="gallery-item relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-200"
 					class:selected={selectedImages.has(image.id)}
 					class:selectable
@@ -320,13 +317,19 @@
 					{/if}
 
 					<!-- Image -->
-					<div 
+					<div
 						class="image-container aspect-square bg-gray-100 cursor-pointer"
 						on:click={() => !selectable && dispatch('imageSelect', image)}
+						on:keydown={(e) => {
+							if ((e.key === 'Enter' || e.key === ' ') && !selectable) {
+								e.preventDefault();
+								dispatch('imageSelect', image);
+							}
+						}}
 						role="button"
 						tabindex="0"
 					>
-						<img 
+						<img
 							src={image.thumbnailUrl || `/api/images/${image.id}`}
 							alt={image.filename}
 							class="w-full h-full object-cover"
@@ -346,24 +349,34 @@
 							</div>
 							<div class="flex items-center gap-1">
 								{#if image.isPublic}
-									<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded" title="Public">🌐</span>
+									<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded" title="Public"
+										>🌐</span
+									>
 								{:else}
-									<span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded" title="Private">🔒</span>
+									<span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded" title="Private"
+										>🔒</span
+									>
 								{/if}
 							</div>
 						</div>
 
 						<!-- Action Buttons -->
 						<div class="action-buttons mt-3 flex gap-2">
-							<button 
+							<button
 								class="btn-secondary text-xs flex-1"
-								on:click={(e) => { e.stopPropagation(); editImageLocation(image); }}
+								on:click={(e) => {
+									e.stopPropagation();
+									editImageLocation(image);
+								}}
 							>
 								Edit Location
 							</button>
-							<button 
+							<button
 								class="text-red-500 hover:text-red-700 text-xs px-2"
-								on:click={(e) => { e.stopPropagation(); deleteImage(image); }}
+								on:click={(e) => {
+									e.stopPropagation();
+									deleteImage(image);
+								}}
 								title="Delete photo"
 							>
 								🗑️
@@ -373,7 +386,9 @@
 
 					<!-- Selection Indicator -->
 					{#if selectable && selectedImages.has(image.id)}
-						<div class="selected-indicator absolute inset-0 border-4 border-blue-500 rounded-lg pointer-events-none"></div>
+						<div
+							class="selected-indicator absolute inset-0 border-4 border-blue-500 rounded-lg pointer-events-none"
+						></div>
 					{/if}
 				</div>
 			{/each}
@@ -382,17 +397,17 @@
 		<!-- Pagination -->
 		{#if totalPages > 1}
 			<div class="pagination flex justify-center items-center gap-2">
-				<button 
+				<button
 					class="btn-secondary text-sm"
 					disabled={currentPage === 1}
 					on:click={() => changePage(currentPage - 1)}
 				>
 					← Previous
 				</button>
-				
+
 				<div class="page-numbers flex gap-1">
 					{#each Array(totalPages) as _, i}
-						<button 
+						<button
 							class="page-btn w-8 h-8 text-sm rounded-lg transition-colors duration-200"
 							class:bg-blue-600={currentPage === i + 1}
 							class:text-white={currentPage === i + 1}
@@ -404,8 +419,8 @@
 						</button>
 					{/each}
 				</div>
-				
-				<button 
+
+				<button
 					class="btn-secondary text-sm"
 					disabled={currentPage === totalPages}
 					on:click={() => changePage(currentPage + 1)}
@@ -432,15 +447,18 @@
 		<div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
 			<div class="modal-header p-4 border-b">
 				<h3 class="text-lg font-semibold text-gray-800">Edit Photo Location</h3>
-				<p class="text-sm text-gray-600">Click on the map to update the location for "{selectedImageForLocation.filename}"</p>
+				<p class="text-sm text-gray-600">
+					Click on the map to update the location for "{selectedImageForLocation.filename}"
+				</p>
 			</div>
 			<div class="modal-content p-4">
 				<div class="location-editor-grid grid grid-cols-1 lg:grid-cols-2 gap-6">
 					<!-- Photo Preview -->
 					<div class="photo-section">
 						<div class="photo-preview-large">
-							<img 
-								src={selectedImageForLocation.thumbnailUrl || `/api/images/${selectedImageForLocation.id}`}
+							<img
+								src={selectedImageForLocation.thumbnailUrl ||
+									`/api/images/${selectedImageForLocation.id}`}
 								alt={selectedImageForLocation.filename}
 								class="w-full h-64 object-cover rounded-lg"
 							/>
@@ -454,7 +472,7 @@
 							</div>
 						</div>
 					</div>
-					
+
 					<!-- Map -->
 					<div class="map-section">
 						<Map
@@ -462,7 +480,9 @@
 							center={editingLocation || selectedImageForLocation.location}
 							zoom={10}
 							clickable={true}
-							markers={editingLocation ? [{ location: editingLocation, popup: 'New location' }] : []}
+							markers={editingLocation
+								? [{ location: editingLocation, popup: 'New location' }]
+								: []}
 							on:mapClick={handleMapClick}
 						/>
 					</div>
@@ -470,11 +490,7 @@
 			</div>
 			<div class="modal-footer p-4 border-t flex justify-end gap-3">
 				<button class="btn-secondary" on:click={cancelLocationEdit}>Cancel</button>
-				<button 
-					class="btn-primary" 
-					disabled={!editingLocation}
-					on:click={saveLocationEdit}
-				>
+				<button class="btn-primary" disabled={!editingLocation} on:click={saveLocationEdit}>
 					Update Location
 				</button>
 			</div>
@@ -506,7 +522,8 @@
 	}
 
 	@keyframes pulse {
-		0%, 100% {
+		0%,
+		100% {
 			opacity: 1;
 		}
 		50% {
@@ -522,14 +539,14 @@
 		.gallery-grid {
 			grid-template-columns: repeat(2, 1fr);
 		}
-		
+
 		.gallery-filters > div {
 			grid-template-columns: 1fr;
 		}
-		
+
 		.page-numbers {
 			max-width: 200px;
 			overflow-x: auto;
 		}
 	}
-</style> 
+</style>

@@ -67,9 +67,15 @@
 
 <svelte:head>
 	<title>{game?.name || 'Shared Game'} - WhereAmI</title>
-	<meta name="description" content={game?.description || 'Play this shared geography game on WhereAmI'} />
+	<meta
+		name="description"
+		content={game?.description || 'Play this shared geography game on WhereAmI'}
+	/>
 	<meta property="og:title" content="{game?.name || 'Shared Game'} - WhereAmI" />
-	<meta property="og:description" content={game?.description || 'Play this shared geography game on WhereAmI'} />
+	<meta
+		property="og:description"
+		content={game?.description || 'Play this shared geography game on WhereAmI'}
+	/>
 	<meta property="og:type" content="website" />
 </svelte:head>
 
@@ -92,12 +98,8 @@
 				<h1 class="text-2xl font-bold text-gray-800 mb-2">Link Not Found</h1>
 				<p class="text-gray-600 mb-6">{error}</p>
 				<div class="flex gap-3 justify-center">
-					<button class="btn-secondary" on:click={() => goto('/browse')}>
-						🌍 Browse Games
-					</button>
-					<button class="btn-primary" on:click={() => goto('/')}>
-						🎮 Play Random Game
-					</button>
+					<button class="btn-secondary" on:click={() => goto('/browse')}> 🌍 Browse Games </button>
+					<button class="btn-primary" on:click={() => goto('/')}> 🎮 Play Random Game </button>
 				</div>
 			</div>
 		</div>
@@ -109,14 +111,16 @@
 			<!-- Header -->
 			<div class="shared-header bg-white shadow-sm">
 				<div class="max-w-2xl mx-auto p-6 text-center">
-					<div class="shared-badge inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-4">
+					<div
+						class="shared-badge inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-4"
+					>
 						🔗 Shared Game
 					</div>
 					<h1 class="text-3xl font-bold text-gray-800 mb-2">{game.name}</h1>
 					<p class="text-gray-600 text-lg mb-6">
 						{game.description || 'A custom geography game'}
 					</p>
-					
+
 					<!-- Game Preview Stats -->
 					<div class="game-preview-stats flex justify-center gap-6 mb-6">
 						<div class="stat-item text-center">
@@ -124,7 +128,9 @@
 							<div class="stat-label text-sm text-gray-600">Locations</div>
 						</div>
 						<div class="stat-item text-center">
-							<div class="stat-value text-2xl font-bold text-green-600">{formatPlayCount(game.playCount)}</div>
+							<div class="stat-value text-2xl font-bold text-green-600">
+								{formatPlayCount(game.playCount)}
+							</div>
 							<div class="stat-label text-sm text-gray-600">Plays</div>
 						</div>
 						<div class="stat-item text-center">
@@ -151,16 +157,16 @@
 						<button class="btn-primary text-lg px-8 py-3" on:click={playGame}>
 							🎮 Play This Game
 						</button>
-						<button class="btn-secondary" on:click={viewGameDetails}>
-							📋 View Details
-						</button>
+						<button class="btn-secondary" on:click={viewGameDetails}> 📋 View Details </button>
 					</div>
 
 					<!-- Creator Info -->
 					<div class="creator-section text-center">
 						<p class="text-sm text-gray-500 mb-2">Created by</p>
 						<div class="creator-info inline-flex items-center gap-3">
-							<div class="creator-avatar w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+							<div
+								class="creator-avatar w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold"
+							>
 								{game.createdBy.charAt(0).toUpperCase()}
 							</div>
 							<div class="text-left">
@@ -176,7 +182,7 @@
 			<div class="game-description max-w-2xl mx-auto p-6">
 				<div class="card p-6 text-center">
 					<h2 class="text-xl font-semibold text-gray-800 mb-4">About This Game</h2>
-					
+
 					{#if game.description}
 						<p class="text-gray-700 mb-6">{game.description}</p>
 					{:else}
@@ -188,13 +194,15 @@
 					<div class="game-challenge bg-blue-50 rounded-lg p-4 mb-6">
 						<h3 class="text-lg font-semibold text-blue-800 mb-2">🌍 The Challenge</h3>
 						<p class="text-blue-700">
-							Look at {game.imageIds.length} photos and try to guess where they were taken. 
-							The closer your guess, the more points you'll earn!
+							Look at {game.imageIds.length} photos and try to guess where they were taken. The closer
+							your guess, the more points you'll earn!
 						</p>
 					</div>
 
 					{#if game.difficulty}
-						<div class="difficulty-badge inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg mb-6">
+						<div
+							class="difficulty-badge inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg mb-6"
+						>
 							<span class="text-lg">⚡</span>
 							<span class="font-medium text-gray-700 capitalize">{game.difficulty} Difficulty</span>
 						</div>
@@ -223,14 +231,12 @@
 			<!-- WhereAmI Promotion -->
 			<div class="promotion-section max-w-2xl mx-auto p-6">
 				<div class="card p-6 text-center bg-gradient-to-r from-blue-50 to-purple-50">
-					<h3 class="text-xl font-semibold text-gray-800 mb-3">
-						🎯 Love Geography Games?
-					</h3>
+					<h3 class="text-xl font-semibold text-gray-800 mb-3">🎯 Love Geography Games?</h3>
 					<p class="text-gray-600 mb-4">
 						Join WhereAmI to create your own games, upload photos, and challenge friends worldwide!
 					</p>
 					<div class="flex flex-col sm:flex-row gap-3 justify-center">
-						<button class="btn-primary" on:click={() => goto('/upload')}>
+						<button class="btn-primary" on:click={() => goto('/gallery?tab=upload')}>
 							📸 Upload Photos
 						</button>
 						<button class="btn-secondary" on:click={() => goto('/browse')}>
@@ -254,8 +260,12 @@
 	}
 
 	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
 	}
 
 	.card {
@@ -268,7 +278,8 @@
 		font-weight: 500;
 	}
 
-	.btn-secondary, .btn-primary {
+	.btn-secondary,
+	.btn-primary {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -293,4 +304,4 @@
 			align-items: center;
 		}
 	}
-</style> 
+</style>

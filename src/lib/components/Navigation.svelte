@@ -4,10 +4,10 @@
 	import { user, isAuthenticated, signOut } from '$lib/stores/authStore';
 	import { showSuccess, showError } from '$lib/stores/toastStore';
 	import AuthModal from './AuthModal.svelte';
-	
+
 	let showAuthModal = false;
 	let showUserMenu = false;
-	
+
 	async function handleLogout() {
 		const result = await signOut();
 		if (result.success) {
@@ -17,37 +17,27 @@
 			showError('Failed to sign out');
 		}
 	}
-	
+
 	function handleLogin() {
 		showAuthModal = true;
 	}
-	
+
 	function handleProfileClick() {
 		showUserMenu = false;
 		goto('/profile');
 	}
-	
-	function handleMyPhotosClick() {
-		showUserMenu = false;
-		goto('/browse?tab=gallery');
-	}
-	
-	function handleMyGamesClick() {
-		showUserMenu = false;
-		goto('/browse?tab=games&filter=my-games');
-	}
-	
+
 	function closeUserMenu() {
 		showUserMenu = false;
 	}
-	
+
 	// Close user menu when clicking outside
 	function handleOutsideClick(event: MouseEvent) {
 		if (showUserMenu && !(event.target as Element).closest('.user-menu-container')) {
 			showUserMenu = false;
 		}
 	}
-	
+
 	$: currentPath = $page.url.pathname;
 </script>
 
@@ -58,100 +48,103 @@
 		<div class="nav-content flex justify-between items-center h-16">
 			<!-- Logo and primary navigation -->
 			<div class="nav-left flex items-center space-x-8">
-				<a href="/" class="nav-logo flex items-center space-x-2 text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors">
+				<a
+					href="/"
+					class="nav-logo flex items-center space-x-2 text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors"
+				>
 					<span class="logo-icon">🌍</span>
 					<span>WhereAmI</span>
 				</a>
-				
+
 				<!-- Main navigation links -->
 				<div class="nav-links hidden md:flex items-center space-x-6">
-					<a 
-						href="/" 
-						class="nav-link {currentPath === '/' ? 'active' : ''}"
-					>
-						🎮 Play
+					<a href="/" class="nav-link {currentPath === '/' ? 'active' : ''}"> 🎮 Play </a>
+					<a href="/gallery" class="nav-link {currentPath === '/gallery' ? 'active' : ''}">
+						📸 Gallery
 					</a>
-					<a 
-						href="/upload" 
-						class="nav-link {currentPath === '/upload' ? 'active' : ''}"
-					>
-						📸 Upload
-					</a>
-					<a 
-						href="/browse" 
-						class="nav-link {currentPath === '/browse' ? 'active' : ''}"
-					>
+					<a href="/browse" class="nav-link {currentPath === '/browse' ? 'active' : ''}">
 						🔍 Browse
+					</a>
+					<a href="/create" class="nav-link {currentPath === '/create' ? 'active' : ''}">
+						🎯 Create
 					</a>
 				</div>
 			</div>
-			
+
 			<!-- User authentication section -->
 			<div class="nav-right flex items-center space-x-4">
 				{#if $isAuthenticated && $user}
 					<!-- Authenticated user menu -->
 					<div class="user-menu-container relative">
-						<button 
+						<button
 							class="user-menu-trigger flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-							on:click={() => showUserMenu = !showUserMenu}
+							on:click={() => (showUserMenu = !showUserMenu)}
 							aria-expanded={showUserMenu}
 							aria-haspopup="true"
 						>
-							<div class="user-avatar w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+							<div
+								class="user-avatar w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+							>
 								{$user.user_metadata?.first_name?.[0] || $user.email?.[0]?.toUpperCase() || '?'}
 							</div>
 							<span class="user-name hidden sm:block text-sm font-medium text-gray-700">
 								{$user.user_metadata?.first_name || $user.email?.split('@')[0] || 'User'}
 							</span>
-							<svg class="user-menu-chevron w-4 h-4 text-gray-500 transition-transform {showUserMenu ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+							<svg
+								class="user-menu-chevron w-4 h-4 text-gray-500 transition-transform {showUserMenu
+									? 'rotate-180'
+									: ''}"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M19 9l-7 7-7-7"
+								/>
 							</svg>
 						</button>
-						
+
 						{#if showUserMenu}
-							<div class="user-menu absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50">
+							<div
+								class="user-menu absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50"
+							>
 								<!-- User info header -->
 								<div class="user-menu-header px-4 py-3 border-b border-gray-100">
 									<div class="flex items-center space-x-3">
-										<div class="user-avatar w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-											{$user.user_metadata?.first_name?.[0] || $user.email?.[0]?.toUpperCase() || '?'}
+										<div
+											class="user-avatar w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold"
+										>
+											{$user.user_metadata?.first_name?.[0] ||
+												$user.email?.[0]?.toUpperCase() ||
+												'?'}
 										</div>
 										<div>
 											<div class="font-medium text-gray-900">
-												{$user.user_metadata?.full_name || $user.user_metadata?.first_name || 'User'}
+												{$user.user_metadata?.full_name ||
+													$user.user_metadata?.first_name ||
+													'User'}
 											</div>
 											<div class="text-sm text-gray-500">{$user.email}</div>
 										</div>
 									</div>
 								</div>
-								
+
 								<!-- Menu items -->
 								<div class="user-menu-items py-1">
-									<button 
+									<button
 										class="user-menu-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-3"
 										on:click={handleProfileClick}
 									>
 										<span>⚙️</span>
 										<span>Profile & Settings</span>
 									</button>
-									<button 
-										class="user-menu-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-3"
-										on:click={handleMyPhotosClick}
-									>
-										<span>📸</span>
-										<span>My Photos</span>
-									</button>
-									<button 
-										class="user-menu-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-3"
-										on:click={handleMyGamesClick}
-									>
-										<span>🎮</span>
-										<span>My Games</span>
-									</button>
 								</div>
-								
+
 								<div class="border-t border-gray-100 py-1">
-									<button 
+									<button
 										class="user-menu-item w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-3"
 										on:click={handleLogout}
 									>
@@ -164,18 +157,26 @@
 					</div>
 				{:else}
 					<!-- Sign in button for unauthenticated users -->
-					<button 
+					<button
 						class="sign-in-btn px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
 						on:click={handleLogin}
 					>
 						Sign In
 					</button>
 				{/if}
-				
+
 				<!-- Mobile menu button (if needed later) -->
-				<button class="mobile-menu-btn md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Open menu">
+				<button
+					class="mobile-menu-btn md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+					aria-label="Open menu"
+				>
 					<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M4 6h16M4 12h16M4 18h16"
+						/>
 					</svg>
 				</button>
 			</div>
@@ -184,13 +185,13 @@
 </nav>
 
 <!-- Auth modal -->
-<AuthModal bind:isOpen={showAuthModal} on:close={() => showAuthModal = false} />
+<AuthModal bind:isOpen={showAuthModal} on:close={() => (showAuthModal = false)} />
 
 <style>
 	.navigation {
 		backdrop-filter: blur(8px);
 	}
-	
+
 	.nav-link {
 		display: flex;
 		align-items: center;
@@ -202,29 +203,29 @@
 		border-radius: 0.5rem;
 		transition: all 0.2s ease;
 	}
-	
+
 	.nav-link:hover {
 		color: #374151;
 		background-color: #f3f4f6;
 	}
-	
+
 	.nav-link.active {
 		color: #2563eb;
 		background-color: #dbeafe;
 	}
-	
+
 	.user-menu-chevron {
 		transition: transform 0.2s ease;
 	}
-	
+
 	.user-menu {
 		animation: fadeInDown 0.15s ease-out;
 	}
-	
+
 	.user-menu-item:hover {
 		background-color: #f9fafb;
 	}
-	
+
 	@keyframes fadeInDown {
 		from {
 			opacity: 0;
@@ -235,21 +236,21 @@
 			transform: translateY(0);
 		}
 	}
-	
+
 	@media (max-width: 768px) {
 		.nav-container {
 			padding-left: 1rem;
 			padding-right: 1rem;
 		}
-		
+
 		.nav-left .nav-links {
 			display: none;
 		}
-		
+
 		.user-menu {
 			right: -1rem;
 			width: calc(100vw - 2rem);
 			max-width: 16rem;
 		}
 	}
-</style> 
+</style>

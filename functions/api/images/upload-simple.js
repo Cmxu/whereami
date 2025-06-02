@@ -7,7 +7,7 @@ export async function onRequestOptions() {
 		headers: {
 			'Access-Control-Allow-Origin': '*',
 			'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-			'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 		}
 	});
 }
@@ -15,7 +15,7 @@ export async function onRequestOptions() {
 export async function onRequestPost(context) {
 	try {
 		const { request, env } = context;
-		
+
 		// Require authentication
 		const { user, error } = await requireAuth(request, env);
 		if (error) {
@@ -24,48 +24,57 @@ export async function onRequestPost(context) {
 
 		// Ensure user profile exists
 		await upsertUserProfile(user, env);
-		
+
 		// Check if R2 bucket is available
 		if (!env.IMAGES_BUCKET) {
 			console.error('IMAGES_BUCKET R2 binding not found');
-			return new Response(JSON.stringify({ 
-				error: 'Server configuration error: R2 bucket not configured' 
-			}), {
-				status: 500,
-				headers: {
-					'Content-Type': 'application/json',
-					'Access-Control-Allow-Origin': '*',
+			return new Response(
+				JSON.stringify({
+					error: 'Server configuration error: R2 bucket not configured'
+				}),
+				{
+					status: 500,
+					headers: {
+						'Content-Type': 'application/json',
+						'Access-Control-Allow-Origin': '*'
+					}
 				}
-			});
+			);
 		}
 
 		// Parse form data
 		const formData = await request.formData();
 		const imageFile = formData.get('image');
 		const locationStr = formData.get('location');
-		
+
 		if (!imageFile) {
-			return new Response(JSON.stringify({ 
-				error: 'No image file provided' 
-			}), {
-				status: 400,
-				headers: {
-					'Content-Type': 'application/json',
-					'Access-Control-Allow-Origin': '*',
+			return new Response(
+				JSON.stringify({
+					error: 'No image file provided'
+				}),
+				{
+					status: 400,
+					headers: {
+						'Content-Type': 'application/json',
+						'Access-Control-Allow-Origin': '*'
+					}
 				}
-			});
+			);
 		}
 
 		if (!locationStr) {
-			return new Response(JSON.stringify({ 
-				error: 'Location data required' 
-			}), {
-				status: 400,
-				headers: {
-					'Content-Type': 'application/json',
-					'Access-Control-Allow-Origin': '*',
+			return new Response(
+				JSON.stringify({
+					error: 'Location data required'
+				}),
+				{
+					status: 400,
+					headers: {
+						'Content-Type': 'application/json',
+						'Access-Control-Allow-Origin': '*'
+					}
 				}
-			});
+			);
 		}
 
 		// Parse location
@@ -73,43 +82,52 @@ export async function onRequestPost(context) {
 		try {
 			location = JSON.parse(locationStr);
 		} catch {
-			return new Response(JSON.stringify({ 
-				error: 'Invalid location data format' 
-			}), {
-				status: 400,
-				headers: {
-					'Content-Type': 'application/json',
-					'Access-Control-Allow-Origin': '*',
+			return new Response(
+				JSON.stringify({
+					error: 'Invalid location data format'
+				}),
+				{
+					status: 400,
+					headers: {
+						'Content-Type': 'application/json',
+						'Access-Control-Allow-Origin': '*'
+					}
 				}
-			});
+			);
 		}
 
 		// Validate file type and size
 		const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 		if (!allowedTypes.includes(imageFile.type)) {
-			return new Response(JSON.stringify({ 
-				error: `Invalid file type. Allowed types: ${allowedTypes.join(', ')}` 
-			}), {
-				status: 400,
-				headers: {
-					'Content-Type': 'application/json',
-					'Access-Control-Allow-Origin': '*',
+			return new Response(
+				JSON.stringify({
+					error: `Invalid file type. Allowed types: ${allowedTypes.join(', ')}`
+				}),
+				{
+					status: 400,
+					headers: {
+						'Content-Type': 'application/json',
+						'Access-Control-Allow-Origin': '*'
+					}
 				}
-			});
+			);
 		}
 
 		// Check file size (10MB limit)
 		const maxSizeBytes = 10 * 1024 * 1024; // 10MB
 		if (imageFile.size > maxSizeBytes) {
-			return new Response(JSON.stringify({ 
-				error: `File too large. Maximum size: ${maxSizeBytes / 1024 / 1024}MB` 
-			}), {
-				status: 400,
-				headers: {
-					'Content-Type': 'application/json',
-					'Access-Control-Allow-Origin': '*',
+			return new Response(
+				JSON.stringify({
+					error: `File too large. Maximum size: ${maxSizeBytes / 1024 / 1024}MB`
+				}),
+				{
+					status: 400,
+					headers: {
+						'Content-Type': 'application/json',
+						'Access-Control-Allow-Origin': '*'
+					}
 				}
-			});
+			);
 		}
 
 		// Generate unique ID and filename
@@ -123,15 +141,15 @@ export async function onRequestPost(context) {
 			await env.IMAGES_BUCKET.put(r2Key, await imageFile.arrayBuffer(), {
 				httpMetadata: {
 					contentType: imageFile.type,
-					cacheControl: 'public, max-age=31536000', // 1 year cache
+					cacheControl: 'public, max-age=31536000' // 1 year cache
 				},
 				customMetadata: {
 					originalFilename: imageFile.name,
 					uploadedAt: new Date().toISOString(),
 					locationLat: String(location.lat),
 					locationLng: String(location.lng),
-					uploadedBy: user.id, // Track who uploaded this image
-				},
+					uploadedBy: user.id // Track who uploaded this image
+				}
 			});
 
 			// Construct the image URL
@@ -168,52 +186,59 @@ export async function onRequestPost(context) {
 			const userImages = await env.USER_DATA.get(userImagesKey);
 			const imagesList = userImages ? JSON.parse(userImages) : [];
 			imagesList.unshift(uniqueId); // Add to beginning of list
-			
+
 			// Keep only the last 1000 images per user
 			if (imagesList.length > 1000) {
 				imagesList.splice(1000);
 			}
-			
+
 			await env.USER_DATA.put(userImagesKey, JSON.stringify(imagesList));
 
-			return new Response(JSON.stringify({
-				success: true,
-				message: 'Image uploaded successfully',
-				imageUrl: imageUrl,
-				metadata: metadata
-			}), {
-				status: 201,
-				headers: {
-					'Content-Type': 'application/json',
-					'Access-Control-Allow-Origin': '*',
+			return new Response(
+				JSON.stringify({
+					success: true,
+					message: 'Image uploaded successfully',
+					imageUrl: imageUrl,
+					metadata: metadata
+				}),
+				{
+					status: 201,
+					headers: {
+						'Content-Type': 'application/json',
+						'Access-Control-Allow-Origin': '*'
+					}
 				}
-			});
-
+			);
 		} catch (uploadError) {
 			console.error('Upload error:', uploadError);
-			return new Response(JSON.stringify({ 
-				error: 'Failed to upload image to storage',
-				details: uploadError.message 
-			}), {
+			return new Response(
+				JSON.stringify({
+					error: 'Failed to upload image to storage',
+					details: uploadError.message
+				}),
+				{
+					status: 500,
+					headers: {
+						'Content-Type': 'application/json',
+						'Access-Control-Allow-Origin': '*'
+					}
+				}
+			);
+		}
+	} catch (error) {
+		console.error('Server error:', error);
+		return new Response(
+			JSON.stringify({
+				error: 'Internal server error',
+				details: error.message
+			}),
+			{
 				status: 500,
 				headers: {
 					'Content-Type': 'application/json',
-					'Access-Control-Allow-Origin': '*',
+					'Access-Control-Allow-Origin': '*'
 				}
-			});
-		}
-
-	} catch (error) {
-		console.error('Server error:', error);
-		return new Response(JSON.stringify({ 
-			error: 'Internal server error',
-			details: error.message 
-		}), {
-			status: 500,
-			headers: {
-				'Content-Type': 'application/json',
-				'Access-Control-Allow-Origin': '*',
 			}
-		});
+		);
 	}
-} 
+}

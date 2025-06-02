@@ -5,7 +5,7 @@ export function corsHeaders(origin: string = '*') {
 		'Access-Control-Allow-Origin': origin,
 		'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 		'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-		'Access-Control-Max-Age': '86400',
+		'Access-Control-Max-Age': '86400'
 	};
 }
 
@@ -19,15 +19,15 @@ export function createResponse<T>(
 		success: status >= 200 && status < 300,
 		...(data && { data }),
 		...(message && { message }),
-		...(error && { error }),
+		...(error && { error })
 	};
 
 	return new Response(JSON.stringify(response), {
 		status,
 		headers: {
 			'Content-Type': 'application/json',
-			...corsHeaders(),
-		},
+			...corsHeaders()
+		}
 	});
 }
 
@@ -56,19 +56,19 @@ export function validateLocation(lat: number, lng: number): boolean {
 
 export function validateImageFile(file: File, env: Env): { valid: boolean; error?: string } {
 	const maxSize = parseInt(env.MAX_FILE_SIZE);
-	const allowedTypes = env.ALLOWED_FILE_TYPES.split(',').map(type => type.trim());
+	const allowedTypes = env.ALLOWED_FILE_TYPES.split(',').map((type) => type.trim());
 
 	if (file.size > maxSize) {
 		return {
 			valid: false,
-			error: `File size too large. Maximum allowed size is ${Math.round(maxSize / 1024 / 1024)}MB`,
+			error: `File size too large. Maximum allowed size is ${Math.round(maxSize / 1024 / 1024)}MB`
 		};
 	}
 
 	if (!allowedTypes.includes(file.type)) {
 		return {
 			valid: false,
-			error: `Invalid file type. Allowed types: ${allowedTypes.join(', ')}`,
+			error: `Invalid file type. Allowed types: ${allowedTypes.join(', ')}`
 		};
 	}
 
@@ -88,7 +88,7 @@ export async function getImageMetadata(imageId: string, env: Env): Promise<Image
 export async function saveImageMetadata(metadata: ImageMetadata, env: Env): Promise<boolean> {
 	try {
 		await env.GAME_METADATA.put(`image:${metadata.id}`, JSON.stringify(metadata));
-		
+
 		// Also store in public index if public
 		if (metadata.isPublic) {
 			const publicImages = await getPublicImages(env);
@@ -99,7 +99,7 @@ export async function saveImageMetadata(metadata: ImageMetadata, env: Env): Prom
 			}
 			await env.GAME_METADATA.put('public_images', JSON.stringify(publicImages));
 		}
-		
+
 		return true;
 	} catch (error) {
 		console.error('Error saving image metadata:', error);
@@ -130,7 +130,7 @@ export async function getGameMetadata(gameId: string, env: Env): Promise<CustomG
 export async function saveGameMetadata(metadata: CustomGame, env: Env): Promise<boolean> {
 	try {
 		await env.GAME_METADATA.put(`game:${metadata.id}`, JSON.stringify(metadata));
-		
+
 		// Also store in public index if public
 		if (metadata.isPublic) {
 			const publicGames = await getPublicGames(env);
@@ -141,7 +141,7 @@ export async function saveGameMetadata(metadata: CustomGame, env: Env): Promise<
 			}
 			await env.GAME_METADATA.put('public_games', JSON.stringify(publicGames));
 		}
-		
+
 		return true;
 	} catch (error) {
 		console.error('Error saving game metadata:', error);
@@ -178,7 +178,10 @@ export function sanitizeFilename(filename: string): string {
 		.replace(/^_+|_+$/g, '');
 }
 
-export async function createThumbnail(imageBuffer: ArrayBuffer, maxWidth: number = 300): Promise<ArrayBuffer> {
+export async function createThumbnail(
+	imageBuffer: ArrayBuffer,
+	maxWidth: number = 300
+): Promise<ArrayBuffer> {
 	// Note: This is a simplified version. In production, you'd want to use a proper image processing library
 	// For now, we'll return the original image and let the frontend handle thumbnails
 	return imageBuffer;
@@ -190,4 +193,4 @@ export function logAnalytics(event: any, env: Env): void {
 	if (env.ENVIRONMENT === 'development') {
 		console.log('Analytics event:', event);
 	}
-} 
+}

@@ -76,7 +76,7 @@
 	function getStarClass(starIndex: number): string {
 		const rating = hoverRating || userRating || 0;
 		const baseClass = `star ${sizeClasses[size]} cursor-pointer transition-all duration-150`;
-		
+
 		if (starIndex <= rating) {
 			return `${baseClass} text-yellow-400`;
 		} else {
@@ -94,7 +94,11 @@
 		<div class="rating-display flex items-center gap-2">
 			<div class="stars flex items-center gap-1">
 				{#each Array(5) as _, i}
-					<span class="star {sizeClasses[size]} {i < displayRating ? 'text-yellow-400' : 'text-gray-300'}">
+					<span
+						class="star {sizeClasses[size]} {i < displayRating
+							? 'text-yellow-400'
+							: 'text-gray-300'}"
+					>
 						⭐
 					</span>
 				{/each}
@@ -116,10 +120,12 @@
 			<div class="rating-label mb-2">
 				<span class="text-sm font-medium text-gray-700">Rate this game</span>
 				{#if userRating > 0}
-					<span class="text-xs text-gray-500 ml-2">You rated: {userRating} star{userRating !== 1 ? 's' : ''}</span>
+					<span class="text-xs text-gray-500 ml-2"
+						>You rated: {userRating} star{userRating !== 1 ? 's' : ''}</span
+					>
 				{/if}
 			</div>
-			
+
 			<div class="stars-container flex items-center gap-1 mb-2">
 				{#each Array(5) as _, i}
 					<button
@@ -147,7 +153,9 @@
 
 			{#if displayRating > 0}
 				<div class="community-rating text-xs text-gray-500">
-					Community rating: {displayRating.toFixed(1)}/5 ({ratingCount} rating{ratingCount !== 1 ? 's' : ''})
+					Community rating: {displayRating.toFixed(1)}/5 ({ratingCount} rating{ratingCount !== 1
+						? 's'
+						: ''})
 				</div>
 			{/if}
 		</div>
@@ -179,8 +187,12 @@
 	}
 
 	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
 	}
 
 	.rating-interactive button:disabled {
@@ -190,4 +202,4 @@
 	.rating-interactive button:not(:disabled):hover {
 		filter: brightness(1.1);
 	}
-</style> 
+</style>

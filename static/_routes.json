@@ -1,8 +1,6 @@
 {
 	"version": 1,
 	"description": "Custom routes configuration for whereami",
-	"include": [
-		"/*"
-	],
+	"include": ["/*"],
 	"exclude": []
-} 
+}

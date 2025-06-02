@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
-	
+
 	export let type: 'success' | 'error' | 'warning' | 'info' = 'info';
 	export let message: string;
 	export let duration: number = 5000;
@@ -31,7 +31,7 @@
 
 	onMount(() => {
 		visible = true;
-		
+
 		if (duration > 0) {
 			timeoutId = setTimeout(() => {
 				dismiss();
@@ -63,7 +63,9 @@
 
 {#if visible}
 	<div
-		class="toast fixed z-50 max-w-sm w-full shadow-lg rounded-lg border-l-4 p-4 transition-all duration-300 {colors[type]}"
+		class="toast fixed z-50 max-w-sm w-full shadow-lg rounded-lg border-l-4 p-4 transition-all duration-300 {colors[
+			type
+		]}"
 		class:top-4={position.includes('top')}
 		class:bottom-4={position.includes('bottom')}
 		class:right-4={position.includes('right')}
@@ -95,11 +97,11 @@
 				</div>
 			{/if}
 		</div>
-		
+
 		<!-- Progress bar for auto-dismiss -->
 		{#if duration > 0}
 			<div class="progress-container mt-2 h-1 bg-black/10 rounded-full overflow-hidden">
-				<div 
+				<div
 					class="progress-bar h-full bg-current opacity-30 transition-all duration-linear"
 					style="animation-duration: {duration}ms"
 				></div>
@@ -162,9 +164,9 @@
 			animation: none;
 			transition: none;
 		}
-		
+
 		.progress-bar {
 			animation: none;
 		}
 	}
-</style> 
+</style>

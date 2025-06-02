@@ -9,11 +9,10 @@ export const user = writable<User | null>(null);
 export const isAuthenticated = derived(user, ($user) => !!$user);
 export const userId = derived(user, ($user) => $user?.id || null);
 export const userEmail = derived(user, ($user) => $user?.email || null);
-export const userName = derived(user, ($user) => 
-	$user?.user_metadata?.full_name || 
-	$user?.user_metadata?.name || 
-	$user?.email || 
-	'Anonymous'
+export const userName = derived(
+	user,
+	($user) =>
+		$user?.user_metadata?.full_name || $user?.user_metadata?.name || $user?.email || 'Anonymous'
 );
 
 // Loading states
@@ -41,7 +40,10 @@ export async function initAuth() {
 
 	try {
 		// Get initial session
-		const { data: { session }, error } = await supabase.auth.getSession();
+		const {
+			data: { session },
+			error
+		} = await supabase.auth.getSession();
 		if (error) {
 			console.error('Error getting session:', error);
 			setAuthError(error.message);
@@ -69,52 +71,57 @@ export async function signInWithEmail(email: string, password: string) {
 		email,
 		password
 	});
-	
+
 	if (error) {
 		setAuthError(error.message);
 		return { success: false, error: error.message };
 	}
-	
+
 	setUser(data.user);
 	return { success: true, user: data.user };
 }
 
-export async function signUpWithEmail(email: string, password: string, options?: { 
-	firstName?: string; 
-	lastName?: string; 
-}) {
+export async function signUpWithEmail(
+	email: string,
+	password: string,
+	options?: {
+		firstName?: string;
+		lastName?: string;
+	}
+) {
 	setAuthLoading(true);
 	const { data, error } = await supabase.auth.signUp({
 		email,
 		password,
 		options: {
 			data: {
-				full_name: options?.firstName && options?.lastName 
-					? `${options.firstName} ${options.lastName}` 
-					: undefined,
+				full_name:
+					options?.firstName && options?.lastName
+						? `${options.firstName} ${options.lastName}`
+						: undefined,
 				first_name: options?.firstName,
 				last_name: options?.lastName
 			}
 		}
 	});
-	
+
 	if (error) {
 		setAuthError(error.message);
 		return { success: false, error: error.message };
 	}
-	
+
 	return { success: true, user: data.user };
 }
 
 export async function signOut() {
 	setAuthLoading(true);
 	const { error } = await supabase.auth.signOut();
-	
+
 	if (error) {
 		setAuthError(error.message);
 		return { success: false, error: error.message };
 	}
-	
+
 	clearAuth();
 	return { success: true };
 }
@@ -122,12 +129,12 @@ export async function signOut() {
 export async function resetPassword(email: string) {
 	setAuthLoading(true);
 	const { error } = await supabase.auth.resetPasswordForEmail(email);
-	
+
 	if (error) {
 		setAuthError(error.message);
 		return { success: false, error: error.message };
 	}
-	
+
 	setAuthLoading(false);
 	return { success: true };
 }
@@ -159,4 +166,4 @@ export function clearAuth() {
 		totalScore: 0,
 		averageScore: 0
 	});
-} 
+}

@@ -26,7 +26,7 @@ async function verifySupabaseToken(token: string, env: Env): Promise<Authenticat
 	try {
 		// For Supabase, we can verify the JWT using the public key
 		// This is a simplified version - in production you'd want to verify the signature
-		
+
 		// Decode the JWT payload (without verification for now)
 		const parts = token.split('.');
 		if (parts.length !== 3) {
@@ -34,7 +34,7 @@ async function verifySupabaseToken(token: string, env: Env): Promise<Authenticat
 		}
 
 		const payload = JSON.parse(atob(parts[1]));
-		
+
 		// Check if token is expired
 		if (payload.exp && payload.exp < Date.now() / 1000) {
 			return null;
@@ -63,11 +63,11 @@ async function verifySupabaseToken(token: string, env: Env): Promise<Authenticat
  * Authentication middleware for Cloudflare Functions
  */
 export async function authenticateRequest(
-	request: Request, 
+	request: Request,
 	env: Env
 ): Promise<{ user: AuthenticatedUser | null; isAuthenticated: boolean }> {
 	const token = extractToken(request);
-	
+
 	if (!token) {
 		return { user: null, isAuthenticated: false };
 	}
@@ -80,11 +80,11 @@ export async function authenticateRequest(
  * Middleware that requires authentication
  */
 export async function requireAuth(
-	request: Request, 
+	request: Request,
 	env: Env
 ): Promise<{ user: AuthenticatedUser; error?: Response }> {
 	const { user, isAuthenticated } = await authenticateRequest(request, env);
-	
+
 	if (!isAuthenticated || !user) {
 		return {
 			user: null as any,
@@ -92,7 +92,7 @@ export async function requireAuth(
 				status: 401,
 				headers: {
 					'Content-Type': 'application/json',
-					'Access-Control-Allow-Origin': '*',
+					'Access-Control-Allow-Origin': '*'
 				}
 			})
 		};
@@ -131,7 +131,7 @@ export async function saveUserData(userId: string, data: any, env: Env): Promise
  */
 export async function upsertUserProfile(user: AuthenticatedUser, env: Env): Promise<void> {
 	const existing = await getUserData(user.id, env);
-	
+
 	const profile = {
 		id: user.id,
 		email: user.email,
@@ -148,4 +148,4 @@ export async function upsertUserProfile(user: AuthenticatedUser, env: Env): Prom
 	};
 
 	await saveUserData(user.id, profile, env);
-} 
+}

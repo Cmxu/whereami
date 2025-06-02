@@ -1,4 +1,14 @@
-import type { ImageMetadata, CustomGame, Location, GameRating, GameComment, ShareableGame, UserProfile, GameSearchFilters, SocialShare } from '$lib/types';
+import type {
+	ImageMetadata,
+	CustomGame,
+	Location,
+	GameRating,
+	GameComment,
+	ShareableGame,
+	UserProfile,
+	GameSearchFilters,
+	SocialShare
+} from '$lib/types';
 
 export class WhereAmIAPI {
 	private baseUrl = '/api';
@@ -179,8 +189,8 @@ export class WhereAmIAPI {
 	 * Get public games for browsing with filters
 	 */
 	async getPublicGames(
-		limit: number = 20, 
-		offset: number = 0, 
+		limit: number = 20,
+		offset: number = 0,
 		filters?: GameSearchFilters
 	): Promise<CustomGame[]> {
 		const params = new URLSearchParams({
@@ -325,7 +335,7 @@ export class WhereAmIAPI {
 			const response = await fetch(`${this.baseUrl}/games/${gameId}/rating/user`, {
 				headers: this.getHeaders()
 			});
-			
+
 			if (response.status === 404) {
 				return null;
 			}
@@ -367,8 +377,14 @@ export class WhereAmIAPI {
 	/**
 	 * Get comments for a game
 	 */
-	async getGameComments(gameId: string, limit: number = 20, offset: number = 0): Promise<GameComment[]> {
-		const response = await fetch(`${this.baseUrl}/games/${gameId}/comments?limit=${limit}&offset=${offset}`);
+	async getGameComments(
+		gameId: string,
+		limit: number = 20,
+		offset: number = 0
+	): Promise<GameComment[]> {
+		const response = await fetch(
+			`${this.baseUrl}/games/${gameId}/comments?limit=${limit}&offset=${offset}`
+		);
 
 		if (!response.ok) {
 			throw new Error('Failed to fetch comments');
@@ -454,7 +470,7 @@ export class WhereAmIAPI {
 	generateSocialShareContent(share: SocialShare): { url: string; text: string } {
 		const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 		const gameUrl = `${baseUrl}/games/${share.gameId}`;
-		
+
 		let text = `Check out this geography game on WhereAmI! 🌍`;
 		if (share.score !== undefined) {
 			text += ` I scored ${share.score.toLocaleString()} points!`;

@@ -112,9 +112,15 @@
 
 <svelte:head>
 	<title>{game?.name || 'Game'} - WhereAmI</title>
-	<meta name="description" content={game?.description || 'Play this custom geography game on WhereAmI'} />
+	<meta
+		name="description"
+		content={game?.description || 'Play this custom geography game on WhereAmI'}
+	/>
 	<meta property="og:title" content="{game?.name || 'Custom Game'} - WhereAmI" />
-	<meta property="og:description" content={game?.description || 'Play this custom geography game on WhereAmI'} />
+	<meta
+		property="og:description"
+		content={game?.description || 'Play this custom geography game on WhereAmI'}
+	/>
 	<meta property="og:type" content="website" />
 </svelte:head>
 
@@ -137,12 +143,8 @@
 				<h1 class="text-2xl font-bold text-gray-800 mb-2">Game Not Found</h1>
 				<p class="text-gray-600 mb-6">{error}</p>
 				<div class="flex gap-3 justify-center">
-					<button class="btn-secondary" on:click={() => goto('/browse')}>
-						← Browse Games
-					</button>
-					<button class="btn-primary" on:click={() => goto('/')}>
-						Play Random Game
-					</button>
+					<button class="btn-secondary" on:click={() => goto('/browse')}> ← Browse Games </button>
+					<button class="btn-primary" on:click={() => goto('/')}> Play Random Game </button>
 				</div>
 			</div>
 		</div>
@@ -160,7 +162,7 @@
 							<p class="text-gray-600 text-lg mb-4">
 								{game.description || 'A custom geography game'}
 							</p>
-							
+
 							<!-- Game Meta -->
 							<div class="game-meta flex flex-wrap items-center gap-4 text-sm text-gray-500">
 								<div class="flex items-center gap-1">
@@ -200,15 +202,11 @@
 						</div>
 
 						<div class="game-actions flex gap-3 ml-6">
-							<button class="btn-secondary" on:click={() => goto('/browse')}>
-								← Browse
-							</button>
-							<button class="btn-secondary" on:click={() => showShareModal = true}>
+							<button class="btn-secondary" on:click={() => goto('/browse')}> ← Browse </button>
+							<button class="btn-secondary" on:click={() => (showShareModal = true)}>
 								🔗 Share
 							</button>
-							<button class="btn-primary text-lg px-6" on:click={playGame}>
-								🎮 Play Game
-							</button>
+							<button class="btn-primary text-lg px-6" on:click={playGame}> 🎮 Play Game </button>
 						</div>
 					</div>
 
@@ -226,18 +224,22 @@
 					<div class="game-info lg:col-span-2">
 						<div class="card p-6">
 							<h2 class="text-xl font-semibold text-gray-800 mb-4">About This Game</h2>
-							
+
 							{#if game.description}
 								<p class="text-gray-700 mb-6">{game.description}</p>
 							{/if}
 
 							<div class="game-stats grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
 								<div class="stat-item text-center p-3 bg-gray-50 rounded-lg">
-									<div class="stat-value text-2xl font-bold text-blue-600">{game.imageIds.length}</div>
+									<div class="stat-value text-2xl font-bold text-blue-600">
+										{game.imageIds.length}
+									</div>
 									<div class="stat-label text-sm text-gray-600">Locations</div>
 								</div>
 								<div class="stat-item text-center p-3 bg-gray-50 rounded-lg">
-									<div class="stat-value text-2xl font-bold text-green-600">{formatPlayCount(game.playCount)}</div>
+									<div class="stat-value text-2xl font-bold text-green-600">
+										{formatPlayCount(game.playCount)}
+									</div>
 									<div class="stat-label text-sm text-gray-600">Plays</div>
 								</div>
 								<div class="stat-item text-center p-3 bg-gray-50 rounded-lg">
@@ -257,7 +259,7 @@
 							<div class="play-section">
 								<h3 class="text-lg font-semibold text-gray-800 mb-3">Ready to Play?</h3>
 								<p class="text-gray-600 mb-4">
-									Test your geography knowledge with {game.imageIds.length} carefully selected locations. 
+									Test your geography knowledge with {game.imageIds.length} carefully selected locations.
 									Can you guess where each photo was taken?
 								</p>
 								<button class="btn-primary w-full text-lg py-3" on:click={playGame}>
@@ -273,7 +275,9 @@
 						<div class="card p-6 mb-6">
 							<h3 class="text-lg font-semibold text-gray-800 mb-3">Created by</h3>
 							<div class="creator-info flex items-center gap-3">
-								<div class="creator-avatar w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+								<div
+									class="creator-avatar w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold"
+								>
 									{game.createdBy.charAt(0).toUpperCase()}
 								</div>
 								<div>
@@ -290,10 +294,16 @@
 								<button class="btn-secondary w-full justify-center" on:click={playGame}>
 									🎮 Play Game
 								</button>
-								<button class="btn-secondary w-full justify-center" on:click={() => showShareModal = true}>
+								<button
+									class="btn-secondary w-full justify-center"
+									on:click={() => (showShareModal = true)}
+								>
 									🔗 Share with Friends
 								</button>
-								<button class="btn-secondary w-full justify-center" on:click={() => goto('/browse')}>
+								<button
+									class="btn-secondary w-full justify-center"
+									on:click={() => goto('/browse')}
+								>
 									🌍 Browse More Games
 								</button>
 							</div>
@@ -353,7 +363,9 @@
 								{#each comments as comment}
 									<div class="comment bg-gray-50 rounded-lg p-4">
 										<div class="comment-header flex items-center gap-3 mb-2">
-											<div class="commenter-avatar w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+											<div
+												class="commenter-avatar w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold"
+											>
 												{comment.username.charAt(0).toUpperCase()}
 											</div>
 											<div class="flex-1">
@@ -381,7 +393,12 @@
 
 <!-- Share Modal -->
 {#if game}
-	<ShareGame {game} bind:showModal={showShareModal} on:shared={handleShared} on:close={() => showShareModal = false} />
+	<ShareGame
+		{game}
+		bind:showModal={showShareModal}
+		on:shared={handleShared}
+		on:close={() => (showShareModal = false)}
+	/>
 {/if}
 
 <style>
@@ -395,8 +412,12 @@
 	}
 
 	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
 	}
 
 	.card {
@@ -409,7 +430,8 @@
 		font-weight: 500;
 	}
 
-	.btn-secondary, .btn-primary {
+	.btn-secondary,
+	.btn-primary {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
@@ -441,4 +463,4 @@
 			grid-template-columns: repeat(2, 1fr);
 		}
 	}
-</style> 
+</style>

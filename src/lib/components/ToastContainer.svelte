@@ -10,56 +10,50 @@
 <!-- Toast container for each position -->
 <div class="toast-container">
 	<!-- Top Right -->
-	{#if $toasts.some(t => t.position === 'top-right')}
-		<div class="toast-position top-right fixed top-0 right-0 p-4 space-y-2 z-50 pointer-events-none">
-			{#each $toasts.filter(t => t.position === 'top-right') as toast (toast.id)}
+	{#if $toasts.some((t) => t.position === 'top-right')}
+		<div
+			class="toast-position top-right fixed top-0 right-0 p-4 space-y-2 z-50 pointer-events-none"
+		>
+			{#each $toasts.filter((t) => t.position === 'top-right') as toast (toast.id)}
 				<div class="pointer-events-auto">
-					<Toast
-						{...toast}
-						on:dismiss={handleDismiss}
-					/>
+					<Toast {...toast} on:dismiss={handleDismiss} />
 				</div>
 			{/each}
 		</div>
 	{/if}
 
 	<!-- Top Left -->
-	{#if $toasts.some(t => t.position === 'top-left')}
+	{#if $toasts.some((t) => t.position === 'top-left')}
 		<div class="toast-position top-left fixed top-0 left-0 p-4 space-y-2 z-50 pointer-events-none">
-			{#each $toasts.filter(t => t.position === 'top-left') as toast (toast.id)}
+			{#each $toasts.filter((t) => t.position === 'top-left') as toast (toast.id)}
 				<div class="pointer-events-auto">
-					<Toast
-						{...toast}
-						on:dismiss={handleDismiss}
-					/>
+					<Toast {...toast} on:dismiss={handleDismiss} />
 				</div>
 			{/each}
 		</div>
 	{/if}
 
 	<!-- Bottom Right -->
-	{#if $toasts.some(t => t.position === 'bottom-right')}
-		<div class="toast-position bottom-right fixed bottom-0 right-0 p-4 space-y-2 z-50 pointer-events-none">
-			{#each $toasts.filter(t => t.position === 'bottom-right') as toast (toast.id)}
+	{#if $toasts.some((t) => t.position === 'bottom-right')}
+		<div
+			class="toast-position bottom-right fixed bottom-0 right-0 p-4 space-y-2 z-50 pointer-events-none"
+		>
+			{#each $toasts.filter((t) => t.position === 'bottom-right') as toast (toast.id)}
 				<div class="pointer-events-auto">
-					<Toast
-						{...toast}
-						on:dismiss={handleDismiss}
-					/>
+					<Toast {...toast} on:dismiss={handleDismiss} />
 				</div>
 			{/each}
 		</div>
 	{/if}
 
 	<!-- Bottom Left -->
-	{#if $toasts.some(t => t.position === 'bottom-left')}
-		<div class="toast-position bottom-left fixed bottom-0 left-0 p-4 space-y-2 z-50 pointer-events-none">
-			{#each $toasts.filter(t => t.position === 'bottom-left') as toast (toast.id)}
+	{#if $toasts.some((t) => t.position === 'bottom-left')}
+		<div
+			class="toast-position bottom-left fixed bottom-0 left-0 p-4 space-y-2 z-50 pointer-events-none"
+		>
+			{#each $toasts.filter((t) => t.position === 'bottom-left') as toast (toast.id)}
 				<div class="pointer-events-auto">
-					<Toast
-						{...toast}
-						on:dismiss={handleDismiss}
-					/>
+					<Toast {...toast} on:dismiss={handleDismiss} />
 				</div>
 			{/each}
 		</div>
@@ -84,4 +78,4 @@
 			max-width: calc(100vw - 2rem);
 		}
 	}
-</style> 
+</style>

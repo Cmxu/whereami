@@ -6,14 +6,14 @@ import {
 	getGameMetadata,
 	saveGameMetadata,
 	getImageMetadata,
-	logAnalytics,
+	logAnalytics
 } from '../utils';
 
 // Handle CORS preflight requests
 export async function onRequestOptions(): Promise<Response> {
-	return new Response(null, { 
+	return new Response(null, {
 		status: 200,
-		headers: corsHeaders() 
+		headers: corsHeaders()
 	});
 }
 
@@ -38,9 +38,9 @@ export async function onRequestGet(context: any): Promise<Response> {
 
 		if (isImagesRequest) {
 			// Return game images
-			const imagePromises = game.imageIds.map(id => getImageMetadata(id, env));
+			const imagePromises = game.imageIds.map((id) => getImageMetadata(id, env));
 			const imageResults = await Promise.all(imagePromises);
-			const validImages = imageResults.filter(img => img !== null) as ImageMetadata[];
+			const validImages = imageResults.filter((img) => img !== null) as ImageMetadata[];
 
 			return createResponse(validImages, 200);
 		}
@@ -84,7 +84,7 @@ export async function onRequestPost(context: any): Promise<Response> {
 				{
 					type: 'game_start',
 					gameId: gameId,
-					timestamp: new Date().toISOString(),
+					timestamp: new Date().toISOString()
 				},
 				env
 			);
@@ -97,4 +97,4 @@ export async function onRequestPost(context: any): Promise<Response> {
 		console.error('Error processing game request:', error);
 		return createErrorResponse('Internal server error', 500);
 	}
-} 
+}
