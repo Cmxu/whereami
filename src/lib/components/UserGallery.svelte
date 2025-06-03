@@ -9,6 +9,7 @@
 		imageSelect: ImageMetadata;
 		imagesSelect: ImageMetadata[];
 		createGame: ImageMetadata[];
+		switchToUpload: void;
 	}>();
 
 	export let selectable = false;
@@ -257,8 +258,11 @@
 				{#if selectable && multiSelect}
 					<button class="btn-secondary w-full text-sm h-11" on:click={selectAll}> Select Page </button>
 				{:else}
-					<button class="btn-primary w-full text-sm h-11" on:click={() => goto('/gallery?tab=upload')}>
-						Upload More
+					<button 
+						class="btn-primary w-full text-sm h-11 flex items-center justify-center gap-2" 
+						on:click={() => dispatch('switchToUpload')}
+					>
+						⬆️ Upload
 					</button>
 				{/if}
 			</div>
@@ -289,7 +293,7 @@
 			<div class="text-6xl mb-6">📸</div>
 			<h3 class="text-xl font-semibold text-gray-800 mb-4">No Photos Yet</h3>
 			<p class="text-gray-600 mb-6">Upload your first photos to start creating custom games</p>
-			<button class="btn-primary" on:click={() => goto('/gallery?tab=upload')}>
+			<button class="btn-primary" on:click={() => dispatch('switchToUpload')}>
 				Upload Photos
 			</button>
 		</div>

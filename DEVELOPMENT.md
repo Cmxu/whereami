@@ -20,7 +20,7 @@
 - [x] The search bar is 2 px taller than the rest of the buttons on its row (in the gallery tab)
 - [x] Dark mode does not affect the background on any tab, it should also affect the color of the welcome tab, it should also affect other colors like blue buttons etc
 - [x] The toggle should just be dark/light mode it can be a button or toggle that switches between them, the default behaviour should be system if the user has never modified the toggle
-- [ ] Upload more button does not actually switch tabs
+- [x] Upload more button does not actually switch tabs
 - [ ] Delete Image Functionality: modify R2 and KV for user/game data
 - [ ] When selecting photos for a new game, you should be able to click anywhere on the picture to select/deselect it
 - [ ] Allow user to modify the name of their image when uploading and in the gallery
@@ -30,7 +30,7 @@
 - [ ] Allow user to add a profile picture
 - [ ] If the user is already on the Gallery page and logs in, the gallery page is not able to load their pictures until after a refresh
 - [ ] On profile page don't need the profile button of the extra username box between the profile button and the back to home button
-- [ ] The user should be able to select multiple images to upload at a time, currently if you select multiple images it only takes the first image
+- [x] The user should be able to select multiple images to upload at a time, currently if you select multiple images it only takes the first image
 - [ ] Optimize image loading and compression
 - [ ] Add proper error boundaries for API failures
 - [ ] Implement retry logic for failed network requests

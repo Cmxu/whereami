@@ -3,13 +3,11 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { fade, fly } from 'svelte/transition';
-	import { isAuthenticated, canUpload } from '$lib/stores/authStore';
+	import { isAuthenticated } from '$lib/stores/authStore';
 	import UserGallery from '$lib/components/UserGallery.svelte';
-	import Map from '$lib/components/Map.svelte';
 	import AuthModal from '$lib/components/AuthModal.svelte';
-	import type { Location, ImageMetadata } from '$lib/types';
+	import type { Location } from '$lib/types';
 	import { api } from '$lib/utils/api';
-	import { getUserPreferences, saveUserPreferences } from '$lib/utils/localStorage';
 	import { showSuccess, showError, showWarning, showInfo } from '$lib/stores/toastStore';
 
 	const dispatch = createEventDispatcher();
@@ -20,7 +18,6 @@
 		preview: string;
 		location?: Location;
 		extractedLocation?: Location;
-		metadata?: any;
 		uploaded: boolean;
 		uploading: boolean;
 		progress: number;
@@ -36,19 +33,7 @@
 	// Upload state variables
 	let dragActive = false;
 	let uploadFiles: UploadFile[] = [];
-	let selectedFileIndex: number | null = null;
-	let showLocationEditor = false;
-	let editingLocation: Location | null = null;
 	let isUploading = false;
-	let exifr: any = null;
-	let preferences = getUserPreferences();
-	let processingFiles = false;
-
-	// Tutorial state
-	let showTutorial = preferences.showUploadTutorial !== false; // Show by default
-	let tutorialStep = 0;
-
-	// File input reference
 	let fileInputRef: HTMLInputElement;
 
 	// Constants
@@ -56,92 +41,40 @@
 	const MAX_RETRY_ATTEMPTS = 3;
 	const SUPPORTED_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic'];
 
-	const tutorialSteps = [
-		{
-			title: 'Welcome to Photo Upload! 📸',
-			description:
-				'Upload your travel photos with GPS data to create geography games for the community.',
-			icon: '🌍'
-		},
-		{
-			title: 'Sign In Required 🔐',
-			description: 'Authentication helps us organize your content and track your contributions.',
-			icon: '👤'
-		},
-		{
-			title: 'Easy Upload Process ⬆️',
-			description: 'Drag photos directly into the upload zone or click to browse your files.',
-			icon: '📁'
-		},
-		{
-			title: 'Smart GPS Detection 🛰️',
-			description:
-				'We automatically extract GPS coordinates from your photo metadata when available.',
-			icon: '📍'
-		},
-		{
-			title: 'Location Editing ✏️',
-			description:
-				'Add or edit locations manually using our interactive map for photos without GPS data.',
-			icon: '🗺️'
-		}
-	];
-
 	// Computed values
 	$: uploadedCount = uploadFiles.filter((f) => f.uploaded).length;
 	$: pendingCount = uploadFiles.filter((f) => !f.uploaded && f.location && !f.error).length;
 	$: errorCount = uploadFiles.filter((f) => f.error).length;
 	$: noLocationCount = uploadFiles.filter((f) => !f.location && !f.uploaded).length;
-	$: hasFilesToUpload = pendingCount > 0;
-	$: overallProgress = uploadFiles.length > 0 ? (uploadedCount / uploadFiles.length) * 100 : 0;
 
 	// Handle URL parameters
 	onMount(async () => {
-		const urlParams = new URLSearchParams($page.url.search);
-		const tabParam = urlParams.get('tab');
-
-		if (tabParam === 'upload') {
-			switchTab('upload');
-		}
-
-		// Load EXIF reader library for upload functionality
-		await loadExifReader();
-
 		// Show sign in prompt for unauthenticated users
 		if (!$isAuthenticated) {
 			showInfo('Sign in to view and upload your photos');
 		}
+		
+		// Initialize tab from URL on mount
+		const urlParams = new URLSearchParams($page.url.search);
+		const tabParam = urlParams.get('tab');
+		if (tabParam === 'upload') {
+			activeTab = 'upload';
+		} else {
+			activeTab = 'gallery';
+		}
 	});
 
-	async function loadExifReader() {
-		try {
-			const exifrModule = await import('exifr');
-			exifr = exifrModule.default || exifrModule;
-			console.log('EXIF reader loaded successfully');
-		} catch (error) {
-			console.warn('Failed to load EXIF reader:', error);
-			if ($isAuthenticated && activeTab === 'upload') {
-				showWarning('GPS extraction not available - you can still add locations manually');
-			}
+	// Handle browser navigation (back/forward buttons)
+	$: {
+		const urlParams = new URLSearchParams($page.url.search);
+		const tabParam = urlParams.get('tab');
+		
+		// Only update if URL doesn't match current tab (avoid infinite loops)
+		if (tabParam === 'upload' && activeTab !== 'upload') {
+			activeTab = 'upload';
+		} else if (!tabParam && activeTab !== 'gallery') {
+			activeTab = 'gallery';
 		}
-	}
-
-	function switchTab(tab: TabType) {
-		activeTab = tab;
-		updateURL();
-		if (tab === 'upload' && $isAuthenticated && uploadFiles.length === 0) {
-			showInfo('Ready to upload! Drag photos here or click to browse.');
-		}
-	}
-
-	function updateURL() {
-		const params = new URLSearchParams();
-		if (activeTab !== 'gallery') {
-			params.set('tab', activeTab);
-		}
-
-		const newUrl = params.toString() ? `?${params.toString()}` : '/gallery';
-		window.history.replaceState({}, '', newUrl);
 	}
 
 	function handleLogin() {
@@ -153,36 +86,17 @@
 		goto('/create');
 	}
 
-	function handleUploadComplete() {
-		// Switch back to gallery view and refresh
-		activeTab = 'gallery';
-		updateURL();
-		// Clear upload files
-		clearAllFiles();
-		showSuccess('Upload complete! View your photos in the gallery.');
+	function handleSwitchToUpload() {
+		goto('/gallery?tab=upload');
 	}
 
-	// Upload functionality
+	function handleSwitchToGallery() {
+		goto('/gallery');
+	}
+
+	// Basic upload functionality
 	function generateId(): string {
 		return Math.random().toString(36).substr(2, 12) + Date.now().toString(36);
-	}
-
-	async function extractGPS(file: File): Promise<Location | null> {
-		if (!exifr) return null;
-
-		try {
-			const gps = await exifr.gps(file);
-			if (gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number') {
-				return {
-					lat: Math.round(gps.latitude * 1000000) / 1000000,
-					lng: Math.round(gps.longitude * 1000000) / 1000000
-				};
-			}
-		} catch (error) {
-			console.warn('Failed to extract GPS data from', file.name, ':', error);
-		}
-
-		return null;
 	}
 
 	function validateFile(file: File): { valid: boolean; error?: string } {
@@ -213,10 +127,8 @@
 	async function processFiles(files: FileList) {
 		if (files.length === 0) return;
 
-		processingFiles = true;
 		const newFiles: UploadFile[] = [];
 		let validFileCount = 0;
-		let gpsExtractedCount = 0;
 		let invalidFiles: string[] = [];
 
 		showInfo(`Processing ${files.length} file${files.length !== 1 ? 's' : ''}...`);
@@ -233,17 +145,11 @@
 			validFileCount++;
 
 			const preview = URL.createObjectURL(file);
-			const extractedLocation = await extractGPS(file);
-			if (extractedLocation) {
-				gpsExtractedCount++;
-			}
 
 			const uploadFile: UploadFile = {
 				id: generateId(),
 				file,
 				preview,
-				extractedLocation: extractedLocation || undefined,
-				location: extractedLocation || undefined,
 				uploaded: false,
 				uploading: false,
 				progress: 0,
@@ -254,66 +160,14 @@
 		}
 
 		uploadFiles = [...uploadFiles, ...newFiles];
-		processingFiles = false;
 
 		if (validFileCount > 0) {
-			showSuccess(
-				`Added ${validFileCount} photo${validFileCount !== 1 ? 's' : ''}` +
-					(gpsExtractedCount > 0 ? ` (${gpsExtractedCount} with GPS data)` : '')
-			);
+			showSuccess(`Added ${validFileCount} photo${validFileCount !== 1 ? 's' : ''}`);
 		}
 
 		if (invalidFiles.length > 0) {
-			const message =
-				invalidFiles.length === 1
-					? invalidFiles[0]
-					: `${invalidFiles.length} files were skipped. Check console for details.`;
+			const message = invalidFiles.length === 1 ? invalidFiles[0] : `${invalidFiles.length} files were skipped.`;
 			showWarning(message);
-			if (invalidFiles.length > 1) {
-				console.warn('Invalid files:', invalidFiles);
-			}
-		}
-
-		if (uploadFiles.some((f) => !f.location && !f.uploaded)) {
-			setTimeout(() => {
-				showInfo('💡 Tip: Click "Add Location" on photos without GPS data');
-			}, 1000);
-		}
-	}
-
-	// Drag and drop handlers
-	function handleDragOver(event: DragEvent) {
-		event.preventDefault();
-		event.stopPropagation();
-		dragActive = true;
-	}
-
-	function handleDragLeave(event: DragEvent) {
-		event.preventDefault();
-		event.stopPropagation();
-
-		const rect = (event.currentTarget as HTMLElement)?.getBoundingClientRect();
-		if (rect) {
-			const { clientX, clientY } = event;
-			if (
-				clientX < rect.left ||
-				clientX > rect.right ||
-				clientY < rect.top ||
-				clientY > rect.bottom
-			) {
-				dragActive = false;
-			}
-		}
-	}
-
-	function handleDrop(event: DragEvent) {
-		event.preventDefault();
-		event.stopPropagation();
-		dragActive = false;
-
-		const files = event.dataTransfer?.files;
-		if (files && files.length > 0) {
-			processFiles(files);
 		}
 	}
 
@@ -333,178 +187,31 @@
 		const file = uploadFiles[index];
 		URL.revokeObjectURL(file.preview);
 		uploadFiles = uploadFiles.filter((_, i) => i !== index);
-
-		if (selectedFileIndex === index) {
-			selectedFileIndex = null;
-			showLocationEditor = false;
-		} else if (selectedFileIndex !== null && selectedFileIndex > index) {
-			selectedFileIndex--;
-		}
-
 		showInfo(`Removed ${file.file.name}`);
 	}
 
-	function editLocation(index: number) {
-		selectedFileIndex = index;
-		const file = uploadFiles[index];
-		editingLocation = file.location || { lat: 0, lng: 0 };
-		showLocationEditor = true;
+	// Drag and drop handlers
+	function handleDragOver(event: DragEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		dragActive = true;
 	}
 
-	function handleMapClick(event: CustomEvent<Location>) {
-		editingLocation = event.detail;
+	function handleDragLeave(event: DragEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		dragActive = false;
 	}
 
-	function saveLocation() {
-		if (selectedFileIndex !== null && editingLocation) {
-			uploadFiles[selectedFileIndex].location = { ...editingLocation };
-			uploadFiles[selectedFileIndex].error = undefined;
-			uploadFiles = [...uploadFiles];
-			showSuccess('Location saved');
+	function handleDrop(event: DragEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		dragActive = false;
+
+		const files = event.dataTransfer?.files;
+		if (files && files.length > 0) {
+			processFiles(files);
 		}
-		showLocationEditor = false;
-		editingLocation = null;
-	}
-
-	function cancelLocationEdit() {
-		showLocationEditor = false;
-		editingLocation = null;
-	}
-
-	async function uploadFile(file: UploadFile): Promise<boolean> {
-		if (!file.location) {
-			file.error = 'Location required - click "Add Location" to set';
-			return false;
-		}
-
-		try {
-			file.uploading = true;
-			file.progress = 10;
-			file.error = undefined;
-
-			const progressInterval = setInterval(() => {
-				if (file.progress < 90) {
-					file.progress += Math.random() * 10;
-					uploadFiles = [...uploadFiles];
-				}
-			}, 200);
-
-			const imageId = await api.uploadImage(file.file, file.location);
-
-			clearInterval(progressInterval);
-			file.progress = 100;
-			file.uploaded = true;
-			file.uploading = false;
-			uploadFiles = [...uploadFiles];
-
-			return true;
-		} catch (error) {
-			file.uploading = false;
-			file.retryCount++;
-
-			let errorMessage = 'Upload failed';
-			if (error instanceof Error) {
-				if (error.message.includes('sign in')) {
-					errorMessage = 'Please sign in to upload';
-				} else if (error.message.includes('network') || error.message.includes('fetch')) {
-					errorMessage = 'Network error - check connection';
-				} else {
-					errorMessage = error.message;
-				}
-			}
-
-			file.error = errorMessage;
-			uploadFiles = [...uploadFiles];
-
-			return false;
-		}
-	}
-
-	async function retryUpload(index: number) {
-		const file = uploadFiles[index];
-		if (file.retryCount >= MAX_RETRY_ATTEMPTS) {
-			showError(`Maximum retry attempts reached for ${file.file.name}`);
-			return;
-		}
-
-		showInfo(`Retrying upload for ${file.file.name}...`);
-		await uploadFile(file);
-	}
-
-	async function uploadAll() {
-		const filesToUpload = uploadFiles.filter((f) => !f.uploaded && f.location && !f.error);
-
-		if (filesToUpload.length === 0) {
-			if (noLocationCount > 0) {
-				showWarning('Some photos need locations. Click "Add Location" to set them.');
-			} else {
-				showWarning('No photos ready to upload.');
-			}
-			return;
-		}
-
-		isUploading = true;
-		let completed = 0;
-		let failed = 0;
-
-		const maxConcurrent = 3;
-		for (let i = 0; i < filesToUpload.length; i += maxConcurrent) {
-			const batch = filesToUpload.slice(i, i + maxConcurrent);
-			const promises = batch.map((file) => uploadFile(file));
-			const results = await Promise.all(promises);
-
-			results.forEach((success) => {
-				if (success) completed++;
-				else failed++;
-			});
-		}
-
-		isUploading = false;
-
-		if (completed > 0) {
-			showSuccess(`Successfully uploaded ${completed} photo${completed !== 1 ? 's' : ''}! 🎉`);
-			if (completed === uploadFiles.length) {
-				setTimeout(() => {
-					handleUploadComplete();
-				}, 2000);
-			}
-		}
-		if (failed > 0) {
-			showError(`${failed} upload${failed !== 1 ? 's' : ''} failed. Check errors and retry.`);
-		}
-	}
-
-	function clearAllFiles() {
-		uploadFiles.forEach((file) => URL.revokeObjectURL(file.preview));
-		uploadFiles = [];
-		selectedFileIndex = null;
-		showLocationEditor = false;
-	}
-
-	// Tutorial functions
-	function nextTutorialStep() {
-		if (tutorialStep < tutorialSteps.length - 1) {
-			tutorialStep++;
-		} else {
-			closeTutorial();
-		}
-	}
-
-	function prevTutorialStep() {
-		if (tutorialStep > 0) {
-			tutorialStep--;
-		}
-	}
-
-	function closeTutorial() {
-		showTutorial = false;
-		const newPrefs = { ...preferences, showUploadTutorial: false };
-		saveUserPreferences(newPrefs);
-		preferences = newPrefs;
-	}
-
-	function skipTutorial() {
-		closeTutorial();
 	}
 </script>
 
@@ -533,45 +240,32 @@
 		<div class="gallery-header border-b" style="background-color: var(--bg-primary); border-color: var(--border-color);">
 			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div class="header-content py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-					<!-- Page title and description -->
-					<div class="header-text mb-4 sm:mb-0">
-						<h1 class="text-3xl font-bold" style="color: var(--text-primary);">Your Photo Gallery</h1>
-						<p class="text-lg mt-2" style="color: var(--text-secondary);">
-							Manage your uploaded photos and create custom geography games
-						</p>
-					</div>
+					<!-- Page title and toggle button -->
+					<div class="flex items-center justify-between w-full">
+						<div class="header-text">
+							<h1 class="text-3xl font-bold" style="color: var(--text-primary);">Your Photo Gallery</h1>
+							<p class="text-lg mt-2" style="color: var(--text-secondary);">
+								Manage your uploaded photos and create custom geography games
+							</p>
+						</div>
 
-					<!-- Action buttons -->
-					<div class="header-actions flex items-center gap-3">
-						{#if $isAuthenticated}
+						<!-- Toggle Button -->
+						<div class="flex bg-gray-100 rounded-lg p-1" style="background-color: var(--bg-tertiary);">
 							<button
-								class="action-btn btn-secondary"
-								on:click={handleCreateGame}
-								disabled={!$canUpload}
+								class="tab-button {activeTab === 'gallery' ? 'active' : ''}"
+								on:click={() => goto('/gallery')}
 							>
-								🎯 Create Game
+								🖼️ My Photos
 							</button>
-						{/if}
+							<button
+								class="tab-button {activeTab === 'upload' ? 'active' : ''}"
+								on:click={() => goto('/gallery?tab=upload')}
+								disabled={!$isAuthenticated}
+							>
+								📤 Upload
+							</button>
+						</div>
 					</div>
-				</div>
-
-				<!-- Tab navigation -->
-				<div class="tab-navigation flex border-b" style="border-color: var(--border-color);">
-					<button
-						class="tab-button px-6 py-3 font-medium transition-all duration-200"
-						class:active={activeTab === 'gallery'}
-						on:click={() => switchTab('gallery')}
-					>
-						📸 Gallery
-					</button>
-					<button
-						class="tab-button px-6 py-3 font-medium transition-all duration-200"
-						class:active={activeTab === 'upload'}
-						on:click={() => switchTab('upload')}
-						disabled={!$isAuthenticated}
-					>
-						⬆️ Upload
-					</button>
 				</div>
 			</div>
 		</div>
@@ -580,163 +274,60 @@
 		<div class="gallery-content">
 			{#if activeTab === 'gallery'}
 				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-					<UserGallery on:createGame={handleCreateGame} />
+					<UserGallery 
+						on:createGame={handleCreateGame} 
+						on:switchToUpload={handleSwitchToUpload} 
+						on:switchToGallery={handleSwitchToGallery}
+					/>
 				</div>
 			{:else if activeTab === 'upload'}
-				<!-- Upload Section -->
-				<div class="upload-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-					<!-- Upload Statistics -->
-					{#if uploadFiles.length > 0}
-						<div
-							class="stats-grid grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
-							transition:fly={{ y: -20, duration: 300 }}
-						>
-							<div
-								class="stat-card rounded-xl p-6 text-center shadow-sm border"
-								style="background-color: var(--bg-primary); border-color: var(--border-color);"
-							>
-								<div class="text-3xl font-bold text-blue-600 mb-2">{uploadFiles.length}</div>
-								<div class="text-sm font-medium" style="color: var(--text-secondary);">Total Photos</div>
-							</div>
-							<div
-								class="stat-card rounded-xl p-6 text-center shadow-sm border"
-								style="background-color: var(--bg-primary); border-color: var(--border-color);"
-							>
-								<div class="text-3xl font-bold text-green-600 mb-2">{uploadedCount}</div>
-								<div class="text-sm font-medium" style="color: var(--text-secondary);">Uploaded</div>
-								{#if overallProgress > 0}
-									<div class="mt-2 rounded-full h-2" style="background-color: var(--border-light);">
-										<div
-											class="bg-green-500 h-2 rounded-full transition-all duration-500"
-											style="width: {overallProgress}%"
-										></div>
-									</div>
-								{/if}
-							</div>
-							<div
-								class="stat-card rounded-xl p-6 text-center shadow-sm border"
-								style="background-color: var(--bg-primary); border-color: var(--border-color);"
-							>
-								<div class="text-3xl font-bold text-amber-600 mb-2">{noLocationCount}</div>
-								<div class="text-sm font-medium" style="color: var(--text-secondary);">Need Location</div>
-							</div>
-							<div
-								class="stat-card rounded-xl p-6 text-center shadow-sm border"
-								style="background-color: var(--bg-primary); border-color: var(--border-color);"
-							>
-								<div class="text-3xl font-bold text-red-600 mb-2">{errorCount}</div>
-								<div class="text-sm font-medium" style="color: var(--text-secondary);">Errors</div>
-							</div>
-						</div>
-					{/if}
-
+				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 					<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
 						<!-- Upload Area -->
 						<div class="xl:col-span-1 space-y-6">
 							<!-- Drag & Drop Zone -->
-							<div class="upload-area-section">
-								<div
-									class="upload-area relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 shadow-sm min-h-80"
-									class:border-blue-400={dragActive}
-									class:bg-blue-50={dragActive}
-									class:border-gray-300={!dragActive}
-									class:scale-105={dragActive}
-									style="background-color: var(--bg-primary); border-color: {dragActive ? '#60a5fa' : 'var(--border-color)'};"
-									on:dragover={handleDragOver}
-									on:dragleave={handleDragLeave}
-									on:drop={handleDrop}
-									role="button"
-									tabindex="0"
-									on:click={triggerFileSelect}
-									on:keydown={(e) => e.key === 'Enter' && triggerFileSelect()}
-								>
-									{#if processingFiles}
-										<div class="processing-indicator">
-											<div class="animate-spin text-4xl mb-4">⚙️</div>
-											<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">Processing Files...</h3>
-											<p style="color: var(--text-secondary);">Extracting GPS data and creating previews</p>
-										</div>
-									{:else}
-										<div class="upload-content">
-											<div
-												class="text-6xl mb-6 transition-transform duration-300"
-												class:scale-110={dragActive}
-											>
-												{dragActive ? '⬇️' : '📸'}
-											</div>
-											<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">
-												{dragActive ? 'Drop your photos here!' : 'Upload Travel Photos'}
-											</h3>
-											<p class="mb-6" style="color: var(--text-secondary);">
-												Drag and drop photos or click to browse your files
-											</p>
-
-											<div class="space-y-3">
-												<button
-													class="bg-blue-primary text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
-													on:click|stopPropagation={triggerFileSelect}
-												>
-													Choose Photos
-												</button>
-												<div class="text-sm" style="color: var(--text-tertiary);">
-													<p class="font-medium">Supported: JPG, PNG, WebP, HEIC</p>
-													<p>Max size: {MAX_FILE_SIZE / 1024 / 1024}MB per file</p>
-												</div>
-											</div>
-										</div>
-									{/if}
-
-									<input
-										bind:this={fileInputRef}
-										type="file"
-										multiple
-										accept={SUPPORTED_FORMATS.join(',')}
-										class="hidden"
-										on:change={handleFileSelect}
-										aria-label="Select photos to upload"
-									/>
-								</div>
-							</div>
-
-							<!-- Upload Actions -->
-							{#if hasFilesToUpload}
-								<div
-									class="upload-actions rounded-2xl p-6 shadow-sm border"
-									style="background-color: var(--bg-primary); border-color: var(--border-color);"
-									transition:fly={{ y: 20, duration: 300 }}
-								>
-									<div class="flex justify-between items-center mb-4">
-										<h4 class="text-lg font-semibold" style="color: var(--text-primary);">Ready to Upload</h4>
-										<span
-											class="bg-blue-100-theme text-blue-800-theme px-3 py-1 rounded-full text-sm font-medium"
-										>
-											{pendingCount} photo{pendingCount !== 1 ? 's' : ''}
-										</span>
+							<div
+								class="upload-area relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 shadow-sm min-h-80"
+								class:border-blue-400={dragActive}
+								class:bg-blue-50={dragActive}
+								class:border-gray-300={!dragActive}
+								style="background-color: var(--bg-primary); border-color: {dragActive ? '#60a5fa' : 'var(--border-color)'};"
+								on:dragover={handleDragOver}
+								on:dragleave={handleDragLeave}
+								on:drop={handleDrop}
+								role="button"
+								tabindex="0"
+								on:click={triggerFileSelect}
+								on:keydown={(e) => e.key === 'Enter' && triggerFileSelect()}
+							>
+								<div class="upload-content">
+									<div class="text-6xl mb-6">
+										{dragActive ? '⬇️' : '📤'}
 									</div>
-
+									<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">
+										{dragActive ? 'Drop your photos here!' : 'Upload Travel Photos'}
+									</h3>
+									<p class="mb-6" style="color: var(--text-secondary);">
+										Drag and drop photos or click to browse your files
+									</p>
 									<button
-										class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2"
-										disabled={isUploading || pendingCount === 0}
-										on:click={uploadAll}
+										class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors"
+										on:click|stopPropagation={triggerFileSelect}
 									>
-										{#if isUploading}
-											<div
-												class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"
-											></div>
-											Uploading...
-										{:else}
-											<span>🚀</span>
-											Upload {pendingCount} Photo{pendingCount !== 1 ? 's' : ''}
-										{/if}
+										Choose Photos
 									</button>
-
-									{#if pendingCount === 0 && noLocationCount > 0}
-										<p class="text-amber-600 text-sm mt-3 text-center">
-											⚠️ Add locations to photos before uploading
-										</p>
-									{/if}
 								</div>
-							{/if}
+
+								<input
+									bind:this={fileInputRef}
+									type="file"
+									multiple
+									accept={SUPPORTED_FORMATS.join(',')}
+									class="hidden"
+									on:change={handleFileSelect}
+									aria-label="Select photos to upload"
+								/>
+							</div>
 						</div>
 
 						<!-- Photo List -->
@@ -749,178 +340,39 @@
 									<div class="text-6xl mb-6">🌍</div>
 									<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">No photos yet</h3>
 									<p class="mb-6" style="color: var(--text-secondary);">
-										Upload photos with GPS data to start creating geography games
+										Select photos to get started
 									</p>
-									<button
-										class="bg-blue-primary text-white px-6 py-3 rounded-xl font-medium transition-colors"
-										on:click={triggerFileSelect}
-									>
-										Get Started
-									</button>
 								</div>
 							{:else}
 								<div class="photo-list space-y-4">
 									{#each uploadFiles as file, index (file.id)}
 										<div
-											class="photo-item rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
+											class="photo-item rounded-xl border overflow-hidden shadow-sm"
 											style="background-color: var(--bg-primary); border-color: var(--border-color);"
-											transition:fly={{ x: -50, duration: 300, delay: index * 50 }}
 										>
 											<div class="flex flex-col sm:flex-row">
-												<!-- Photo Preview -->
-												<div
-													class="photo-preview w-full sm:w-32 h-32 bg-gray-100 flex-shrink-0 relative"
-												>
+												<div class="photo-preview w-full sm:w-32 h-32 bg-gray-100 flex-shrink-0">
 													<img
 														src={file.preview}
 														alt="Upload preview"
 														class="w-full h-full object-cover"
 														loading="lazy"
 													/>
-													{#if file.uploaded}
-														<div
-															class="absolute top-2 right-2 bg-green-600 text-white rounded-full p-1"
-														>
-															<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-																<path
-																	fill-rule="evenodd"
-																	d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-																	clip-rule="evenodd"
-																></path>
-															</svg>
-														</div>
-													{/if}
 												</div>
-
-												<!-- Photo Info -->
-												<div class="photo-info flex-1 p-4 sm:p-6">
+												<div class="photo-info flex-1 p-4">
 													<div class="flex justify-between items-start mb-3">
-														<h4
-															class="font-semibold text-gray-800 truncate pr-4 text-lg"
-															title={file.file.name}
-														>
+														<h4 class="font-semibold truncate pr-4" title={file.file.name}>
 															{file.file.name}
 														</h4>
 														<button
-															class="text-gray-400 hover:text-red-500 transition-colors p-1"
+															class="text-gray-400 hover:text-red-500 transition-colors"
 															on:click={() => removeFile(index)}
-															aria-label="Remove photo"
 														>
-															<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-																<path
-																	fill-rule="evenodd"
-																	d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-																	clip-rule="evenodd"
-																></path>
-															</svg>
+															×
 														</button>
 													</div>
-
-													<div class="text-sm text-gray-600 mb-3">
+													<div class="text-sm text-gray-600">
 														{(file.file.size / 1024 / 1024).toFixed(1)} MB
-													</div>
-
-													<!-- Location Status -->
-													<div class="location-status mb-4">
-														{#if file.location}
-															<div
-																class="location-info bg-green-50 border border-green-200 rounded-lg p-3"
-															>
-																<div class="flex items-center text-green-700 mb-1">
-																	<span class="mr-2">📍</span>
-																	<span class="font-medium">Location set</span>
-																	{#if file.extractedLocation}
-																		<span class="ml-2 text-xs bg-green-100 px-2 py-1 rounded"
-																			>GPS</span
-																		>
-																	{:else}
-																		<span
-																			class="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded"
-																			>Manual</span
-																		>
-																	{/if}
-																</div>
-																<div class="text-xs text-green-600">
-																	{file.location.lat.toFixed(6)}, {file.location.lng.toFixed(6)}
-																</div>
-															</div>
-														{:else}
-															<div
-																class="location-missing bg-amber-50 border border-amber-200 rounded-lg p-3"
-															>
-																<div class="flex items-center text-amber-700">
-																	<span class="mr-2">⚠️</span>
-																	<span class="font-medium">Location required</span>
-																</div>
-																<div class="text-xs text-amber-600 mt-1">
-																	Click "Add Location" to set GPS coordinates
-																</div>
-															</div>
-														{/if}
-													</div>
-
-													<!-- Status Actions -->
-													<div class="status-actions">
-														{#if file.uploaded}
-															<div class="flex items-center text-green-600 font-medium">
-																<span class="mr-2">✅</span>
-																<span>Successfully uploaded</span>
-															</div>
-														{:else if file.uploading}
-															<div class="upload-progress">
-																<div class="flex justify-between text-sm text-blue-600 mb-2">
-																	<span>Uploading...</span>
-																	<span>{Math.round(file.progress)}%</span>
-																</div>
-																<div class="bg-gray-200 rounded-full h-2 overflow-hidden">
-																	<div
-																		class="bg-blue-600 h-2 rounded-full transition-all duration-300"
-																		style="width: {file.progress}%"
-																	></div>
-																</div>
-															</div>
-														{:else if file.error}
-															<div class="error-state">
-																<div class="text-red-600 text-sm mb-3 bg-red-50 rounded-lg p-3">
-																	<div class="flex items-center mb-1">
-																		<span class="mr-2">❌</span>
-																		<span class="font-medium">Upload failed</span>
-																	</div>
-																	<div class="text-xs">{file.error}</div>
-																</div>
-																{#if file.retryCount < MAX_RETRY_ATTEMPTS}
-																	<button
-																		class="bg-orange-100 hover:bg-orange-200 text-orange-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-																		on:click={() => retryUpload(index)}
-																	>
-																		🔄 Retry Upload ({file.retryCount + 1}/{MAX_RETRY_ATTEMPTS})
-																	</button>
-																{:else}
-																	<div class="text-xs text-gray-500">
-																		Maximum retry attempts reached
-																	</div>
-																{/if}
-															</div>
-														{:else}
-															<div class="actions flex gap-3">
-																<button
-																	class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-																	on:click={() => editLocation(index)}
-																>
-																	<span>{file.location ? '✏️' : '📍'}</span>
-																	{file.location ? 'Edit Location' : 'Add Location'}
-																</button>
-																{#if file.location}
-																	<button
-																		class="bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-																		on:click={() => uploadFile(file)}
-																		disabled={isUploading}
-																	>
-																		🚀 Upload Now
-																	</button>
-																{/if}
-															</div>
-														{/if}
 													</div>
 												</div>
 											</div>
@@ -936,140 +388,8 @@
 	</div>
 {/if}
 
-<!-- Location Editor Modal -->
-{#if showLocationEditor}
-	<div
-		class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-		transition:fade={{ duration: 200 }}
-	>
-		<div
-			class="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-			transition:fly={{ y: 50, duration: 300 }}
-		>
-			<div class="modal-header p-6 border-b border-gray-200 bg-gray-50">
-				<h3 class="text-xl font-bold text-gray-800 mb-2">Set Photo Location</h3>
-				<p class="text-gray-600">Click on the map to mark where this photo was taken</p>
-			</div>
-
-			<div class="modal-content p-6">
-				<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-					<!-- Photo Preview -->
-					<div class="photo-section">
-						{#if selectedFileIndex !== null}
-							<div class="space-y-4">
-								<div class="photo-preview-large">
-									<img
-										src={uploadFiles[selectedFileIndex].preview}
-										alt={uploadFiles[selectedFileIndex].file.name}
-										class="w-full h-64 sm:h-80 object-cover rounded-xl shadow-lg"
-									/>
-								</div>
-								<div class="photo-details bg-gray-50 rounded-xl p-4">
-									<h4 class="font-semibold text-gray-800 mb-2">
-										{uploadFiles[selectedFileIndex].file.name}
-									</h4>
-									<div class="text-sm text-gray-600 space-y-1">
-										<p>
-											Size: {(uploadFiles[selectedFileIndex].file.size / 1024 / 1024).toFixed(1)} MB
-										</p>
-										{#if editingLocation}
-											<p class="font-medium text-blue-600">
-												📍 {editingLocation.lat.toFixed(6)}, {editingLocation.lng.toFixed(6)}
-											</p>
-										{:else}
-											<p class="text-amber-600">⚠️ Click on the map to set location</p>
-										{/if}
-									</div>
-								</div>
-							</div>
-						{/if}
-					</div>
-
-					<!-- Map -->
-					<div class="map-section">
-						<div class="map-container h-80 bg-gray-100 rounded-xl overflow-hidden">
-							<Map
-								on:mapClick={handleMapClick}
-								center={editingLocation || undefined}
-								markers={editingLocation ? [{ location: editingLocation, type: 'custom' }] : []}
-								zoom={editingLocation ? 10 : 2}
-							/>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="modal-footer p-6 border-t border-gray-200 flex justify-end gap-3">
-				<button class="btn-secondary" on:click={cancelLocationEdit}> Cancel </button>
-				<button class="btn-primary" disabled={!editingLocation} on:click={saveLocation}>
-					Save Location
-				</button>
-			</div>
-		</div>
-	</div>
-{/if}
-
 <!-- Auth modal -->
 <AuthModal bind:isOpen={showAuthModal} on:close={() => (showAuthModal = false)} />
-
-<!-- Tutorial Modal -->
-{#if showTutorial && activeTab === 'upload' && $isAuthenticated}
-	<div
-		class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-		transition:fade={{ duration: 200 }}
-	>
-		<div
-			class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl"
-			transition:fly={{ y: 50, duration: 300 }}
-		>
-			<div
-				class="tutorial-header p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white"
-			>
-				<div class="text-center">
-					<div class="text-4xl mb-3">{tutorialSteps[tutorialStep].icon}</div>
-					<h3 class="text-xl font-bold mb-2">{tutorialSteps[tutorialStep].title}</h3>
-					<div class="flex justify-center">
-						<div class="flex space-x-2">
-							{#each tutorialSteps as _, i}
-								<div
-									class="w-2 h-2 rounded-full transition-all duration-300 {i === tutorialStep
-										? 'bg-white'
-										: 'bg-white/30'}"
-								></div>
-							{/each}
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="tutorial-content p-6">
-				<p class="text-gray-700 leading-relaxed mb-6">
-					{tutorialSteps[tutorialStep].description}
-				</p>
-
-				<div class="flex justify-between items-center">
-					<button
-						class="text-gray-500 hover:text-gray-700 text-sm font-medium"
-						on:click={skipTutorial}
-					>
-						Skip Tutorial
-					</button>
-
-					<div class="flex gap-3">
-						{#if tutorialStep > 0}
-							<button class="btn-secondary text-sm px-4 py-2" on:click={prevTutorialStep}>
-								← Back
-							</button>
-						{/if}
-						<button class="btn-primary text-sm px-4 py-2" on:click={nextTutorialStep}>
-							{tutorialStep === tutorialSteps.length - 1 ? 'Get Started!' : 'Next →'}
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-{/if}
 
 <style>
 	.gallery-container {
@@ -1078,28 +398,27 @@
 	}
 
 	.tab-button {
-		padding: 0.75rem 1.5rem;
+		padding: 0.5rem 1rem;
 		font-size: 0.875rem;
 		font-weight: 500;
-		border-radius: 0;
+		border-radius: 0.375rem;
 		transition: all 0.2s;
 		color: var(--text-secondary);
 		background: transparent;
 		border: none;
-		border-bottom: 2px solid transparent;
 		cursor: pointer;
 		position: relative;
 	}
 
 	.tab-button:hover:not(:disabled) {
 		color: var(--text-primary);
-		background: var(--bg-tertiary);
+		background: var(--bg-secondary);
 	}
 
 	.tab-button.active {
-		color: var(--btn-primary-bg);
-		border-bottom-color: var(--btn-primary-bg);
-		background: transparent;
+		color: var(--text-primary);
+		background: var(--bg-primary);
+		box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 	}
 
 	.tab-button:disabled {
@@ -1120,72 +439,21 @@
 		transform: translateY(-1px);
 	}
 
-	.processing-indicator .animate-spin {
-		animation: spin 2s linear infinite;
-	}
-
-	.photo-list {
-		max-height: calc(100vh - 300px);
-		overflow-y: auto;
-	}
-
-	/* Custom scrollbar */
-	.photo-list::-webkit-scrollbar {
-		width: 8px;
-	}
-
-	.photo-list::-webkit-scrollbar-track {
-		background: var(--border-light);
-		border-radius: 4px;
-	}
-
-	.photo-list::-webkit-scrollbar-thumb {
-		background: var(--border-color);
-		border-radius: 4px;
-	}
-
-	.photo-list::-webkit-scrollbar-thumb:hover {
-		background: var(--text-tertiary);
-	}
-
 	@media (max-width: 640px) {
-		.gallery-header .flex {
+		.header-content {
 			flex-direction: column;
 			align-items: stretch;
+		}
+
+		.header-content > div {
+			flex-direction: column;
+			align-items: center;
+			gap: 1rem;
 		}
 
 		.tab-button {
 			flex: 1;
 			text-align: center;
-		}
-
-		.modal-content {
-			padding: 1rem;
-		}
-
-		.modal-header,
-		.modal-footer {
-			padding: 1rem;
-		}
-
-		.actions {
-			flex-direction: column;
-		}
-
-		.actions button {
-			width: 100%;
-		}
-
-		.stats-grid {
-			grid-template-columns: repeat(2, 1fr);
-		}
-
-		.photo-item .flex {
-			flex-direction: column;
-		}
-
-		.photo-preview {
-			width: 100% !important;
 		}
 	}
 </style>
