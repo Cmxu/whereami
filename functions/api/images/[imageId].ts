@@ -143,13 +143,13 @@ export async function onRequestDelete(context: any): Promise<Response> {
 			await env.IMAGES_BUCKET.delete(thumbnailKey);
 
 			// Delete metadata from KV
-			await env.GAME_METADATA.delete(`image:${imageId}`);
+			await env.IMAGE_DATA.delete(`image:${imageId}`);
 
 			// Remove from public images index if it was public
 			if (metadata.isPublic) {
 				const publicImages = await getPublicImages(env);
 				const filteredImages = publicImages.filter((id) => id !== imageId);
-				await env.GAME_METADATA.put('public_images', JSON.stringify(filteredImages));
+				await env.IMAGE_DATA.put('public_images', JSON.stringify(filteredImages));
 			}
 
 			return createResponse(null, 200, 'Image deleted successfully');

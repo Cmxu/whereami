@@ -77,7 +77,7 @@ export function validateImageFile(file: File, env: Env): { valid: boolean; error
 
 export async function getImageMetadata(imageId: string, env: Env): Promise<ImageMetadata | null> {
 	try {
-		const metadata = await env.GAME_METADATA.get(`image:${imageId}`);
+		const metadata = await env.IMAGE_DATA.get(`image:${imageId}`);
 		return metadata ? JSON.parse(metadata) : null;
 	} catch (error) {
 		console.error('Error getting image metadata:', error);
@@ -87,7 +87,7 @@ export async function getImageMetadata(imageId: string, env: Env): Promise<Image
 
 export async function saveImageMetadata(metadata: ImageMetadata, env: Env): Promise<boolean> {
 	try {
-		await env.GAME_METADATA.put(`image:${metadata.id}`, JSON.stringify(metadata));
+		await env.IMAGE_DATA.put(`image:${metadata.id}`, JSON.stringify(metadata));
 
 		// Also store in public index if public
 		if (metadata.isPublic) {
@@ -97,7 +97,7 @@ export async function saveImageMetadata(metadata: ImageMetadata, env: Env): Prom
 			if (publicImages.length > 1000) {
 				publicImages.splice(1000);
 			}
-			await env.GAME_METADATA.put('public_images', JSON.stringify(publicImages));
+			await env.IMAGE_DATA.put('public_images', JSON.stringify(publicImages));
 		}
 
 		return true;
@@ -109,7 +109,7 @@ export async function saveImageMetadata(metadata: ImageMetadata, env: Env): Prom
 
 export async function getPublicImages(env: Env): Promise<string[]> {
 	try {
-		const images = await env.GAME_METADATA.get('public_images');
+		const images = await env.IMAGE_DATA.get('public_images');
 		return images ? JSON.parse(images) : [];
 	} catch (error) {
 		console.error('Error getting public images:', error);
@@ -119,7 +119,7 @@ export async function getPublicImages(env: Env): Promise<string[]> {
 
 export async function getGameMetadata(gameId: string, env: Env): Promise<CustomGame | null> {
 	try {
-		const metadata = await env.GAME_METADATA.get(`game:${gameId}`);
+		const metadata = await env.IMAGE_DATA.get(`game:${gameId}`);
 		return metadata ? JSON.parse(metadata) : null;
 	} catch (error) {
 		console.error('Error getting game metadata:', error);
@@ -129,7 +129,7 @@ export async function getGameMetadata(gameId: string, env: Env): Promise<CustomG
 
 export async function saveGameMetadata(metadata: CustomGame, env: Env): Promise<boolean> {
 	try {
-		await env.GAME_METADATA.put(`game:${metadata.id}`, JSON.stringify(metadata));
+		await env.IMAGE_DATA.put(`game:${metadata.id}`, JSON.stringify(metadata));
 
 		// Also store in public index if public
 		if (metadata.isPublic) {
@@ -139,7 +139,7 @@ export async function saveGameMetadata(metadata: CustomGame, env: Env): Promise<
 			if (publicGames.length > 1000) {
 				publicGames.splice(1000);
 			}
-			await env.GAME_METADATA.put('public_games', JSON.stringify(publicGames));
+			await env.IMAGE_DATA.put('public_games', JSON.stringify(publicGames));
 		}
 
 		return true;
@@ -151,7 +151,7 @@ export async function saveGameMetadata(metadata: CustomGame, env: Env): Promise<
 
 export async function getPublicGames(env: Env): Promise<string[]> {
 	try {
-		const games = await env.GAME_METADATA.get('public_games');
+		const games = await env.IMAGE_DATA.get('public_games');
 		return games ? JSON.parse(games) : [];
 	} catch (error) {
 		console.error('Error getting public games:', error);

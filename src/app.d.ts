@@ -11,8 +11,7 @@ declare global {
 		interface Platform {
 			env: {
 				IMAGES_BUCKET: R2Bucket;
-				// Add other bindings from wrangler.toml here
-				GAME_METADATA: KVNamespace;
+				IMAGE_DATA: KVNamespace;
 				USER_DATA: KVNamespace;
 				CORS_ORIGIN: string;
 				MAX_FILE_SIZE: string;

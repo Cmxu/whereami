@@ -1,29 +1,26 @@
-name = "whereami-api"
+name = "whereami"
 compatibility_date = "2025-05-30"
 compatibility_flags = ["nodejs_compat"]
 
 # Pages configuration (no main field needed for Pages Functions)
 pages_build_output_dir = ".svelte-kit/cloudflare"
 
-# Single R2 bucket for all environments
+# R2 bucket for images
 [[r2_buckets]]
 binding = "IMAGES_BUCKET"
 bucket_name = "whereami-images"
 
-# Single set of KV namespaces for all environments
+# KV namespaces
 [[kv_namespaces]]
-binding = "GAME_METADATA"
-id = "b2d844556c024af599a55f653d38ea09"
+binding = "IMAGE_DATA"
+id = "ed09b9a23eeb4a58b500f03e636ea811"
 
 [[kv_namespaces]]
 binding = "USER_DATA"
-id = "871c412270ad49a88db04e146bee26c8"
+id = "7fb86fe8775e461996350c8f2dc6f86b"
 
 [vars]
 ENVIRONMENT = "production"
 CORS_ORIGIN = "*"
 MAX_FILE_SIZE = "10485760"  # 10MB
 ALLOWED_FILE_TYPES = "image/jpeg,image/png,image/webp"
-# Supabase Authentication
-PUBLIC_SUPABASE_URL = "https://vcgwduccreqwwvljprie.supabase.co"
-PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjZ3dkdWNjcmVxd3d2bGpwcmllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3Njc4MjEsImV4cCI6MjA2NDM0MzgyMX0.99zmZlIIyh4tpVuFKz-GIN6P78gqVnLN6Be0NXHTEWU" 

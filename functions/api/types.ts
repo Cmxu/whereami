@@ -2,7 +2,7 @@ import type { R2Bucket, KVNamespace } from '@cloudflare/workers-types';
 
 export interface Env {
 	IMAGES_BUCKET: R2Bucket;
-	GAME_METADATA: KVNamespace;
+	IMAGE_DATA: KVNamespace;
 	USER_DATA: KVNamespace;
 	ENVIRONMENT: string;
 	CORS_ORIGIN: string;

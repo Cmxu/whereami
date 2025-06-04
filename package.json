@@ -1,7 +1,7 @@
 {
-	"name": "whereami-2.0",
+	"name": "whereami",
 	"private": true,
-	"version": "0.0.1",
+	"version": "2.0.4",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -12,14 +12,15 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
-		"deploy": "npm run build && wrangler pages deploy .svelte-kit/cloudflare --project-name whereami-app",
+		"deploy": "npm run build && npx wrangler pages deploy .svelte-kit/cloudflare --project-name whereami",
 		"dev:build": "npm run build",
-		"dev:functions": "npm run build && wrangler pages dev .svelte-kit/cloudflare --r2 IMAGES_BUCKET --kv GAME_METADATA --kv USER_DATA --port 8788",
+		"dev:functions": "npm run build && wrangler pages dev .svelte-kit/cloudflare --r2 IMAGES_BUCKET --kv IMAGE_DATA --kv USER_DATA --port 8788",
 		"wrangler": "wrangler"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.18.0",
+		"@playwright/test": "^1.52.0",
 		"@sveltejs/adapter-cloudflare": "^6.0.0",
 		"@sveltejs/kit": "^2.16.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
@@ -39,9 +40,9 @@
 		"wrangler": "^4.18.0"
 	},
 	"dependencies": {
+		"@supabase/supabase-js": "^2.39.7",
 		"@types/leaflet": "^1.9.18",
 		"exifr": "^7.1.3",
-		"leaflet": "^1.9.4",
-		"@supabase/supabase-js": "^2.39.7"
+		"leaflet": "^1.9.4"
 	}
 }

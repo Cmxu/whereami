@@ -117,7 +117,7 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 		console.log('Platform env:', env ? 'exists' : 'missing');
 		console.log('IMAGES_BUCKET:', env?.IMAGES_BUCKET ? 'exists' : 'missing');
 		console.log('USER_DATA:', env?.USER_DATA ? 'exists' : 'missing');
-		console.log('GAME_METADATA:', env?.GAME_METADATA ? 'exists' : 'missing');
+		console.log('IMAGE_DATA:', env?.IMAGE_DATA ? 'exists' : 'missing');
 
 		if (!env?.IMAGES_BUCKET) {
 			console.error('IMAGES_BUCKET R2 binding not found');
@@ -134,7 +134,7 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			);
 		}
 
-		if (!env?.USER_DATA || !env?.GAME_METADATA) {
+		if (!env?.USER_DATA || !env?.IMAGE_DATA) {
 			console.error('KV namespaces not available');
 			return json(
 				{
@@ -326,7 +326,7 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 
 			console.log('Storing image metadata in KV...');
 			// Store image metadata in KV
-			await env.GAME_METADATA.put(`image:${uniqueId}`, JSON.stringify(metadata));
+			await env.IMAGE_DATA.put(`image:${uniqueId}`, JSON.stringify(metadata));
 
 			console.log('Updating user profile...');
 			// Update user's upload count

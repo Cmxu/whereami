@@ -58,7 +58,7 @@ async function verifySupabaseToken(token: string, env: any): Promise<Authenticat
 // Get image metadata from KV
 async function getImageMetadata(imageId: string, env: any): Promise<any> {
 	try {
-		const metadata = await env.GAME_METADATA.get(`image:${imageId}`);
+		const metadata = await env.IMAGE_DATA.get(`image:${imageId}`);
 		return metadata ? JSON.parse(metadata) : null;
 	} catch (error) {
 		console.error('Failed to get image metadata:', error);
@@ -70,7 +70,7 @@ export const GET = async ({ request, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
 
-		if (!env?.USER_DATA || !env?.GAME_METADATA) {
+		if (!env?.USER_DATA || !env?.IMAGE_DATA) {
 			console.error('KV namespaces not available');
 			return json(
 				{ error: 'Server configuration error' },

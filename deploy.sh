@@ -29,7 +29,7 @@ npm run build
 
 # Deploy to Cloudflare Pages (includes both frontend and API functions)
 echo "🌐 Deploying to Cloudflare Pages..."
-wrangler pages deploy .svelte-kit/cloudflare --project-name whereami-app
+wrangler pages deploy .svelte-kit/cloudflare --project-name whereami
 
 echo "✅ Deployment complete!"
 echo ""
@@ -41,6 +41,6 @@ echo "3. Update your domain configuration in Cloudflare Dashboard"
 echo "4. Test your deployment at your Cloudflare Pages URL"
 echo ""
 echo "🔗 Useful commands:"
-echo "  wrangler pages deployment list --project-name whereami-app"
-echo "  wrangler pages deployment tail --project-name whereami-app"
+echo "  wrangler pages deployment list --project-name whereami"
+echo "  wrangler pages deployment tail --project-name whereami"
 echo "  wrangler r2 bucket list" 

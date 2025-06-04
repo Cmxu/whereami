@@ -49,14 +49,11 @@
 		<!-- Header -->
 		<div class="flex justify-between items-center mb-8">
 			<div>
-				<h1 class="text-3xl font-bold text-gray-900">Profile</h1>
-				<p class="text-gray-600 mt-1">Manage your account and view your stats</p>
+				<h1 class="text-3xl font-bold" style="color: var(--text-primary);">Profile</h1>
+				<p class="mt-1" style="color: var(--text-secondary);">Manage your account and view your stats</p>
 			</div>
 			<div class="flex items-center gap-4">
 				<button on:click={() => goto('/')} class="btn-secondary"> ← Back to Home </button>
-				{#if $isAuthenticated}
-					<AuthButton on:logout={handleLogout} on:login={handleLogin} on:profile={() => {}} />
-				{/if}
 			</div>
 		</div>
 
@@ -132,17 +129,17 @@
 
 			<!-- Danger Zone -->
 			<div class="rounded-xl shadow-sm p-6 mt-8 border border-red-200">
-				<h3 class="text-lg font-semibold text-red-900 mb-4">Account Actions</h3>
+				<h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Account Actions</h3>
 				<button on:click={handleLogout} disabled={loading} class="btn-danger">
 					{loading ? 'Signing out...' : 'Sign Out'}
 				</button>
 			</div>
 		{:else}
 			<!-- Not authenticated -->
-			<div class="bg-white rounded-xl shadow-sm p-8 text-center">
+			<div class="rounded-xl shadow-sm p-8 text-center" style="background-color: var(--bg-primary);">
 				<div class="text-6xl mb-4">🔐</div>
-				<h2 class="text-2xl font-bold text-gray-900 mb-2">Sign In Required</h2>
-				<p class="text-gray-600 mb-6">You need to sign in to view your profile</p>
+				<h2 class="text-2xl font-bold mb-2" style="color: var(--text-primary);">Sign In Required</h2>
+				<p class="mb-6" style="color: var(--text-secondary);">You need to sign in to view your profile</p>
 				<button on:click={handleLogin} class="btn-primary"> Sign In </button>
 			</div>
 		{/if}

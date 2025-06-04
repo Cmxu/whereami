@@ -171,7 +171,7 @@ export async function onRequestPost(context) {
 			};
 
 			// Store image metadata in KV
-			await env.GAME_METADATA.put(`image:${uniqueId}`, JSON.stringify(metadata));
+			await env.IMAGE_DATA.put(`image:${uniqueId}`, JSON.stringify(metadata));
 
 			// Update user's upload count
 			const userData = await getUserData(user.id, env);
