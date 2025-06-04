@@ -26,6 +26,7 @@
 		progress: number;
 		error?: string;
 		retryCount: number;
+		customName?: string;
 	}
 
 	type TabType = 'gallery' | 'upload';
@@ -214,7 +215,8 @@
 				uploaded: false,
 				uploading: false,
 				progress: 0,
-				retryCount: 0
+				retryCount: 0,
+				customName: file.name.split('.').slice(0, -1).join('.')
 			};
 
 			newFiles.push(uploadFile);
@@ -331,8 +333,12 @@
 				}
 			}, 200);
 
-			// Upload the image
-			const imageId = await api.uploadImage(file.file, file.location);
+			// Upload the image with custom name if provided
+			const imageId = await api.uploadImage(
+				file.file, 
+				file.location, 
+				file.customName || undefined
+			);
 
 			clearInterval(progressInterval);
 			file.progress = 100;
@@ -746,6 +752,23 @@
 																<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
 															</svg>
 														</button>
+													</div>
+
+													<!-- Custom Name Input -->
+													<div class="custom-name-input mb-4">
+														<label class="block text-sm font-medium mb-2" style="color: var(--text-primary);">
+															Photo Name
+														</label>
+														<input
+															type="text"
+															class="input-field w-full"
+															placeholder="Enter custom name..."
+															bind:value={file.customName}
+															on:input={() => uploadFiles = [...uploadFiles]}
+														/>
+														<p class="text-xs mt-1" style="color: var(--text-secondary);">
+															Leave empty to use original filename
+														</p>
 													</div>
 													
 													<div class="text-sm mb-3" style="color: var(--text-secondary);">

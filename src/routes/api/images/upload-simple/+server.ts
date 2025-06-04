@@ -187,8 +187,10 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 		const formData = await request.formData();
 		const imageFile = formData.get('image') as File;
 		const locationStr = formData.get('location') as string;
+		const customName = formData.get('customName') as string;
 
 		console.log('Received file:', imageFile?.name, 'size:', imageFile?.size);
+		console.log('Custom name:', customName);
 		console.log('Location data:', locationStr);
 		console.log('User:', user.username || user.email);
 
@@ -273,7 +275,18 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 		// Generate unique ID and filename
 		const uniqueId = crypto.randomUUID();
 		const fileExtension = imageFile.name.split('.').pop() || 'jpg';
-		const sanitizedName = imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+		
+		// Use custom name if provided, otherwise use original filename
+		let filename;
+		if (customName && customName.trim()) {
+			// Sanitize custom name and add extension
+			const sanitizedCustomName = customName.trim().replace(/[^a-zA-Z0-9._\-\s]/g, '');
+			filename = sanitizedCustomName + '.' + fileExtension;
+		} else {
+			filename = imageFile.name;
+		}
+		
+		const sanitizedName = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
 		const r2Key = `images/${uniqueId}/${sanitizedName}`;
 
 		console.log('Attempting to upload to R2 with key:', r2Key);
@@ -350,6 +363,24 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			}
 
 			await env.USER_DATA.put(userImagesKey, JSON.stringify(imagesList));
+
+			// Add to public images index if the image is public
+			if (metadata.isPublic) {
+				console.log('Adding to public images index...');
+				const publicImagesData = await env.IMAGE_DATA.get('public_images');
+				const publicImages: string[] = publicImagesData ? JSON.parse(publicImagesData) : [];
+				
+				// Add the new image to the beginning of the list
+				publicImages.unshift(uniqueId);
+				
+				// Keep only the last 1000 public images
+				if (publicImages.length > 1000) {
+					publicImages.splice(1000);
+				}
+				
+				await env.IMAGE_DATA.put('public_images', JSON.stringify(publicImages));
+				console.log('Added to public images index, total public images:', publicImages.length);
+			}
 
 			console.log('Upload completed successfully, image stored with thumbnail URL');
 

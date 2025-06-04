@@ -28,6 +28,11 @@
 	let selectedImageForLocation: ImageMetadata | null = null;
 	let editingLocation: Location | null = null;
 
+	// Image name editing state
+	let showNameEditor = false;
+	let selectedImageForNameEdit: ImageMetadata | null = null;
+	let editingName = '';
+
 	// Pagination
 	let currentPage = 1;
 	let itemsPerPage = 12;
@@ -164,10 +169,33 @@
 		}
 	}
 
+	async function updateImageName(image: ImageMetadata, newName: string) {
+		try {
+			const updatedImage = await api.updateImage(image.id, { filename: newName });
+
+			// Update local data
+			const imageIndex = images.findIndex((img) => img.id === image.id);
+			if (imageIndex !== -1) {
+				images[imageIndex] = { ...images[imageIndex], ...updatedImage };
+				images = [...images];
+				updateFilteredImages();
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to update image name';
+			throw err;
+		}
+	}
+
 	function editImageLocation(image: ImageMetadata) {
 		selectedImageForLocation = image;
 		editingLocation = { ...image.location };
 		showLocationMap = true;
+	}
+
+	function editImageName(image: ImageMetadata) {
+		selectedImageForNameEdit = image;
+		editingName = image.filename;
+		showNameEditor = true;
 	}
 
 	function handleMapClick(event: CustomEvent<Location>) {
@@ -182,10 +210,29 @@
 		}
 	}
 
+	async function saveNameEdit() {
+		if (selectedImageForNameEdit && editingName.trim()) {
+			try {
+				await updateImageName(selectedImageForNameEdit, editingName.trim());
+				showNameEditor = false;
+				selectedImageForNameEdit = null;
+				editingName = '';
+			} catch (err) {
+				// Error handling is done in updateImageName function
+			}
+		}
+	}
+
 	function cancelLocationEdit() {
 		showLocationMap = false;
 		selectedImageForLocation = null;
 		editingLocation = null;
+	}
+
+	function cancelNameEdit() {
+		showNameEditor = false;
+		selectedImageForNameEdit = null;
+		editingName = '';
 	}
 
 	function createGameFromSelected() {
@@ -314,7 +361,10 @@
 							<input
 								type="checkbox"
 								checked={selectedImages.has(image.id)}
-								on:change={() => toggleImageSelection(image)}
+								on:change={(e) => {
+									e.stopPropagation();
+									toggleImageSelection(image);
+								}}
 								class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
 							/>
 						</div>
@@ -323,11 +373,15 @@
 					<!-- Image -->
 					<div
 						class="image-container aspect-square bg-gray-100 cursor-pointer"
-						on:click={() => !selectable && dispatch('imageSelect', image)}
+						on:click={() => selectable ? toggleImageSelection(image) : dispatch('imageSelect', image)}
 						on:keydown={(e) => {
-							if ((e.key === 'Enter' || e.key === ' ') && !selectable) {
+							if (e.key === 'Enter' || e.key === ' ') {
 								e.preventDefault();
-								dispatch('imageSelect', image);
+								if (selectable) {
+									toggleImageSelection(image);
+								} else {
+									dispatch('imageSelect', image);
+								}
 							}
 						}}
 						role="button"
@@ -365,25 +419,36 @@
 						</div>
 
 						<!-- Action Buttons -->
-						<div class="action-buttons mt-3 flex gap-2">
+						<div class="action-buttons mt-3 space-y-2">
+							<div class="flex gap-2">
+								<button
+									class="btn-secondary text-xs flex-1"
+									on:click={(e) => {
+										e.stopPropagation();
+										editImageName(image);
+									}}
+								>
+									✏️ Edit Name
+								</button>
+								<button
+									class="btn-secondary text-xs flex-1"
+									on:click={(e) => {
+										e.stopPropagation();
+										editImageLocation(image);
+									}}
+								>
+									📍 Edit Location
+								</button>
+							</div>
 							<button
-								class="btn-secondary text-xs flex-1"
-								on:click={(e) => {
-									e.stopPropagation();
-									editImageLocation(image);
-								}}
-							>
-								Edit Location
-							</button>
-							<button
-								class="text-red-500 hover:text-red-700 text-xs px-2"
+								class="w-full text-red-500 hover:text-red-700 text-xs py-1 hover:bg-red-50 rounded transition-colors"
 								on:click={(e) => {
 									e.stopPropagation();
 									deleteImage(image);
 								}}
 								title="Delete photo"
 							>
-								🗑️
+								🗑️ Delete Photo
 							</button>
 						</div>
 					</div>
@@ -496,6 +561,49 @@
 				<button class="btn-secondary" on:click={cancelLocationEdit}>Cancel</button>
 				<button class="btn-primary" disabled={!editingLocation} on:click={saveLocationEdit}>
 					Update Location
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Image Name Editor Modal -->
+{#if showNameEditor && selectedImageForNameEdit}
+	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+		<div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+			<div class="modal-header p-4 border-b">
+				<h3 class="text-lg font-semibold text-gray-800">Edit Image Name</h3>
+				<p class="text-sm text-gray-600">
+					Enter a new name for "{selectedImageForNameEdit.filename}"
+				</p>
+			</div>
+			<div class="modal-content p-4">
+				<div class="name-editor-grid grid grid-cols-1 gap-6">
+					<!-- Image Preview -->
+					<div class="image-preview">
+						<img
+							src={selectedImageForNameEdit.thumbnailUrl ||
+								`/api/images/${selectedImageForNameEdit.id}`}
+							alt={selectedImageForNameEdit.filename}
+							class="w-full h-64 object-cover rounded-lg"
+						/>
+					</div>
+
+					<!-- Name Input -->
+					<div class="name-input">
+						<input
+							type="text"
+							placeholder="Enter new name..."
+							class="input-field h-11"
+							bind:value={editingName}
+						/>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer p-4 border-t flex justify-end gap-3">
+				<button class="btn-secondary" on:click={cancelNameEdit}>Cancel</button>
+				<button class="btn-primary" disabled={!editingName.trim()} on:click={saveNameEdit}>
+					Update Name
 				</button>
 			</div>
 		</div>

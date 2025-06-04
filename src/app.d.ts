@@ -13,6 +13,7 @@ declare global {
 				IMAGES_BUCKET: R2Bucket;
 				IMAGE_DATA: KVNamespace;
 				USER_DATA: KVNamespace;
+				GAME_DATA: KVNamespace;
 				CORS_ORIGIN: string;
 				MAX_FILE_SIZE: string;
 				ALLOWED_FILE_TYPES: string;

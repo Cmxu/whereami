@@ -133,3 +133,53 @@ export interface SocialShare {
 	gameId: string;
 	score?: number;
 }
+
+// New types for game data storage in KV
+export interface SavedGame {
+	id: string;
+	gameType: 'random' | 'custom';
+	customGameId?: string; // If it's a custom game
+	imageIds: string[];
+	rounds: CompletedRound[];
+	playerScore: number;
+	maxPossibleScore: number;
+	completedAt: string;
+	playedBy?: string; // User ID if logged in
+	shareToken?: string; // For sharing games
+	isShared: boolean;
+	gameSettings: {
+		numRounds: number;
+		gameMode: 'random' | 'custom';
+	};
+}
+
+export interface CompletedRound {
+	id: number;
+	imageId: string;
+	imageLocation: Location;
+	userGuess: Location;
+	score: number;
+	distance: number;
+	formattedDistance: string;
+	timeTaken?: number; // Time in seconds to make the guess
+}
+
+export interface GameShareData {
+	gameId: string;
+	shareToken: string;
+	createdAt: string;
+	accessCount: number;
+	lastAccessedAt?: string;
+	createdBy?: string; // User ID if logged in
+	expiresAt?: string; // Optional expiration
+}
+
+export interface GameStats {
+	totalGamesPlayed: number;
+	averageScore: number;
+	bestScore: number;
+	totalDistance: number;
+	averageDistance: number;
+	roundsPlayed: number;
+	perfectGuesses: number; // Guesses within a certain threshold
+}

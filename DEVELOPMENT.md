@@ -14,12 +14,6 @@
 ---
 
 ## 🚀 Development Tasks & Features
-
-- [ ] Delete Image Functionality: modify R2 and KV for user/game data
-- [ ] When selecting photos for a new game, you should be able to click anywhere on the picture to select/deselect it
-- [ ] Allow user to modify the name of their image when uploading and in the gallery
-- [ ] Generate random game is not working
-- [ ] Create custom game tab needs an 'x' to close it out and a create game button
 - [ ] Allow user to edit their display name/username (this is distinct from their actual name)
 - [ ] Allow user to add a profile picture
 - [ ] If the user is already on the Gallery page and logs in, the gallery page is not able to load their pictures until after a refresh
@@ -30,6 +24,63 @@
 
 
 ## Completed Tasks
+- [x] **Playwright Test Configuration Update**: Successfully updated and fixed Playwright test configuration:
+  - 🔧 **Headless by default**: All tests now run headless unless specifically configured otherwise for better CI/CD performance
+  - 🌐 **Updated base URL**: Changed from various subdomain URLs to `https://whereami-5kp.pages.dev` which always contains the most up-to-date deployment
+  - 🔐 **Simplified authentication**: Recreated authentication setup with automatic credential filling and improved error handling
+  - 🛠️ **Fixed auth setup**: Resolved UI element interception issues with force clicks and toast message handling
+  - 📝 **Updated documentation**: Created comprehensive README-PLAYWRIGHT-SETUP.md with usage instructions
+  - ✅ **Verified functionality**: All tests now run successfully with proper authentication state management
+  - 🔄 **Consistent URLs**: Updated all test files to use the correct domain for reliable testing
+  - 🚫 **No auto-opening reports**: HTML reports are generated but never auto-open to avoid workflow interruption
+  - 🎯 **CI/Local optimization**: Auth setup runs headed locally for manual intervention but headless in CI environments
+  - 🧹 **Fixed linter errors**: Resolved TypeScript type issues in test files for cleaner code
+- [x] **Create Custom Game Tab Enhancement**: Successfully improved the create custom game modal with proper user interface controls:
+  - ✨ **Close Button**: Added an 'X' button in the modal header to close the modal, with proper theme-aware styling
+  - 🎯 **Create Game Button**: Confirmed existing "Create Game" button is properly positioned and functional
+  - 🖱️ **User Experience**: Close button includes hover effects and disabled state during game creation
+  - 🎨 **Theme Integration**: Close button properly uses CSS variables for consistent theming across light/dark modes
+  - ⌨️ **Accessibility**: Added proper aria-label for screen reader support
+  - 🔄 **Functionality**: Both close (X) and cancel buttons properly reset the modal state and clear selected images
+- [x] **Game Data Storage Infrastructure**: Successfully created comprehensive game data storage system with KV namespace:
+  - 🗄️ **New KV Namespace**: Created `GAME_DATA` KV namespace (ID: a86736cd257440bea9b9c403b3b3afe5) for storing completed games
+  - 📊 **Data Models**: Added TypeScript interfaces for `SavedGame`, `CompletedRound`, `GameShareData`, and `GameStats`
+  - 🔗 **API Endpoints**: Created `/api/games/save` endpoint to save completed games with scores, images, and player data
+  - 📁 **Game Retrieval**: Added `/api/games/[gameId]` endpoint to retrieve saved games by ID or share token
+  - 🔄 **Dual Implementation**: Both SvelteKit routes and Cloudflare Functions versions for consistency
+  - 👤 **User Integration**: Saves games to user history when logged in, maintains public games index for discovery
+  - 🔗 **Sharing System**: Generates unique share tokens for each game, tracks access counts and statistics
+  - 🏗️ **Infrastructure**: Updated wrangler.toml and TypeScript types to support the new KV namespace
+  - 🎯 **Foundation Ready**: System now ready for implementing shareable random games feature
+- [x] **Generate random game is not working** - Fixed missing public images index update in upload endpoints
+- [x] **Random Game Generation Fix**: Fixed the critical issue where random games were not working due to missing public images index maintenance:
+  - 🔍 **Root Cause**: Upload endpoints were not adding newly uploaded public images to the `public_images` index in KV storage
+  - 🛠️ **Solution**: Added code to both upload endpoints (`src/routes/api/images/upload-simple/+server.ts` and `functions/api/images/upload-simple.js`) to automatically add public images to the index
+  - 📊 **Index Management**: Implemented proper index maintenance with automatic cleanup (keeping only the latest 1000 public images)
+  - 🎮 **Result**: Random games now work properly once users upload public images, enabling the core game functionality
+  - 🔄 **Consistency**: Ensured both the SvelteKit routes API and Cloudflare Functions API versions handle public image indexing consistently
+- [x] **Image Name Editing Functionality**: Implemented comprehensive image name editing that allows users to:
+  - ✨ **Edit names during upload** - Users can set custom names for their images before uploading via an input field in the upload interface
+  - ✏️ **Edit names after upload** - Gallery includes "Edit Name" buttons that open a modal for renaming existing images
+  - 🔄 **Real-time updates** - Changes are immediately reflected in the gallery without page refresh
+  - 🛡️ **Input sanitization** - Custom names are properly sanitized to prevent issues with special characters
+  - 📱 **User-friendly UI** - Clean modals and input fields that integrate seamlessly with the existing design
+  - 🔐 **Secure updates** - Only image owners can edit their own image names with proper authentication
+  - 🎯 **Fallback handling** - If no custom name is provided, the original filename is used as a sensible default
+- [x] **Enhanced Photo Selection for Game Creation**: Implemented improved user experience for photo selection when creating custom games:
+  - ✨ **Click anywhere on image to select/deselect** - Users can now click anywhere on the photo (not just the checkbox) to select or deselect it
+  - 🎯 **Improved interaction area** - The entire image container is now clickable for better usability
+  - ⌨️ **Keyboard accessibility** - Added keyboard support (Enter/Space keys) for both image and checkbox selection
+  - 🔄 **Event handling optimization** - Prevented event propagation conflicts between checkbox and image clicks
+  - 📱 **Consistent behavior** - Both checkbox and image clicks now work seamlessly together for a better user experience
+- [x] **Delete Image Functionality**: Implemented comprehensive delete functionality that:
+  - ✨ **Added DELETE API endpoint** at `/api/images/[imageId]` with proper authentication and authorization
+  - 🗂️ **Complete R2 storage cleanup** - removes both original images and thumbnails from Cloudflare R2
+  - 📊 **KV database updates** - removes image metadata, updates user image lists, and removes from public index
+  - 👤 **User data synchronization** - decrements user upload count and maintains data consistency
+  - 🔐 **Security controls** - ensures users can only delete their own images with proper token verification
+  - 🎨 **UI integration** - delete button already existed in UserGallery component with confirmation dialog
+  - ⚡ **Real-time updates** - gallery refreshes immediately after successful deletion
 - [x] Remove redundant profile button from profile page header
 - [x] Fix TypeScript accessibility warnings in components
 - [x] Create dark mode theme

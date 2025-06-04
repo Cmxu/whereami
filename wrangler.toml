@@ -19,6 +19,10 @@ id = "ed09b9a23eeb4a58b500f03e636ea811"
 binding = "USER_DATA"
 id = "7fb86fe8775e461996350c8f2dc6f86b"
 
+[[kv_namespaces]]
+binding = "GAME_DATA"
+id = "8b8aaaeb40844b2c9591c98860b9dd47"
+
 [vars]
 ENVIRONMENT = "production"
 CORS_ORIGIN = "*"

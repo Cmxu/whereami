@@ -3,29 +3,33 @@ import { test, expect } from '@playwright/test';
 test.describe('WhereAmI Website Error Check', () => {
   test('should load without console errors', async ({ page }) => {
     // Array to collect console messages
+    /** @type {Array<{type: string, text: string, url?: string, lineNumber?: number}>} */
     const consoleMessages = [];
+    /** @type {Array<{text: string, url?: string, lineNumber?: number}>} */
     const errorMessages = [];
     
     // Listen for console events
     page.on('console', (msg) => {
+      const location = msg.location();
       consoleMessages.push({
         type: msg.type(),
         text: msg.text(),
-        url: msg.location().url,
-        lineNumber: msg.location().lineNumber
+        url: location.url,
+        lineNumber: location.lineNumber
       });
       
       // Collect error messages
       if (msg.type() === 'error') {
         errorMessages.push({
           text: msg.text(),
-          url: msg.location().url,
-          lineNumber: msg.location().lineNumber
+          url: location.url,
+          lineNumber: location.lineNumber
         });
       }
     });
 
     // Listen for page errors
+    /** @type {Array<{name: string, message: string, stack?: string}>} */
     const pageErrors = [];
     page.on('pageerror', (error) => {
       pageErrors.push({
@@ -36,6 +40,7 @@ test.describe('WhereAmI Website Error Check', () => {
     });
 
     // Listen for failed requests
+    /** @type {Array<{url: string, status: number, statusText: string}>} */
     const failedRequests = [];
     page.on('response', (response) => {
       if (response.status() >= 400) {
@@ -48,8 +53,8 @@ test.describe('WhereAmI Website Error Check', () => {
     });
 
     // Navigate to the website
-    console.log('Loading website: https://acf3e4e7.whereami-5kp.pages.dev/');
-    await page.goto('https://acf3e4e7.whereami-5kp.pages.dev/', { 
+    console.log('Loading website: https://whereami-5kp.pages.dev/');
+    await page.goto('https://whereami-5kp.pages.dev/', { 
       waitUntil: 'networkidle',
       timeout: 30000 
     });
@@ -121,7 +126,7 @@ test.describe('WhereAmI Website Error Check', () => {
   });
 
   test('should have functional navigation', async ({ page }) => {
-    await page.goto('https://acf3e4e7.whereami-5kp.pages.dev/');
+    await page.goto('https://whereami-5kp.pages.dev/');
     
     // Check that main navigation elements are present (use first occurrence)
     await expect(page.locator('text=Gallery').first()).toBeVisible();

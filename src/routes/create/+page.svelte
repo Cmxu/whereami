@@ -150,58 +150,31 @@
 
 		<!-- Content -->
 		<div class="create-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-			<!-- Selection info -->
-			{#if selectedImages.length > 0}
-				<div class="selection-info bg-blue-50-theme border border-blue-200-theme rounded-lg p-4 mb-6">
-					<div class="flex items-center justify-between">
-						<div class="flex items-center gap-3">
-							<div class="text-blue-600 text-xl">✅</div>
-							<div>
-								<p class="font-medium text-blue-900-theme">
-									{selectedImages.length} photo{selectedImages.length !== 1 ? 's' : ''} selected
-								</p>
-								<p class="text-sm text-blue-700-theme">
-									{selectedImages.length < 3
-										? `Select ${3 - selectedImages.length} more to create a game`
-										: 'Ready to create your game!'}
-								</p>
-							</div>
+			<!-- Instructions -->
+			<div class="instructions border rounded-lg p-6 mb-6" style="background-color: var(--bg-primary); border-color: var(--border-color);">
+				<div class="text-center">
+					<div class="text-gray-400 text-5xl mb-4">🖼️</div>
+					<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">Select Photos for Your Game</h3>
+					<p class="mb-4" style="color: var(--text-secondary);">
+						Choose 3-20 photos from your gallery below. Each photo will be a round in your custom
+						geography game.
+					</p>
+					<div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm" style="color: var(--text-secondary);">
+						<div class="flex items-center justify-center gap-2">
+							<span class="text-green-600">✓</span>
+							<span>Minimum 3 photos</span>
 						</div>
-						<button
-							class="btn-primary"
-							on:click={() => (showCreateGameModal = true)}
-							disabled={selectedImages.length < 3}
-						>
-							Create Game
-						</button>
-					</div>
-				</div>
-			{:else}
-				<div class="instructions border rounded-lg p-6 mb-6" style="background-color: var(--bg-primary); border-color: var(--border-color);">
-					<div class="text-center">
-						<div class="text-gray-400 text-5xl mb-4">🖼️</div>
-						<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">Select Photos for Your Game</h3>
-						<p class="mb-4" style="color: var(--text-secondary);">
-							Choose 3-20 photos from your gallery below. Each photo will be a round in your custom
-							geography game.
-						</p>
-						<div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm" style="color: var(--text-secondary);">
-							<div class="flex items-center justify-center gap-2">
-								<span class="text-green-600">✓</span>
-								<span>Minimum 3 photos</span>
-							</div>
-							<div class="flex items-center justify-center gap-2">
-								<span class="text-green-600">✓</span>
-								<span>Maximum 20 photos</span>
-							</div>
-							<div class="flex items-center justify-center gap-2">
-								<span class="text-green-600">✓</span>
-								<span>Photos need GPS data</span>
-							</div>
+						<div class="flex items-center justify-center gap-2">
+							<span class="text-green-600">✓</span>
+							<span>Maximum 20 photos</span>
+						</div>
+						<div class="flex items-center justify-center gap-2">
+							<span class="text-green-600">✓</span>
+							<span>Photos need GPS data</span>
 						</div>
 					</div>
 				</div>
-			{/if}
+			</div>
 
 			<!-- Photo Gallery -->
 			<UserGallery
@@ -217,15 +190,28 @@
 <!-- Create Game Modal -->
 {#if showCreateGameModal}
 	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-		<div class="rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden" style="background-color: var(--bg-primary);">
-			<div class="modal-header p-6 border-b" style="border-color: var(--border-color);">
-				<h3 class="text-xl font-semibold" style="color: var(--text-primary);">Create Custom Game</h3>
-				<p class="text-sm mt-1" style="color: var(--text-secondary);">
-					Creating a game with {selectedImages.length} photo{selectedImages.length !== 1 ? 's' : ''}
-				</p>
+		<div class="rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col" style="background-color: var(--bg-primary);">
+			<div class="modal-header p-6 border-b flex items-center justify-between flex-shrink-0" style="border-color: var(--border-color);">
+				<div>
+					<h3 class="text-xl font-semibold" style="color: var(--text-primary);">Create Custom Game</h3>
+					<p class="text-sm mt-1" style="color: var(--text-secondary);">
+						Creating a game with {selectedImages.length} photo{selectedImages.length !== 1 ? 's' : ''}
+					</p>
+				</div>
+				<button
+					class="close-button text-gray-500 hover:text-gray-700 transition-colors p-2"
+					on:click={cancelCreateGame}
+					aria-label="Close modal"
+					disabled={creating}
+				>
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="18" y1="6" x2="6" y2="18"></line>
+						<line x1="6" y1="6" x2="18" y2="18"></line>
+					</svg>
+				</button>
 			</div>
 
-			<div class="modal-content p-6 overflow-y-auto">
+			<div class="modal-content p-6 overflow-y-auto flex-1 min-h-0">
 				<div class="form-section mb-6">
 					<label for="game-name" class="block text-sm font-medium mb-2" style="color: var(--text-primary);">
 						Game Name *
@@ -338,12 +324,9 @@
 				</div>
 			</div>
 
-			<div class="modal-footer p-6 border-t flex justify-end gap-3" style="border-color: var(--border-color);">
-				<button class="btn-secondary" on:click={cancelCreateGame} disabled={creating}>
-					Cancel
-				</button>
+			<div class="modal-footer p-6 border-t flex justify-center flex-shrink-0" style="border-color: var(--border-color);">
 				<button
-					class="btn-primary"
+					class="btn-primary px-8"
 					disabled={!newGameName.trim() || selectedImages.length < 3 || creating}
 					on:click={createCustomGame}
 				>
@@ -378,6 +361,27 @@
 		background: none;
 		border: none;
 		cursor: pointer;
+	}
+
+	.close-button {
+		border-radius: 0.375rem;
+	}
+
+	.close-button:hover {
+		background-color: var(--bg-secondary);
+	}
+
+	.close-button:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.close-button svg {
+		stroke: var(--text-secondary);
+	}
+
+	.close-button:hover svg {
+		stroke: var(--text-primary);
 	}
 
 	@media (max-width: 640px) {

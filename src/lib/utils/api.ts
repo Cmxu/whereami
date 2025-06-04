@@ -47,7 +47,7 @@ export class WhereAmIAPI {
 	/**
 	 * Upload an image with location data (requires authentication)
 	 */
-	async uploadImage(file: File, location: Location): Promise<string> {
+	async uploadImage(file: File, location: Location, customName?: string): Promise<string> {
 		if (!this.isAuthenticated) {
 			throw new Error('Authentication required to upload images');
 		}
@@ -55,6 +55,11 @@ export class WhereAmIAPI {
 		const formData = new FormData();
 		formData.append('image', file);
 		formData.append('location', JSON.stringify(location));
+		
+		// Add custom name if provided
+		if (customName && customName.trim()) {
+			formData.append('customName', customName.trim());
+		}
 
 		const headers: Record<string, string> = {};
 		if (this.authToken) {
@@ -267,6 +272,36 @@ export class WhereAmIAPI {
 			}
 			throw new Error('Failed to delete image');
 		}
+	}
+
+	/**
+	 * Update image metadata (requires authentication)
+	 */
+	async updateImage(imageId: string, updates: {
+		filename?: string;
+		isPublic?: boolean;
+		tags?: string[];
+	}): Promise<ImageMetadata> {
+		if (!this.isAuthenticated) {
+			throw new Error('Authentication required to update images');
+		}
+
+		const response = await fetch(`${this.baseUrl}/images/${imageId}`, {
+			method: 'PUT',
+			headers: this.getHeaders(),
+			body: JSON.stringify(updates)
+		});
+
+		if (!response.ok) {
+			if (response.status === 401) {
+				throw new Error('Please sign in to update images');
+			}
+			const error = await response.json().catch(() => ({ error: 'Failed to update image' }));
+			throw new Error(error.error || 'Failed to update image');
+		}
+
+		const result = await response.json();
+		return result.metadata;
 	}
 
 	/**
