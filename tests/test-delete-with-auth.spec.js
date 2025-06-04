@@ -19,8 +19,8 @@ test.describe('Delete Image with Authentication', () => {
 		// Note: This test requires manual intervention to complete authentication
 		console.log('🔐 Authentication modal appeared');
 		console.log('📝 To complete this test:');
-		console.log('   1. Sign in using the email: cmxu@comcast.net');
-		console.log('   2. Password: admin1');
+		console.log(`   1. Sign in using the email: ${process.env.TEST_EMAIL || 'cmxu@comcast.net'}`);
+		console.log(`   2. Password: ${process.env.TEST_PASSWORD || 'admin1'}`);
 		console.log('   3. The test will continue automatically after authentication');
 		
 		// Wait for authentication to complete (user will need to sign in manually)

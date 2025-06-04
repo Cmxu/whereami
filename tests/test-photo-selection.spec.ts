@@ -9,8 +9,8 @@ test.describe('Photo Selection for Game Creation', () => {
     
     // Login with the test account
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.getByPlaceholder('Enter your email').fill('cmxu@comcast.net');
-    await page.getByPlaceholder('Enter your password').fill('admin1');
+    await page.getByPlaceholder('Enter your email').fill(process.env.TEST_EMAIL || 'cmxu@comcast.net');
+    await page.getByPlaceholder('Enter your password').fill(process.env.TEST_PASSWORD || 'admin1');
     await page.getByRole('button', { name: 'Sign In' }).click();
     
     // Wait for successful login

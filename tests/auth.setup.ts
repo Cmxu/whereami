@@ -65,11 +65,11 @@ setup('authenticate', async ({ page }) => {
       console.log('📧 Email input found, filling in credentials...');
       
       // Fill in the email
-      await emailInput.fill('cmxu@comcast.net');
+      await emailInput.fill(process.env.TEST_EMAIL || 'cmxu@comcast.net');
       
       if (await passwordInput.isVisible({ timeout: 2000 })) {
         console.log('🔑 Password input found, filling in password...');
-        await passwordInput.fill('admin1');
+        await passwordInput.fill(process.env.TEST_PASSWORD || 'admin1');
         
         // Look for submit button
         const submitButton = page.locator('button[type="submit"], button:has-text("Sign In"), button:has-text("Login")').first();

@@ -6,8 +6,19 @@ This document describes the Playwright test setup for the WhereAmI application.
 ## Configuration Changes
 1. **Headless by default**: All tests run headless unless specifically configured otherwise
 2. **Base URL**: Updated to use `https://whereami-5kp.pages.dev` (always contains the most up-to-date deployment)
-3. **Authentication**: Simplified authentication setup using email/password flow
+3. **Authentication**: Simplified authentication setup using email/password flow with environment variables
 4. **HTML Report**: HTML reports are generated but never auto-open to avoid interrupting workflow
+
+## Environment Variables
+Create a `.env` file in the project root with your test credentials:
+
+```env
+# Test credentials for Playwright
+TEST_EMAIL=your-test-email@example.com
+TEST_PASSWORD=your-test-password
+```
+
+**Security Note**: The `.env` file is already in `.gitignore` so your credentials won't be committed to the repository.
 
 ## Running Tests
 
@@ -39,7 +50,7 @@ npx playwright show-report
 ## Authentication Setup
 The authentication setup (`tests/auth.setup.ts`) will:
 1. Navigate to `/gallery` which triggers authentication
-2. Automatically fill in credentials (cmxu@comcast.net / admin1)
+2. Automatically fill in credentials from environment variables (`TEST_EMAIL` and `TEST_PASSWORD`)
 3. Save authentication state to `playwright/.auth/user.json`
 4. Run in headed mode locally to allow manual intervention if needed
 5. Run headless in CI environments
@@ -60,6 +71,8 @@ All tests now use `https://whereami-5kp.pages.dev` as the base URL, which always
 
 ## Environment Variables
 - `CI`: When set, forces all tests including auth setup to run headless
+- `TEST_EMAIL`: Email address for test authentication (defaults to fallback if not set)
+- `TEST_PASSWORD`: Password for test authentication (defaults to fallback if not set)
 
 ## Screenshots
 Test screenshots are saved to `tests/screenshots/` for debugging and verification. 

@@ -127,9 +127,10 @@ export class AuthUtils {
       }
       
       if (authInterface) {
-        console.log('📝 Please complete authentication manually');
-        console.log('   Email: cmxu@comcast.net');
-        console.log('   Password: admin1');
+        console.log('📝 Authentication interface detected!');
+        console.log(`   Email: ${process.env.TEST_EMAIL || 'cmxu@comcast.net'}`);
+        console.log(`   Password: ${process.env.TEST_PASSWORD || 'admin1'}`);
+        console.log('   Please complete authentication manually');
         
         // Wait for authentication to complete
         await this.waitForAuthentication(60000);

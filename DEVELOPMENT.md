@@ -35,6 +35,8 @@
   - 🚫 **No auto-opening reports**: HTML reports are generated but never auto-open to avoid workflow interruption
   - 🎯 **CI/Local optimization**: Auth setup runs headed locally for manual intervention but headless in CI environments
   - 🧹 **Fixed linter errors**: Resolved TypeScript type issues in test files for cleaner code
+  - 🔒 **Secure credentials**: Moved test credentials to environment variables to prevent committing sensitive data
+  - 📦 **Environment setup**: Added dotenv configuration and proper .env file handling with .gitignore protection
 - [x] **Create Custom Game Tab Enhancement**: Successfully improved the create custom game modal with proper user interface controls:
   - ✨ **Close Button**: Added an 'X' button in the modal header to close the modal, with proper theme-aware styling
   - 🎯 **Create Game Button**: Confirmed existing "Create Game" button is properly positioned and functional
