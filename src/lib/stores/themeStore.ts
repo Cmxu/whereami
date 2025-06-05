@@ -31,15 +31,15 @@ function createThemeStore() {
 	// Apply theme to document
 	function applyTheme(theme: Theme) {
 		if (!browser) return;
-		
+
 		const htmlElement = document.documentElement;
-		
+
 		if (theme === 'dark') {
 			htmlElement.classList.add('dark');
 		} else {
 			htmlElement.classList.remove('dark');
 		}
-		
+
 		// Store the preference
 		try {
 			localStorage.setItem('theme', theme);
@@ -66,7 +66,7 @@ function createThemeStore() {
 			const currentTheme = getStoredTheme();
 			applyTheme(currentTheme);
 			set(currentTheme);
-			
+
 			// Listen for system theme changes only if no preference is stored
 			if (browser && !localStorage.getItem('theme')) {
 				const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -78,9 +78,9 @@ function createThemeStore() {
 						set(systemTheme);
 					}
 				};
-				
+
 				mediaQuery.addEventListener('change', handleSystemThemeChange);
-				
+
 				// Return cleanup function
 				return () => {
 					mediaQuery.removeEventListener('change', handleSystemThemeChange);
@@ -90,4 +90,4 @@ function createThemeStore() {
 	};
 }
 
-export const theme = createThemeStore(); 
+export const theme = createThemeStore();

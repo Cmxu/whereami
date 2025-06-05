@@ -56,7 +56,7 @@ export class WhereAmIAPI {
 		const formData = new FormData();
 		formData.append('image', file);
 		formData.append('location', JSON.stringify(location));
-		
+
 		// Add custom name if provided
 		if (customName && customName.trim()) {
 			formData.append('customName', customName.trim());
@@ -91,12 +91,7 @@ export class WhereAmIAPI {
 	 */
 	async getRandomImages(count: number): Promise<ImageMetadata[]> {
 		const response = await fetch(`${this.baseUrl}/images/random?count=${count}`);
-
-		if (!response.ok) {
-			throw new Error('Failed to fetch random images');
-		}
-
-		return response.json();
+		return this.handleResponse<ImageMetadata[]>(response, 'Failed to fetch random images');
 	}
 
 	/**
@@ -104,12 +99,7 @@ export class WhereAmIAPI {
 	 */
 	async getImageMetadata(imageId: string): Promise<ImageMetadata> {
 		const response = await fetch(`${this.baseUrl}/images/${imageId}`);
-
-		if (!response.ok) {
-			throw new Error('Image not found');
-		}
-
-		return response.json();
+		return this.handleResponse<ImageMetadata>(response, 'Image not found');
 	}
 
 	/**
@@ -170,12 +160,7 @@ export class WhereAmIAPI {
 	 */
 	async getCustomGame(gameId: string): Promise<CustomGame> {
 		const response = await fetch(`${this.baseUrl}/games/${gameId}`);
-
-		if (!response.ok) {
-			throw new Error('Game not found');
-		}
-
-		return response.json();
+		return this.handleResponse<CustomGame>(response, 'Game not found');
 	}
 
 	/**
@@ -183,12 +168,7 @@ export class WhereAmIAPI {
 	 */
 	async getCustomGameImages(gameId: string): Promise<ImageMetadata[]> {
 		const response = await fetch(`${this.baseUrl}/games/${gameId}/images`);
-
-		if (!response.ok) {
-			throw new Error('Failed to fetch game images');
-		}
-
-		return response.json();
+		return this.handleResponse<ImageMetadata[]>(response, 'Failed to fetch game images');
 	}
 
 	/**
@@ -213,12 +193,10 @@ export class WhereAmIAPI {
 		}
 
 		const response = await fetch(`${this.baseUrl}/games/public?${params}`);
-
-		if (!response.ok) {
-			throw new Error('Failed to fetch public games');
-		}
-
-		return response.json();
+		return this.handleResponse<PaginatedResponse<CustomGame>>(
+			response,
+			'Failed to fetch public games'
+		);
 	}
 
 	/**
@@ -278,11 +256,14 @@ export class WhereAmIAPI {
 	/**
 	 * Update image metadata (requires authentication)
 	 */
-	async updateImage(imageId: string, updates: {
-		filename?: string;
-		isPublic?: boolean;
-		tags?: string[];
-	}): Promise<ImageMetadata> {
+	async updateImage(
+		imageId: string,
+		updates: {
+			filename?: string;
+			isPublic?: boolean;
+			tags?: string[];
+		}
+	): Promise<ImageMetadata> {
 		if (!this.isAuthenticated) {
 			throw new Error('Authentication required to update images');
 		}
@@ -564,6 +545,24 @@ export class WhereAmIAPI {
 			default:
 				return { url: gameUrl, text };
 		}
+	}
+
+	/**
+	 * Handle common API response patterns
+	 */
+	private async handleResponse<T>(response: Response, errorPrefix: string): Promise<T> {
+		if (!response.ok) {
+			if (response.status === 401) {
+				throw new Error('Please sign in to continue');
+			}
+			try {
+				const error = await response.json();
+				throw new Error(error.error || `${errorPrefix} failed`);
+			} catch {
+				throw new Error(`${errorPrefix} failed`);
+			}
+		}
+		return response.json();
 	}
 }
 

@@ -100,7 +100,7 @@ export const GET = async ({ params, url, platform }: RequestEvent) => {
 		if (!env?.IMAGE_DATA || !env?.GAME_DATA) {
 			return json(
 				{ error: 'Server configuration error: KV stores not configured' },
-				{ 
+				{
 					status: 500,
 					headers: { 'Access-Control-Allow-Origin': '*' }
 				}
@@ -127,13 +127,13 @@ export const GET = async ({ params, url, platform }: RequestEvent) => {
 
 			// Check if this might be a saved game query
 			const isShareToken = url.searchParams.get('shareToken');
-			
+
 			if (isShareToken === 'true' && env.GAME_DATA) {
 				// Lookup by share token in GAME_DATA
 				const shareDataStr = await env.GAME_DATA.get(`share_${gameId}`);
 				if (shareDataStr) {
 					shareData = JSON.parse(shareDataStr);
-					
+
 					// Increment access count
 					if (shareData) {
 						shareData.accessCount++;
@@ -157,18 +157,21 @@ export const GET = async ({ params, url, platform }: RequestEvent) => {
 
 			// If we found a saved game, return that instead
 			if (savedGame) {
-				return json({
-					game: savedGame,
-					shareData: shareData
-				}, {
-					headers: { 'Access-Control-Allow-Origin': '*' }
-				});
+				return json(
+					{
+						game: savedGame,
+						shareData: shareData
+					},
+					{
+						headers: { 'Access-Control-Allow-Origin': '*' }
+					}
+				);
 			}
 
 			// No game found at all
 			return json(
 				{ error: 'Game not found' },
-				{ 
+				{
 					status: 404,
 					headers: { 'Access-Control-Allow-Origin': '*' }
 				}
@@ -193,12 +196,11 @@ export const GET = async ({ params, url, platform }: RequestEvent) => {
 		return json(game, {
 			headers: { 'Access-Control-Allow-Origin': '*' }
 		});
-
 	} catch (error) {
 		console.error('Error retrieving game:', error);
 		return json(
 			{ error: 'Failed to retrieve game' },
-			{ 
+			{
 				status: 500,
 				headers: { 'Access-Control-Allow-Origin': '*' }
 			}
@@ -284,7 +286,7 @@ export const DELETE = async ({ params, request, platform }: RequestEvent) => {
 		const userGamesData = await env.USER_DATA.get(userGamesKey);
 		if (userGamesData) {
 			const gamesList: string[] = JSON.parse(userGamesData);
-			const updatedGamesList = gamesList.filter(id => id !== gameId);
+			const updatedGamesList = gamesList.filter((id) => id !== gameId);
 			await env.USER_DATA.put(userGamesKey, JSON.stringify(updatedGamesList));
 		}
 
@@ -316,7 +318,6 @@ export const DELETE = async ({ params, request, platform }: RequestEvent) => {
 				headers: { 'Access-Control-Allow-Origin': '*' }
 			}
 		);
-
 	} catch (error) {
 		console.error('Error deleting game:', error);
 		return json(
@@ -338,4 +339,4 @@ export const OPTIONS = async () => {
 			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 		}
 	});
-}; 
+};

@@ -270,7 +270,10 @@
 	</div>
 
 	<!-- Filters and Search -->
-	<div class="gallery-filters mb-6 p-4 rounded-lg border" style="background-color: var(--bg-primary); border-color: var(--border-color);">
+	<div
+		class="gallery-filters mb-6 p-4 rounded-lg border"
+		style="background-color: var(--bg-primary); border-color: var(--border-color);"
+	>
 		<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
 			<!-- Search -->
 			<div class="search-field">
@@ -303,10 +306,12 @@
 			<!-- Batch Actions -->
 			<div class="batch-actions">
 				{#if selectable && multiSelect}
-					<button class="btn-secondary w-full text-sm h-11" on:click={selectAll}> Select Page </button>
+					<button class="btn-secondary w-full text-sm h-11" on:click={selectAll}>
+						Select Page
+					</button>
 				{:else}
-					<button 
-						class="btn-primary w-full text-sm h-11 flex items-center justify-center gap-2" 
+					<button
+						class="btn-primary w-full text-sm h-11 flex items-center justify-center gap-2"
 						on:click={() => dispatch('switchToUpload')}
 					>
 						⬆️ Upload
@@ -373,7 +378,8 @@
 					<!-- Image -->
 					<div
 						class="image-container aspect-square bg-gray-100 cursor-pointer"
-						on:click={() => selectable ? toggleImageSelection(image) : dispatch('imageSelect', image)}
+						on:click={() =>
+							selectable ? toggleImageSelection(image) : dispatch('imageSelect', image)}
 						on:keydown={(e) => {
 							if (e.key === 'Enter' || e.key === ' ') {
 								e.preventDefault();

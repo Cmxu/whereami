@@ -89,13 +89,15 @@
 							<!-- User Avatar with Profile Picture Support -->
 							<div class="user-avatar w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
 								{#if $userProfile?.profilePicture}
-									<img 
-										src={`/api/images/${$userProfile.profilePicture}`} 
-										alt="Profile" 
+									<img
+										src={`/api/images/${$userProfile.profilePicture}`}
+										alt="Profile"
 										class="w-full h-full object-cover"
 									/>
 								{:else}
-									<div class="w-full h-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold">
+									<div
+										class="w-full h-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold"
+									>
 										{$user.user_metadata?.first_name?.[0] || $user.email?.[0]?.toUpperCase() || '?'}
 									</div>
 								{/if}
@@ -121,23 +123,25 @@
 						</button>
 
 						{#if showUserMenu}
-							<div
-								class="user-menu absolute right-0 mt-2 w-64 rounded-lg shadow-lg py-2 z-50"
-							>
+							<div class="user-menu absolute right-0 mt-2 w-64 rounded-lg shadow-lg py-2 z-50">
 								<!-- User info header -->
 								<div class="user-menu-header px-4 py-3 border-b">
 									<div class="flex items-center space-x-3">
 										<!-- User Avatar with Profile Picture Support -->
 										<div class="user-avatar w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
 											{#if $userProfile?.profilePicture}
-												<img 
-													src={`/api/images/${$userProfile.profilePicture}`} 
-													alt="Profile" 
+												<img
+													src={`/api/images/${$userProfile.profilePicture}`}
+													alt="Profile"
 													class="w-full h-full object-cover"
 												/>
 											{:else}
-												<div class="w-full h-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-													{$user.user_metadata?.first_name?.[0] || $user.email?.[0]?.toUpperCase() || '?'}
+												<div
+													class="w-full h-full bg-blue-600 flex items-center justify-center text-white font-semibold"
+												>
+													{$user.user_metadata?.first_name?.[0] ||
+														$user.email?.[0]?.toUpperCase() ||
+														'?'}
 												</div>
 											{/if}
 										</div>
@@ -210,7 +214,9 @@
 		backdrop-filter: blur(8px);
 		background-color: var(--bg-primary);
 		border-color: var(--border-color);
-		transition: background-color 0.2s ease, border-color 0.2s ease;
+		transition:
+			background-color 0.2s ease,
+			border-color 0.2s ease;
 	}
 
 	.nav-link {

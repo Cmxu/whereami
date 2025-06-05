@@ -121,10 +121,10 @@ export const GET = async ({ request, platform }: RequestEvent) => {
 		}
 
 		const userData = await getUserData(user.id, env);
-		
+
 		return json(
-			{ 
-				success: true, 
+			{
+				success: true,
 				profile: userData || {
 					id: user.id,
 					email: user.email,
@@ -190,7 +190,7 @@ export const PUT = async ({ request, platform }: RequestEvent) => {
 
 		// Get existing user data
 		const existingData = await getUserData(user.id, env);
-		
+
 		// Update profile data
 		const updatedProfile = {
 			...existingData,
@@ -283,7 +283,8 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			);
 		}
 
-		if (imageFile.size > 5 * 1024 * 1024) { // 5MB limit
+		if (imageFile.size > 5 * 1024 * 1024) {
+			// 5MB limit
 			return json(
 				{ error: 'Image must be smaller than 5MB' },
 				{
@@ -321,8 +322,8 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 		await saveUserData(user.id, updatedProfile, env);
 
 		return json(
-			{ 
-				success: true, 
+			{
+				success: true,
 				profilePicture: fileName,
 				profile: updatedProfile
 			},
@@ -340,4 +341,4 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			}
 		);
 	}
-}; 
+};

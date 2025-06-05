@@ -114,10 +114,6 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 	try {
 		// Check if R2 bucket is available
 		const env = platform?.env;
-		console.log('Platform env:', env ? 'exists' : 'missing');
-		console.log('IMAGES_BUCKET:', env?.IMAGES_BUCKET ? 'exists' : 'missing');
-		console.log('USER_DATA:', env?.USER_DATA ? 'exists' : 'missing');
-		console.log('IMAGE_DATA:', env?.IMAGE_DATA ? 'exists' : 'missing');
 
 		if (!env?.IMAGES_BUCKET) {
 			console.error('IMAGES_BUCKET R2 binding not found');
@@ -188,11 +184,6 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 		const imageFile = formData.get('image') as File;
 		const locationStr = formData.get('location') as string;
 		const customName = formData.get('customName') as string;
-
-		console.log('Received file:', imageFile?.name, 'size:', imageFile?.size);
-		console.log('Custom name:', customName);
-		console.log('Location data:', locationStr);
-		console.log('User:', user.username || user.email);
 
 		if (!imageFile) {
 			return json(
@@ -275,7 +266,7 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 		// Generate unique ID and filename
 		const uniqueId = crypto.randomUUID();
 		const fileExtension = imageFile.name.split('.').pop() || 'jpg';
-		
+
 		// Use custom name if provided, otherwise use original filename
 		let filename;
 		if (customName && customName.trim()) {
@@ -285,21 +276,15 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 		} else {
 			filename = imageFile.name;
 		}
-		
+
 		const sanitizedName = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
 		const r2Key = `images/${uniqueId}/${sanitizedName}`;
-
-		console.log('Attempting to upload to R2 with key:', r2Key);
-		console.log('File size:', imageFile.size, 'bytes');
-		console.log('File type:', imageFile.type);
 
 		try {
 			// Convert file to ArrayBuffer
 			const arrayBuffer = await imageFile.arrayBuffer();
-			console.log('ArrayBuffer size:', arrayBuffer.byteLength);
 
 			// Upload original image to R2
-			console.log('Starting R2 put operation for original image...');
 			const uploadResult = await env.IMAGES_BUCKET.put(r2Key, arrayBuffer, {
 				httpMetadata: {
 					contentType: imageFile.type,
@@ -314,10 +299,7 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 				}
 			});
 
-			console.log('Original image uploaded successfully');
-
 			// Construct the image URLs
-			// Use Cloudflare Workers image transformation for thumbnails
 			const imageUrl = `/api/images/${uniqueId}/${sanitizedName}`;
 			const thumbnailUrl = `/api/images/${uniqueId}/${sanitizedName}?w=300&h=300&fit=cover&q=80`;
 
@@ -337,11 +319,9 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 				isPublic: true // Default to public, can be changed later
 			};
 
-			console.log('Storing image metadata in KV...');
 			// Store image metadata in KV
 			await env.IMAGE_DATA.put(`image:${uniqueId}`, JSON.stringify(metadata));
 
-			console.log('Updating user profile...');
 			// Update user's upload count
 			const userData = await getUserData(user.id, env);
 			if (userData) {
@@ -350,7 +330,6 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 				await saveUserData(user.id, userData, env);
 			}
 
-			console.log('Adding to user images list...');
 			// Add to user's images list
 			const userImagesKey = `user:${user.id}:images`;
 			const userImages = await env.USER_DATA.get(userImagesKey);
@@ -366,23 +345,19 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 
 			// Add to public images index if the image is public
 			if (metadata.isPublic) {
-				console.log('Adding to public images index...');
 				const publicImagesData = await env.IMAGE_DATA.get('public_images');
 				const publicImages: string[] = publicImagesData ? JSON.parse(publicImagesData) : [];
-				
+
 				// Add the new image to the beginning of the list
 				publicImages.unshift(uniqueId);
-				
+
 				// Keep only the last 1000 public images
 				if (publicImages.length > 1000) {
 					publicImages.splice(1000);
 				}
-				
-				await env.IMAGE_DATA.put('public_images', JSON.stringify(publicImages));
-				console.log('Added to public images index, total public images:', publicImages.length);
-			}
 
-			console.log('Upload completed successfully, image stored with thumbnail URL');
+				await env.IMAGE_DATA.put('public_images', JSON.stringify(publicImages));
+			}
 
 			return json(
 				{
@@ -401,24 +376,10 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			);
 		} catch (uploadError) {
 			console.error('Upload error:', uploadError);
-			console.error(
-				'Upload error stack:',
-				uploadError instanceof Error ? uploadError.stack : 'No stack'
-			);
-			console.error(
-				'Upload error name:',
-				uploadError instanceof Error ? uploadError.name : 'Unknown'
-			);
-			console.error(
-				'Upload error message:',
-				uploadError instanceof Error ? uploadError.message : 'Unknown'
-			);
-
 			return json(
 				{
 					error: 'Failed to upload image to storage',
-					details: uploadError instanceof Error ? uploadError.message : 'Unknown error',
-					errorType: uploadError instanceof Error ? uploadError.name : 'Unknown'
+					details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
 				},
 				{
 					status: 500,
@@ -430,7 +391,6 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 		}
 	} catch (err) {
 		console.error('Server error:', err);
-		console.error('Server error stack:', err instanceof Error ? err.stack : 'No stack');
 		return json(
 			{
 				error: 'Internal server error',

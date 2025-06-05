@@ -242,7 +242,7 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			const publicGamesKey = 'public_games_index';
 			const existingPublicGamesStr = await env.GAME_DATA.get(publicGamesKey);
 			const existingPublicGames = existingPublicGamesStr ? JSON.parse(existingPublicGamesStr) : [];
-			
+
 			existingPublicGames.unshift({
 				gameId: gameId,
 				name: game.name,
@@ -254,12 +254,12 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 				tags: game.tags,
 				difficulty: game.difficulty
 			});
-			
+
 			// Keep only the last 1000 public games
 			if (existingPublicGames.length > 1000) {
 				existingPublicGames.splice(1000);
 			}
-			
+
 			await env.GAME_DATA.put(publicGamesKey, JSON.stringify(existingPublicGames));
 		}
 
@@ -270,7 +270,6 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 				headers: { 'Access-Control-Allow-Origin': '*' }
 			}
 		);
-
 	} catch (error) {
 		console.error('Error creating game:', error);
 		return json(
@@ -292,4 +291,4 @@ export const OPTIONS = async () => {
 			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 		}
 	});
-}; 
+};

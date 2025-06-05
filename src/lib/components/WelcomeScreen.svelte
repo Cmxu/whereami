@@ -360,7 +360,8 @@
 		background: rgba(148, 163, 184, 0.3);
 	}
 
-	.stats-toggle, .option-link {
+	.stats-toggle,
+	.option-link {
 		background: rgba(255, 255, 255, 0.2);
 		color: white;
 		text-decoration: none;
@@ -368,7 +369,8 @@
 		transition: all 0.2s ease;
 	}
 
-	.stats-toggle:hover, .option-link:hover {
+	.stats-toggle:hover,
+	.option-link:hover {
 		background: rgba(255, 255, 255, 0.3);
 		transform: translateY(-2px);
 	}

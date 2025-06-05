@@ -161,14 +161,14 @@
 		try {
 			deletingGame = true;
 			await api.deleteGame(gameToDelete.id);
-			
+
 			// Remove from local state
-			userGames = userGames.filter(game => game.id !== gameToDelete!.id);
-			
+			userGames = userGames.filter((game) => game.id !== gameToDelete!.id);
+
 			// Close modal and reset state
 			showDeleteModal = false;
 			gameToDelete = null;
-			
+
 			// Success - no popup needed, user can see the game disappeared from the list
 		} catch (err) {
 			alert(err instanceof Error ? err.message : 'Failed to delete game');
@@ -230,18 +230,20 @@
 
 <div class="browse-page min-h-screen" style="background-color: var(--bg-secondary);">
 	<!-- Header -->
-	<div class="page-header border-b" style="background-color: var(--bg-primary); border-color: var(--border-color);">
+	<div
+		class="page-header border-b"
+		style="background-color: var(--bg-primary); border-color: var(--border-color);"
+	>
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 				<div>
 					<h1 class="text-3xl font-bold" style="color: var(--text-primary);">Browse Games</h1>
-					<p style="color: var(--text-secondary);">Discover and play community-created geography games</p>
+					<p style="color: var(--text-secondary);">
+						Discover and play community-created geography games
+					</p>
 				</div>
 				{#if $isAuthenticated}
-					<a
-						href="/create"
-						class="btn-primary flex items-center gap-2"
-					>
+					<a href="/create" class="btn-primary flex items-center gap-2">
 						<span>🎯</span>
 						Create Game
 					</a>
@@ -253,7 +255,10 @@
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 		<!-- Filters -->
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-			<div class="filters-section rounded-lg border p-6 mb-8" style="background-color: var(--bg-primary); border-color: var(--border-color);">
+			<div
+				class="filters-section rounded-lg border p-6 mb-8"
+				style="background-color: var(--bg-primary); border-color: var(--border-color);"
+			>
 				<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
 					<!-- Filter tabs -->
 					<div class="flex rounded-lg p-1" style="background-color: var(--bg-tertiary);">
@@ -316,14 +321,18 @@
 			{:else if gamesError}
 				<div class="error-state text-center py-12">
 					<div class="text-red-500 text-4xl mb-4">⚠️</div>
-					<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">Error Loading Games</h3>
+					<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">
+						Error Loading Games
+					</h3>
 					<p class="mb-4" style="color: var(--text-secondary);">{gamesError}</p>
 					<button class="btn-primary" on:click={loadPublicGames}>Try Again</button>
 				</div>
 			{:else if publicGames.length === 0}
 				<div class="empty-state text-center py-12">
 					<div class="text-gray-400 text-6xl mb-6">🎯</div>
-					<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">No Games Found</h3>
+					<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">
+						No Games Found
+					</h3>
 					<p class="mb-6" style="color: var(--text-secondary);">
 						{searchQuery
 							? 'Try adjusting your search filters'
@@ -369,7 +378,9 @@
 								{#if game.tags && game.tags.length > 0}
 									<div class="tags flex flex-wrap gap-1">
 										{#each game.tags.slice(0, 3) as tag}
-											<span class="tag bg-blue-100-theme text-blue-800-theme px-2 py-1 rounded text-xs">
+											<span
+												class="tag bg-blue-100-theme text-blue-800-theme px-2 py-1 rounded text-xs"
+											>
 												{tag}
 											</span>
 										{/each}
@@ -415,8 +426,12 @@
 			{#if !$isAuthenticated}
 				<div class="auth-notice text-center py-12">
 					<div class="text-blue-500 text-6xl mb-6">🔐</div>
-					<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">Sign In Required</h3>
-					<p class="mb-6" style="color: var(--text-secondary);">Sign in to view and manage your custom games</p>
+					<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">
+						Sign In Required
+					</h3>
+					<p class="mb-6" style="color: var(--text-secondary);">
+						Sign in to view and manage your custom games
+					</p>
 					<button class="btn-primary" on:click={() => goto('/gallery')}> Sign In </button>
 				</div>
 			{:else if loadingGames}
@@ -427,14 +442,18 @@
 			{:else if gamesError}
 				<div class="error-state text-center py-12">
 					<div class="text-red-500 text-4xl mb-4">⚠️</div>
-					<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">Error Loading Your Games</h3>
+					<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">
+						Error Loading Your Games
+					</h3>
 					<p class="mb-4" style="color: var(--text-secondary);">{gamesError}</p>
 					<button class="btn-primary" on:click={loadUserGames}>Try Again</button>
 				</div>
 			{:else if userGames.length === 0}
 				<div class="empty-state text-center py-12">
 					<div class="text-gray-400 text-6xl mb-6">🎮</div>
-					<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">No Games Yet</h3>
+					<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">
+						No Games Yet
+					</h3>
 					<p class="mb-6" style="color: var(--text-secondary);">
 						You haven't created any custom games. Start by uploading some photos!
 					</p>
@@ -455,7 +474,9 @@
 						>
 							<a href="/games/{game.id}" class="game-link block">
 								<div class="game-header p-4 border-b" style="border-color: var(--border-color);">
-									<h3 class="font-semibold mb-1" style="color: var(--text-primary);">{game.name}</h3>
+									<h3 class="font-semibold mb-1" style="color: var(--text-primary);">
+										{game.name}
+									</h3>
 									{#if game.description}
 										<p class="text-sm" style="color: var(--text-secondary);">{game.description}</p>
 									{/if}
@@ -464,7 +485,9 @@
 								<div class="game-info p-4 space-y-3">
 									<div class="game-stats flex justify-between text-sm">
 										<span style="color: var(--text-secondary);">{game.imageIds.length} photos</span>
-										<span style="color: var(--text-secondary);">Created {formatDate(game.createdAt)}</span>
+										<span style="color: var(--text-secondary);"
+											>Created {formatDate(game.createdAt)}</span
+										>
 									</div>
 
 									<div
@@ -490,25 +513,34 @@
 							</a>
 
 							<div class="game-actions p-4 pt-0 flex gap-2">
-								<button 
-									class="btn-primary flex-1" 
-									on:click={(e) => { e.stopPropagation(); playUserGame(game); }}
+								<button
+									class="btn-primary flex-1"
+									on:click={(e) => {
+										e.stopPropagation();
+										playUserGame(game);
+									}}
 								>
 									🎮 Play
 								</button>
-								<button 
-									class="btn-secondary" 
-									on:click={(e) => { e.stopPropagation(); shareGame(game); }}
+								<button
+									class="btn-secondary"
+									on:click={(e) => {
+										e.stopPropagation();
+										shareGame(game);
+									}}
 									title="Share"
-								> 
-									📤 
+								>
+									📤
 								</button>
-								<button 
-									class="btn-danger px-3" 
-									on:click={(e) => { e.stopPropagation(); confirmDeleteGame(game); }}
+								<button
+									class="btn-danger px-3"
+									on:click={(e) => {
+										e.stopPropagation();
+										confirmDeleteGame(game);
+									}}
 									title="Delete game"
-								> 
-									🗑️ 
+								>
+									🗑️
 								</button>
 							</div>
 						</div>
@@ -526,8 +558,11 @@
 
 <!-- Delete Confirmation Modal -->
 {#if showDeleteModal && gameToDelete}
-	<div class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4" style="background-color: rgba(0, 0, 0, 0.5);">
-		<div 
+	<div
+		class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
+		style="background-color: rgba(0, 0, 0, 0.5);"
+	>
+		<div
 			class="modal bg-white rounded-lg shadow-xl max-w-md w-full p-6"
 			style="background-color: var(--bg-primary); border: 1px solid var(--border-color);"
 		>
@@ -539,18 +574,10 @@
 				This action cannot be undone. The game will be permanently removed.
 			</p>
 			<div class="flex gap-3 justify-end">
-				<button 
-					class="btn-secondary" 
-					on:click={cancelDeleteGame}
-					disabled={deletingGame}
-				>
+				<button class="btn-secondary" on:click={cancelDeleteGame} disabled={deletingGame}>
 					Cancel
 				</button>
-				<button 
-					class="btn-danger" 
-					on:click={deleteGame}
-					disabled={deletingGame}
-				>
+				<button class="btn-danger" on:click={deleteGame} disabled={deletingGame}>
 					{deletingGame ? 'Deleting...' : 'Delete Game'}
 				</button>
 			</div>
@@ -600,8 +627,12 @@
 	}
 
 	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
 	}
 
 	@media (max-width: 768px) {

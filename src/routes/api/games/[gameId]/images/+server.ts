@@ -30,7 +30,7 @@ export const GET = async ({ params, platform }: RequestEvent) => {
 		if (!env?.IMAGE_DATA || !env?.GAME_DATA) {
 			return json(
 				{ error: 'Server configuration error: KV stores not configured' },
-				{ 
+				{
 					status: 500,
 					headers: { 'Access-Control-Allow-Origin': '*' }
 				}
@@ -53,7 +53,7 @@ export const GET = async ({ params, platform }: RequestEvent) => {
 		if (!game) {
 			return json(
 				{ error: 'Game not found' },
-				{ 
+				{
 					status: 404,
 					headers: { 'Access-Control-Allow-Origin': '*' }
 				}
@@ -68,12 +68,11 @@ export const GET = async ({ params, platform }: RequestEvent) => {
 		return json(validImages, {
 			headers: { 'Access-Control-Allow-Origin': '*' }
 		});
-
 	} catch (error) {
 		console.error('Error retrieving game images:', error);
 		return json(
 			{ error: 'Failed to retrieve game images' },
-			{ 
+			{
 				status: 500,
 				headers: { 'Access-Control-Allow-Origin': '*' }
 			}
@@ -90,4 +89,4 @@ export const OPTIONS = async () => {
 			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 		}
 	});
-}; 
+};

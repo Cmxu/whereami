@@ -6,9 +6,7 @@ import type { ImageMetadata } from '$lib/types';
 async function getPublicImages(env: any): Promise<string[]> {
 	try {
 		const images = await env.IMAGE_DATA.get('public_images');
-		console.log('Public images raw data:', images);
 		const result = images ? JSON.parse(images) : [];
-		console.log('Public images parsed:', result);
 		return result;
 	} catch (error) {
 		console.error('Error getting public images:', error);
@@ -30,8 +28,6 @@ async function getImageMetadata(imageId: string, env: any): Promise<ImageMetadat
 export const GET: RequestHandler = async ({ url, platform }) => {
 	try {
 		const env = platform?.env;
-		console.log('Environment available:', !!env);
-		console.log('IMAGE_DATA available:', !!env?.IMAGE_DATA);
 
 		if (!env?.IMAGE_DATA) {
 			console.error('KV namespaces not available');
@@ -44,10 +40,8 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 
 		// Get public images list
 		const publicImageIds = await getPublicImages(env);
-		console.log('Found public image IDs:', publicImageIds);
 
 		if (publicImageIds.length === 0) {
-			console.log('No public images found, returning 404');
 			throw error(404, 'No public images available. Upload some images first!');
 		}
 
@@ -59,8 +53,8 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 		const imagePromises = selectedIds.map((id) => getImageMetadata(id, env));
 		const imageResults = await Promise.all(imagePromises);
 
-		// Filter out any null results (deleted images)
-		const validImages = imageResults.filter((img) => img !== null) as ImageMetadata[];
+		// Filter out any null results
+		const validImages = imageResults.filter((img): img is ImageMetadata => img !== null);
 
 		// Return error if we don't have enough valid images
 		if (validImages.length === 0) {
@@ -71,7 +65,8 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 		const enrichedImages = validImages.map((image) => ({
 			...image,
 			src: `/api/images/${image.id}/${image.filename}`,
-			thumbnailUrl: image.thumbnailUrl || `/api/images/${image.id}/${image.filename}?w=300&h=300&fit=cover&q=80`
+			thumbnailUrl:
+				image.thumbnailUrl || `/api/images/${image.id}/${image.filename}?w=300&h=300&fit=cover&q=80`
 		}));
 
 		return json(enrichedImages.slice(0, count), {
@@ -97,4 +92,4 @@ export const OPTIONS = async () => {
 			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 		}
 	});
-}; 
+};

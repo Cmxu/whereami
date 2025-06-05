@@ -107,15 +107,18 @@ export const GET = async ({ request, platform, url }: RequestEvent) => {
 		const userGamesData = await env.USER_DATA.get(userGamesKey);
 
 		if (!userGamesData) {
-			return json({
-				games: [],
-				total: 0,
-				limit,
-				offset,
-				hasMore: false
-			}, {
-				headers: { 'Access-Control-Allow-Origin': '*' }
-			});
+			return json(
+				{
+					games: [],
+					total: 0,
+					limit,
+					offset,
+					hasMore: false
+				},
+				{
+					headers: { 'Access-Control-Allow-Origin': '*' }
+				}
+			);
 		}
 
 		const gameIds: string[] = JSON.parse(userGamesData);
@@ -140,16 +143,18 @@ export const GET = async ({ request, platform, url }: RequestEvent) => {
 			url: `/games/${game.id}`
 		}));
 
-		return json({
-			games: enrichedGames,
-			total: gameIds.length,
-			limit,
-			offset,
-			hasMore: offset + limit < gameIds.length
-		}, {
-			headers: { 'Access-Control-Allow-Origin': '*' }
-		});
-
+		return json(
+			{
+				games: enrichedGames,
+				total: gameIds.length,
+				limit,
+				offset,
+				hasMore: offset + limit < gameIds.length
+			},
+			{
+				headers: { 'Access-Control-Allow-Origin': '*' }
+			}
+		);
 	} catch (error) {
 		console.error('Error fetching user games:', error);
 		return json(
@@ -171,4 +176,4 @@ export const OPTIONS = async () => {
 			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 		}
 	});
-}; 
+};

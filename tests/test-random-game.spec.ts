@@ -34,22 +34,26 @@ test.describe('Random Game Functionality', () => {
 		const noImagesError = page.locator('text=Upload some images first');
 		const serverError = page.locator('text=Failed to fetch random images');
 
-		const hasError = await errorMessage.isVisible().catch(() => false) ||
-						await noImagesError.isVisible().catch(() => false) ||
-						await serverError.isVisible().catch(() => false);
+		const hasError =
+			(await errorMessage.isVisible().catch(() => false)) ||
+			(await noImagesError.isVisible().catch(() => false)) ||
+			(await serverError.isVisible().catch(() => false));
 
 		if (hasError) {
-			console.log('No public images available - this is expected if no one has uploaded public images yet');
+			console.log(
+				'No public images available - this is expected if no one has uploaded public images yet'
+			);
 			// This is expected if there are no public images in the database
 			expect(true).toBe(true); // Test passes - the endpoint is working but no data
 		} else {
 			// Check if the game loaded successfully
 			const gameRound = page.locator('[data-testid="game-round"]').or(page.locator('text=Round 1'));
 			const gameImage = page.locator('img').first();
-			
+
 			// Either should be visible if the game loaded
-			const gameLoaded = await gameRound.isVisible().catch(() => false) || 
-							  await gameImage.isVisible().catch(() => false);
+			const gameLoaded =
+				(await gameRound.isVisible().catch(() => false)) ||
+				(await gameImage.isVisible().catch(() => false));
 
 			expect(gameLoaded).toBe(true);
 		}
@@ -57,10 +61,12 @@ test.describe('Random Game Functionality', () => {
 
 	test('should handle API endpoint directly', async ({ page }) => {
 		// Test the API endpoint directly
-		const response = await page.request.get('https://whereami-5kp.pages.dev/api/images/random?count=5');
-		
+		const response = await page.request.get(
+			'https://whereami-5kp.pages.dev/api/images/random?count=5'
+		);
+
 		console.log(`Response status: ${response.status()}`);
-		
+
 		if (response.status() === 404) {
 			// This is expected if no public images are available
 			const body = await response.text();
@@ -70,7 +76,7 @@ test.describe('Random Game Functionality', () => {
 			// This is expected if public images are available
 			try {
 				const responseBody = await response.json();
-				
+
 				// Check if it's the functions API format
 				if (responseBody.success && responseBody.data) {
 					expect(Array.isArray(responseBody.data)).toBe(true);
@@ -92,7 +98,7 @@ test.describe('Random Game Functionality', () => {
 			try {
 				const errorResponse = await response.json();
 				console.log('500 error response:', errorResponse);
-				
+
 				if (errorResponse.error && errorResponse.error.includes('No public images')) {
 					console.log('500 error is actually about no public images - this is expected');
 					expect(true).toBe(true); // Test passes - the endpoint is working but no data
@@ -111,4 +117,4 @@ test.describe('Random Game Functionality', () => {
 			expect(response.status()).toBe(200);
 		}
 	});
-}); 
+});

@@ -1,7 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { user, isAuthenticated, signOut, userStats, userProfile, displayName, loadUserProfile } from '$lib/stores/authStore';
+	import {
+		user,
+		isAuthenticated,
+		signOut,
+		userStats,
+		userProfile,
+		displayName,
+		loadUserProfile
+	} from '$lib/stores/authStore';
 	import { showSuccess, showError } from '$lib/stores/toastStore';
 	import AuthButton from '$lib/components/AuthButton.svelte';
 	import AuthModal from '$lib/components/AuthModal.svelte';
@@ -66,7 +74,9 @@
 		<div class="flex justify-between items-center mb-8">
 			<div>
 				<h1 class="text-3xl font-bold" style="color: var(--text-primary);">Profile</h1>
-				<p class="mt-1" style="color: var(--text-secondary);">Manage your account and view your stats</p>
+				<p class="mt-1" style="color: var(--text-secondary);">
+					Manage your account and view your stats
+				</p>
 			</div>
 			<div class="flex items-center gap-4">
 				<button on:click={() => goto('/')} class="btn-secondary"> ← Back to Home </button>
@@ -81,13 +91,15 @@
 						<!-- Avatar -->
 						<div class="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
 							{#if $userProfile?.profilePicture}
-								<img 
-									src={`/api/images/${$userProfile.profilePicture}`} 
-									alt="Profile" 
+								<img
+									src={`/api/images/${$userProfile.profilePicture}`}
+									alt="Profile"
 									class="w-full h-full object-cover"
 								/>
 							{:else}
-								<div class="w-full h-full bg-blue-600 flex items-center justify-center text-white text-xl font-semibold">
+								<div
+									class="w-full h-full bg-blue-600 flex items-center justify-center text-white text-xl font-semibold"
+								>
 									{$user.user_metadata?.first_name?.[0] || $user.email?.[0]?.toUpperCase() || '?'}
 								</div>
 							{/if}
@@ -104,14 +116,9 @@
 							</p>
 						</div>
 					</div>
-					
+
 					<!-- Edit Profile Button -->
-					<button
-						on:click={openProfileEdit}
-						class="btn-secondary"
-					>
-						✏️ Edit Profile
-					</button>
+					<button on:click={openProfileEdit} class="btn-secondary"> ✏️ Edit Profile </button>
 				</div>
 			</div>
 
@@ -147,7 +154,9 @@
 
 			<!-- Quick Actions -->
 			<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
-				<h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Quick Actions</h3>
+				<h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">
+					Quick Actions
+				</h3>
 				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 					<button on:click={() => goto('/gallery?tab=upload')} class="btn-primary text-center">
 						📸 Upload Photos
@@ -163,17 +172,26 @@
 
 			<!-- Danger Zone -->
 			<div class="rounded-xl shadow-sm p-6 mt-8 border border-red-200">
-				<h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Account Actions</h3>
+				<h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">
+					Account Actions
+				</h3>
 				<button on:click={handleLogout} disabled={loading} class="btn-danger">
 					{loading ? 'Signing out...' : 'Sign Out'}
 				</button>
 			</div>
 		{:else}
 			<!-- Not authenticated -->
-			<div class="rounded-xl shadow-sm p-8 text-center" style="background-color: var(--bg-primary);">
+			<div
+				class="rounded-xl shadow-sm p-8 text-center"
+				style="background-color: var(--bg-primary);"
+			>
 				<div class="text-6xl mb-4">🔐</div>
-				<h2 class="text-2xl font-bold mb-2" style="color: var(--text-primary);">Sign In Required</h2>
-				<p class="mb-6" style="color: var(--text-secondary);">You need to sign in to view your profile</p>
+				<h2 class="text-2xl font-bold mb-2" style="color: var(--text-primary);">
+					Sign In Required
+				</h2>
+				<p class="mb-6" style="color: var(--text-secondary);">
+					You need to sign in to view your profile
+				</p>
 				<button on:click={handleLogin} class="btn-primary"> Sign In </button>
 			</div>
 		{/if}
@@ -184,7 +202,7 @@
 <AuthModal isOpen={showAuthModal} on:close={handleAuthModalClose} />
 
 <!-- Profile Edit Modal -->
-<ProfileEdit 
+<ProfileEdit
 	isOpen={showProfileEdit}
 	currentDisplayName={$userProfile?.displayName || $displayName}
 	currentProfilePicture={$userProfile?.profilePicture}

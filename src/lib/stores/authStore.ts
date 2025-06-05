@@ -30,11 +30,11 @@ export const userProfile = writable<{
 // Derived display name from profile or user metadata
 export const displayName = derived(
 	[userProfile, user],
-	([$userProfile, $user]) => 
-		$userProfile?.displayName || 
-		$user?.user_metadata?.full_name || 
-		$user?.user_metadata?.name || 
-		$user?.email || 
+	([$userProfile, $user]) =>
+		$userProfile?.displayName ||
+		$user?.user_metadata?.full_name ||
+		$user?.user_metadata?.name ||
+		$user?.email ||
 		'Anonymous'
 );
 
@@ -95,14 +95,16 @@ export async function initAuth() {
 // Load user profile data
 export async function loadUserProfile() {
 	try {
-		const { data: { session } } = await supabase.auth.getSession();
+		const {
+			data: { session }
+		} = await supabase.auth.getSession();
 		if (!session?.access_token) {
 			return;
 		}
 
 		const response = await fetch('/api/user/profile', {
 			headers: {
-				'Authorization': `Bearer ${session.access_token}`
+				Authorization: `Bearer ${session.access_token}`
 			}
 		});
 

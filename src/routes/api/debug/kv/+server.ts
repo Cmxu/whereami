@@ -42,13 +42,10 @@ export const GET = async ({ request, platform, url }: RequestEvent) => {
 		};
 
 		// Try to get some common keys to verify functionality
-		const commonKeys = [
-			'public_images',
-			'public_games_index'
-		];
+		const commonKeys = ['public_images', 'public_games_index'];
 
 		const samples: any = {};
-		
+
 		if (env.IMAGE_DATA) {
 			for (const sampleKey of commonKeys) {
 				try {
@@ -73,7 +70,6 @@ export const GET = async ({ request, platform, url }: RequestEvent) => {
 			...debugInfo,
 			samples
 		});
-
 	} catch (error) {
 		console.error('Debug endpoint error:', error);
 		return json({ error: 'Debug endpoint failed', details: error }, { status: 500 });
@@ -89,4 +85,4 @@ export const OPTIONS = async () => {
 			'Access-Control-Allow-Headers': 'Content-Type'
 		}
 	});
-}; 
+};

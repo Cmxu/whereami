@@ -19,8 +19,11 @@ test.describe('Random Game with Upload Test', () => {
 		}
 
 		// Create a simple test image file
-		const testImageBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAGAWA4h4QAAAABJRU5ErkJggg==', 'base64');
-		
+		const testImageBuffer = Buffer.from(
+			'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAGAWA4h4QAAAABJRU5ErkJggg==',
+			'base64'
+		);
+
 		// Upload an image
 		const fileInput = page.locator('input[type="file"]');
 		await fileInput.setInputFiles({
@@ -42,15 +45,15 @@ test.describe('Random Game with Upload Test', () => {
 		const addLocationButton = page.locator('button').filter({ hasText: 'Add Location' }).first();
 		if (await addLocationButton.isVisible()) {
 			await addLocationButton.click();
-			
+
 			// Wait for the map modal to open
 			await page.waitForTimeout(1000);
-			
+
 			// Click somewhere on the map to set a location
 			const mapElement = page.locator('.leaflet-container').first();
 			if (await mapElement.isVisible()) {
 				await mapElement.click({ position: { x: 200, y: 200 } });
-				
+
 				// Save the location
 				const saveButton = page.locator('button').filter({ hasText: 'Save Location' });
 				await saveButton.click();
@@ -61,10 +64,10 @@ test.describe('Random Game with Upload Test', () => {
 		const uploadButton = page.locator('button').filter({ hasText: 'Upload Now' }).first();
 		if (await uploadButton.isVisible()) {
 			await uploadButton.click();
-			
+
 			// Wait for upload to complete
 			await page.waitForTimeout(5000);
-			
+
 			// Check for success message
 			const successMessage = page.locator('text=Successfully uploaded');
 			if (await successMessage.isVisible()) {
@@ -74,19 +77,21 @@ test.describe('Random Game with Upload Test', () => {
 
 		// Now test the random game functionality
 		console.log('🎮 Testing random game functionality...');
-		
+
 		// Wait a bit for the image to be indexed
 		await page.waitForTimeout(2000);
-		
+
 		// Test the API endpoint directly
-		const response = await page.request.get('https://whereami-5kp.pages.dev/api/images/random?count=3');
+		const response = await page.request.get(
+			'https://whereami-5kp.pages.dev/api/images/random?count=3'
+		);
 		console.log(`API Response status: ${response.status()}`);
-		
+
 		if (response.status() === 200) {
 			try {
 				const responseBody = await response.json();
 				console.log('Response body type:', typeof responseBody);
-				
+
 				// Check if it's the functions API format
 				if (responseBody.success && responseBody.data) {
 					expect(Array.isArray(responseBody.data)).toBe(true);
@@ -131,9 +136,10 @@ test.describe('Random Game with Upload Test', () => {
 		const serverError = page.locator('text=Failed to fetch random images');
 		const gameImage = page.locator('img').first();
 
-		const hasError = await errorMessage.isVisible().catch(() => false) ||
-						await noImagesError.isVisible().catch(() => false) ||
-						await serverError.isVisible().catch(() => false);
+		const hasError =
+			(await errorMessage.isVisible().catch(() => false)) ||
+			(await noImagesError.isVisible().catch(() => false)) ||
+			(await serverError.isVisible().catch(() => false));
 
 		if (hasError) {
 			console.log('❌ Still getting "no images" error even after upload');
@@ -150,4 +156,4 @@ test.describe('Random Game with Upload Test', () => {
 		// The test passes if we either got a working game or a reasonable error
 		expect(true).toBe(true);
 	});
-}); 
+});

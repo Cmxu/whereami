@@ -12,7 +12,7 @@
 	// Initialize Supabase auth when the app loads
 	onMount(() => {
 		initAuth();
-		
+
 		// Initialize theme
 		theme.init();
 	});

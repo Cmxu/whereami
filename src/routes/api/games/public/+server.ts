@@ -33,40 +33,50 @@ export const GET = async ({ url, platform }: RequestEvent) => {
 		const sortBy = (url.searchParams.get('sortBy') as 'newest' | 'popular' | 'rating') || 'newest';
 		const difficulty = url.searchParams.get('difficulty')?.trim();
 		const minRating = parseFloat(url.searchParams.get('minRating') || '0');
-		const tags = url.searchParams.get('tags')?.split(',').filter(tag => tag.trim()) || [];
+		const tags =
+			url.searchParams
+				.get('tags')
+				?.split(',')
+				.filter((tag) => tag.trim()) || [];
 
 		// Get public games index from GAME_DATA
 		const publicGamesKey = 'public_games_index';
 		const existingPublicGamesStr = await env.GAME_DATA.get(publicGamesKey);
-		
+
 		if (!existingPublicGamesStr) {
-			return json({
-				games: [],
-				total: 0,
-				limit,
-				offset,
-				hasMore: false
-			}, {
-				headers: { 'Access-Control-Allow-Origin': '*' }
-			});
+			return json(
+				{
+					games: [],
+					total: 0,
+					limit,
+					offset,
+					hasMore: false
+				},
+				{
+					headers: { 'Access-Control-Allow-Origin': '*' }
+				}
+			);
 		}
 
 		const publicGamesIndex = JSON.parse(existingPublicGamesStr);
-		
+
 		if (publicGamesIndex.length === 0) {
-			return json({
-				games: [],
-				total: 0,
-				limit,
-				offset,
-				hasMore: false
-			}, {
-				headers: { 'Access-Control-Allow-Origin': '*' }
-			});
+			return json(
+				{
+					games: [],
+					total: 0,
+					limit,
+					offset,
+					hasMore: false
+				},
+				{
+					headers: { 'Access-Control-Allow-Origin': '*' }
+				}
+			);
 		}
 
 		// Get full game metadata for all public games
-		const gamePromises = publicGamesIndex.map((indexEntry: any) => 
+		const gamePromises = publicGamesIndex.map((indexEntry: any) =>
 			getGameMetadata(indexEntry.gameId || indexEntry.id, env)
 		);
 		const gameResults = await Promise.all(gamePromises);
@@ -94,15 +104,16 @@ export const GET = async ({ url, platform }: RequestEvent) => {
 		// Apply minimum rating filter
 		if (minRating > 0) {
 			validGames = validGames.filter((game) => {
-				const avgRating = (game.ratingCount || 0) > 0 ? (game.rating || 0) / (game.ratingCount || 1) : 0;
+				const avgRating =
+					(game.ratingCount || 0) > 0 ? (game.rating || 0) / (game.ratingCount || 1) : 0;
 				return avgRating >= minRating;
 			});
 		}
 
 		// Apply tags filter
 		if (tags.length > 0) {
-			validGames = validGames.filter((game) =>
-				game.tags && game.tags.some(tag => tags.includes(tag))
+			validGames = validGames.filter(
+				(game) => game.tags && game.tags.some((tag) => tags.includes(tag))
 			);
 		}
 
@@ -136,16 +147,18 @@ export const GET = async ({ url, platform }: RequestEvent) => {
 			imageCount: game.imageIds.length
 		}));
 
-		return json({
-			games: enrichedGames,
-			total: validGames.length,
-			limit,
-			offset,
-			hasMore: offset + limit < validGames.length
-		}, {
-			headers: { 'Access-Control-Allow-Origin': '*' }
-		});
-
+		return json(
+			{
+				games: enrichedGames,
+				total: validGames.length,
+				limit,
+				offset,
+				hasMore: offset + limit < validGames.length
+			},
+			{
+				headers: { 'Access-Control-Allow-Origin': '*' }
+			}
+		);
 	} catch (error) {
 		console.error('Error fetching public games:', error);
 		return json(

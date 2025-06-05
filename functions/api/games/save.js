@@ -23,7 +23,7 @@ export async function onRequestPost(context) {
 		}
 
 		const gameData = await request.json();
-		
+
 		// Validate required fields
 		if (!gameData.rounds || !Array.isArray(gameData.rounds) || gameData.rounds.length === 0) {
 			return new Response(JSON.stringify({ error: 'Invalid game data: rounds are required' }), {
@@ -44,7 +44,7 @@ export async function onRequestPost(context) {
 			id: gameId,
 			gameType: gameData.gameType || 'random',
 			customGameId: gameData.customGameId,
-			imageIds: gameData.imageIds || gameData.rounds.map(r => r.imageId),
+			imageIds: gameData.imageIds || gameData.rounds.map((r) => r.imageId),
 			rounds: gameData.rounds.map((round, index) => ({
 				id: index + 1,
 				imageId: round.imageId || round.image?.id,
@@ -56,7 +56,7 @@ export async function onRequestPost(context) {
 				timeTaken: round.timeTaken
 			})),
 			playerScore: gameData.totalScore || gameData.playerScore,
-			maxPossibleScore: gameData.maxPossibleScore || (gameData.rounds.length * 5000),
+			maxPossibleScore: gameData.maxPossibleScore || gameData.rounds.length * 5000,
 			completedAt: new Date().toISOString(),
 			playedBy: gameData.playedBy,
 			shareToken: shareToken,
@@ -88,14 +88,14 @@ export async function onRequestPost(context) {
 				const userGamesKey = `user_games_${gameData.playedBy}`;
 				const existingGamesStr = await env.GAME_DATA.get(userGamesKey);
 				const existingGames = existingGamesStr ? JSON.parse(existingGamesStr) : [];
-				
+
 				existingGames.unshift(gameId); // Add to beginning of array
-				
+
 				// Keep only the last 100 games per user
 				if (existingGames.length > 100) {
 					existingGames.splice(100);
 				}
-				
+
 				await env.GAME_DATA.put(userGamesKey, JSON.stringify(existingGames));
 			} catch (error) {
 				console.error('Error saving to user game history:', error);
@@ -108,8 +108,10 @@ export async function onRequestPost(context) {
 			try {
 				const publicGamesKey = 'public_games_index';
 				const existingPublicGamesStr = await env.GAME_DATA.get(publicGamesKey);
-				const existingPublicGames = existingPublicGamesStr ? JSON.parse(existingPublicGamesStr) : [];
-				
+				const existingPublicGames = existingPublicGamesStr
+					? JSON.parse(existingPublicGamesStr)
+					: [];
+
 				existingPublicGames.unshift({
 					gameId: gameId,
 					playerScore: savedGame.playerScore,
@@ -118,12 +120,12 @@ export async function onRequestPost(context) {
 					gameType: savedGame.gameType,
 					numRounds: savedGame.gameSettings.numRounds
 				});
-				
+
 				// Keep only the last 1000 public games
 				if (existingPublicGames.length > 1000) {
 					existingPublicGames.splice(1000);
 				}
-				
+
 				await env.GAME_DATA.put(publicGamesKey, JSON.stringify(existingPublicGames));
 			} catch (error) {
 				console.error('Error updating public games index:', error);
@@ -132,18 +134,20 @@ export async function onRequestPost(context) {
 		}
 
 		const url = new URL(request.url);
-		return new Response(JSON.stringify({
-			success: true,
-			gameId: gameId,
-			shareToken: shareToken,
-			shareUrl: `${url.origin}/shared/${shareToken}`
-		}), {
-			headers: {
-				'Content-Type': 'application/json',
-				'Access-Control-Allow-Origin': '*'
+		return new Response(
+			JSON.stringify({
+				success: true,
+				gameId: gameId,
+				shareToken: shareToken,
+				shareUrl: `${url.origin}/shared/${shareToken}`
+			}),
+			{
+				headers: {
+					'Content-Type': 'application/json',
+					'Access-Control-Allow-Origin': '*'
+				}
 			}
-		});
-
+		);
 	} catch (error) {
 		console.error('Error saving game:', error);
 		return new Response(JSON.stringify({ error: 'Failed to save game' }), {
@@ -165,4 +169,4 @@ export async function onRequestOptions() {
 			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 		}
 	});
-} 
+}

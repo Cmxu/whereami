@@ -187,7 +187,7 @@ export const DELETE = async ({ params, request, platform }: RequestEvent) => {
 			const userImagesData = await env.USER_DATA.get(userImagesKey);
 			if (userImagesData) {
 				const imagesList: string[] = JSON.parse(userImagesData);
-				const filteredImages = imagesList.filter(id => id !== imageId);
+				const filteredImages = imagesList.filter((id) => id !== imageId);
 				await env.USER_DATA.put(userImagesKey, JSON.stringify(filteredImages));
 			}
 
@@ -196,7 +196,7 @@ export const DELETE = async ({ params, request, platform }: RequestEvent) => {
 				const publicImagesData = await env.IMAGE_DATA.get('public_images');
 				if (publicImagesData) {
 					const publicImages: string[] = JSON.parse(publicImagesData);
-					const filteredPublicImages = publicImages.filter(id => id !== imageId);
+					const filteredPublicImages = publicImages.filter((id) => id !== imageId);
 					await env.IMAGE_DATA.put('public_images', JSON.stringify(filteredPublicImages));
 				}
 			}
@@ -210,9 +210,9 @@ export const DELETE = async ({ params, request, platform }: RequestEvent) => {
 			}
 
 			return json(
-				{ 
-					success: true, 
-					message: 'Image deleted successfully' 
+				{
+					success: true,
+					message: 'Image deleted successfully'
 				},
 				{
 					status: 200,
@@ -221,11 +221,10 @@ export const DELETE = async ({ params, request, platform }: RequestEvent) => {
 					}
 				}
 			);
-
 		} catch (deleteError) {
 			console.error('Error deleting image:', deleteError);
 			return json(
-				{ 
+				{
 					error: 'Failed to delete image',
 					details: deleteError instanceof Error ? deleteError.message : 'Unknown error'
 				},
@@ -374,7 +373,7 @@ export const PUT = async ({ params, request, platform }: RequestEvent) => {
 					}
 				} else if (!metadata.isPublic && publicImages.includes(imageId)) {
 					// Remove from public index
-					const filteredImages = publicImages.filter(id => id !== imageId);
+					const filteredImages = publicImages.filter((id) => id !== imageId);
 					await env.IMAGE_DATA.put('public_images', JSON.stringify(filteredImages));
 				}
 
@@ -385,7 +384,9 @@ export const PUT = async ({ params, request, platform }: RequestEvent) => {
 		}
 
 		if (updateData.tags !== undefined && Array.isArray(updateData.tags)) {
-			metadata.tags = updateData.tags.map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+			metadata.tags = updateData.tags
+				.map((tag: string) => tag.trim())
+				.filter((tag: string) => tag.length > 0);
 		}
 
 		// Update the updatedAt timestamp
@@ -396,8 +397,8 @@ export const PUT = async ({ params, request, platform }: RequestEvent) => {
 			await env.IMAGE_DATA.put(`image:${imageId}`, JSON.stringify(metadata));
 
 			return json(
-				{ 
-					success: true, 
+				{
+					success: true,
 					message: 'Image updated successfully',
 					metadata: metadata
 				},
@@ -408,11 +409,10 @@ export const PUT = async ({ params, request, platform }: RequestEvent) => {
 					}
 				}
 			);
-
 		} catch (saveError) {
 			console.error('Error saving updated metadata:', saveError);
 			return json(
-				{ 
+				{
 					error: 'Failed to save changes',
 					details: saveError instanceof Error ? saveError.message : 'Unknown error'
 				},
@@ -466,7 +466,7 @@ export const GET = async ({ params, platform }: RequestEvent) => {
 
 		// Handle different types of image requests
 		let objectKey: string;
-		
+
 		// Check if it's a profile picture request
 		if (imageId.startsWith('profile-pictures/')) {
 			objectKey = imageId;
@@ -501,4 +501,4 @@ export const GET = async ({ params, platform }: RequestEvent) => {
 		console.error('Image serving error:', error);
 		return new Response('Internal server error', { status: 500 });
 	}
-}; 
+};

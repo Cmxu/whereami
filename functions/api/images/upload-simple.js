@@ -198,15 +198,15 @@ export async function onRequestPost(context) {
 			if (metadata.isPublic) {
 				const publicImagesData = await env.IMAGE_DATA.get('public_images');
 				const publicImages = publicImagesData ? JSON.parse(publicImagesData) : [];
-				
+
 				// Add the new image to the beginning of the list
 				publicImages.unshift(uniqueId);
-				
+
 				// Keep only the last 1000 public images
 				if (publicImages.length > 1000) {
 					publicImages.splice(1000);
 				}
-				
+
 				await env.IMAGE_DATA.put('public_images', JSON.stringify(publicImages));
 			}
 
