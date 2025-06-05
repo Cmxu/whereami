@@ -33,12 +33,12 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
-    // Setup project for authentication - only this needs to run headed for manual auth
+    // Setup project for authentication - always headless
     { 
       name: 'setup', 
       testMatch: /.*\.setup\.ts/,
       use: {
-        headless: process.env.CI ? true : false, // Headed locally for manual auth, headless in CI
+        headless: true, // Always headless for setup
       }
     },
     
@@ -46,7 +46,7 @@ export default defineConfig({
       name: 'chromium',
       use: { 
         ...devices['Desktop Chrome'],
-        headless: true, // Explicitly ensure headless
+        headless: true,
         // Use prepared auth state
         storageState: 'playwright/.auth/user.json',
       },
@@ -57,7 +57,7 @@ export default defineConfig({
       name: 'firefox',
       use: { 
         ...devices['Desktop Firefox'],
-        headless: true, // Explicitly ensure headless
+        headless: true,
         // Use prepared auth state
         storageState: 'playwright/.auth/user.json',
       },
@@ -68,7 +68,7 @@ export default defineConfig({
       name: 'webkit',
       use: { 
         ...devices['Desktop Safari'],
-        headless: true, // Explicitly ensure headless
+        headless: true,
         // Use prepared auth state
         storageState: 'playwright/.auth/user.json',
       },

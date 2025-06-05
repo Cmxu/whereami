@@ -17,7 +17,13 @@ export const GET = async ({ params, url, request, platform }: RequestEvent) => {
 		}
 
 		// Construct the R2 key
-		const r2Key = `images/${path}`;
+		// Special handling for profile pictures - they are stored directly at the path
+		let r2Key: string;
+		if (path.startsWith('profile-pictures/')) {
+			r2Key = path;
+		} else {
+			r2Key = `images/${path}`;
+		}
 
 		// Parse transformation parameters from query string
 		const width = url.searchParams.get('w');

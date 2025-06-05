@@ -13,8 +13,13 @@ export class AuthUtils {
       await this.page.waitForLoadState('networkidle', { timeout: 5000 });
       
       // Check for sign-in prompt (indicates not authenticated)
-      const signInButton = this.page.getByText('Sign In to Continue');
-      if (await signInButton.isVisible({ timeout: 3000 })) {
+      const hasSignInPrompt = await this.page.evaluate(() => {
+        return Array.from(document.querySelectorAll('*')).some(el => 
+          el.textContent?.includes('Sign In to Continue')
+        );
+      });
+      
+      if (hasSignInPrompt) {
         return false;
       }
 
@@ -39,7 +44,7 @@ export class AuthUtils {
       // Additional check: if we're on a protected page and no sign-in prompt, likely authenticated
       const currentUrl = this.page.url();
       if ((currentUrl.includes('/gallery') || currentUrl.includes('/profile') || currentUrl.includes('/create')) 
-          && !await signInButton.isVisible({ timeout: 1000 })) {
+          && !hasSignInPrompt) {
         return true;
       }
 
@@ -66,92 +71,15 @@ export class AuthUtils {
   }
 
   /**
-   * Perform login if needed - more flexible approach
+   * Navigate to a protected route and verify authentication
    */
-  async ensureAuthenticated(): Promise<void> {
-    // First check if already authenticated
-    if (await this.isAuthenticated()) {
-      console.log('✅ Already authenticated');
-      return;
-    }
-
-    console.log('🔐 Authentication required, attempting login...');
+  async gotoProtected(path: string): Promise<void> {
+    await this.page.goto(path);
+    await this.page.waitForLoadState('networkidle');
     
-    // Look for various sign-in elements
-    const signInSelectors = [
-      'text="Sign In to Continue"',
-      'button:has-text("Sign In")',
-      'button:has-text("Login")',
-      'a:has-text("Sign In")',
-      'a:has-text("Login")',
-      '[data-testid="sign-in"]',
-      '.sign-in-button'
-    ];
-    
-    let signInElement = null;
-    for (const selector of signInSelectors) {
-      const element = this.page.locator(selector);
-      if (await element.isVisible({ timeout: 2000 })) {
-        signInElement = element;
-        console.log(`🔍 Found sign-in element: ${selector}`);
-        break;
-      }
-    }
-    
-    if (signInElement) {
-      await signInElement.click();
-      
-      // Look for various authentication interfaces
-      const authSelectors = [
-        'div[role="dialog"]',
-        '.modal',
-        '.auth-modal',
-        '.login-modal',
-        'iframe[src*="supabase"]',
-        'iframe[src*="auth"]',
-        'form[action*="auth"]',
-        'form[action*="login"]',
-        'input[type="email"]',
-        'input[name="email"]',
-        'input[placeholder*="email"]'
-      ];
-      
-      let authInterface = null;
-      for (const selector of authSelectors) {
-        const element = this.page.locator(selector);
-        if (await element.isVisible({ timeout: 5000 })) {
-          authInterface = element;
-          console.log(`🎯 Found authentication interface: ${selector}`);
-          break;
-        }
-      }
-      
-      if (authInterface) {
-        console.log('📝 Authentication interface detected!');
-        console.log(`   Email: ${process.env.TEST_EMAIL || 'cmxu@comcast.net'}`);
-        console.log(`   Password: ${process.env.TEST_PASSWORD || 'admin1'}`);
-        console.log('   Please complete authentication manually');
-        
-        // Wait for authentication to complete
-        await this.waitForAuthentication(60000);
-        console.log('✅ Authentication completed');
-      } else {
-        console.log('⚠️  No authentication interface found - checking if already authenticated');
-        // Sometimes clicking sign-in immediately authenticates (e.g., with stored credentials)
-        await this.page.waitForTimeout(2000);
-        if (await this.isAuthenticated()) {
-          console.log('✅ Authentication completed automatically');
-        } else {
-          throw new Error('Authentication interface not found and not authenticated');
-        }
-      }
-    } else {
-      console.log('⚠️  No sign-in button found - checking authentication state');
-      // Maybe we're already on an authenticated page but detection failed
-      await this.page.waitForTimeout(2000);
-      if (!await this.isAuthenticated()) {
-        throw new Error('Sign In button not found and not authenticated');
-      }
+    // Verify we're authenticated
+    if (!await this.isAuthenticated()) {
+      throw new Error(`Not authenticated when accessing protected route: ${path}`);
     }
   }
 
@@ -162,7 +90,7 @@ export class AuthUtils {
     try {
       // Make sure we're on the gallery page
       if (!this.page.url().includes('/gallery')) {
-        await this.page.goto('/gallery');
+        await this.gotoProtected('/gallery');
       }
       
       // Wait for page to load
@@ -185,7 +113,7 @@ export class AuthUtils {
     try {
       // Make sure we're on the gallery page
       if (!this.page.url().includes('/gallery')) {
-        await this.page.goto('/gallery');
+        await this.gotoProtected('/gallery');
       }
       
       // Wait for page to load
@@ -195,21 +123,6 @@ export class AuthUtils {
       return await galleryItems.count();
     } catch {
       return 0;
-    }
-  }
-
-  /**
-   * Navigate to a protected page and ensure authentication
-   */
-  async gotoProtected(path: string): Promise<void> {
-    await this.page.goto(path);
-    
-    // Wait for page to load
-    await this.page.waitForLoadState('networkidle', { timeout: 10000 });
-    
-    // Only try to authenticate if we detect we need to
-    if (!await this.isAuthenticated()) {
-      await this.ensureAuthenticated();
     }
   }
 } 

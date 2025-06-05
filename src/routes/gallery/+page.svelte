@@ -92,23 +92,34 @@
 	}
 
 	async function extractGPS(file: File): Promise<Location | null> {
-		if (!exifr) return null;
+		if (!exifr) {
+			console.log(`EXIF reader not available for ${file.name}`);
+			return null;
+		}
 
 		try {
+			console.log(`Starting GPS extraction for ${file.name}...`);
 			// Use a more efficient approach - only extract GPS data
 			const gps = await exifr.gps(file);
+			console.log(`GPS extraction result for ${file.name}:`, gps);
+			
 			if (gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number') {
 				// Round to 6 decimal places (approximately 0.1m precision)
-				return {
+				const location = {
 					lat: Math.round(gps.latitude * 1000000) / 1000000,
 					lng: Math.round(gps.longitude * 1000000) / 1000000
 				};
+				console.log(`Successfully extracted GPS from ${file.name}:`, location);
+				return location;
+			} else {
+				console.log(`No valid GPS coordinates found in ${file.name}`);
+				return null;
 			}
 		} catch (error) {
 			console.warn('Failed to extract GPS data from', file.name, ':', error);
+			// Don't let GPS extraction errors break the file processing
+			return null;
 		}
-
-		return null;
 	}
 
 	// Handle browser navigation (back/forward buttons)
@@ -174,8 +185,12 @@
 		return { valid: true };
 	}
 
-	async function processFiles(files: FileList) {
+	async function processFiles(files: FileList | File[]) {
 		if (files.length === 0) return;
+
+		console.log('=== PROCESSING FILES ===');
+		console.log(`Starting to process ${files.length} files:`);
+		console.log('Files:', Array.from(files).map(f => ({ name: f.name, size: f.size, type: f.type })));
 
 		processingFiles = true;
 		const newFiles: UploadFile[] = [];
@@ -183,56 +198,87 @@
 		let gpsExtractedCount = 0;
 		let invalidFiles: string[] = [];
 
-		showInfo(`Processing ${files.length} file${files.length !== 1 ? 's' : ''}...`);
+		// Enhanced feedback for multiple files
+		if (files.length === 1) {
+			showInfo(`Processing 1 file...`);
+		} else {
+			showInfo(`Processing ${files.length} files... 📚`);
+		}
 
+		// Process files sequentially to avoid overwhelming the system
 		for (let i = 0; i < files.length; i++) {
 			const file = files[i];
+			console.log(`Processing file ${i + 1}/${files.length}: ${file.name}`);
 			
-			// Validate file
-			const validation = validateFile(file);
-			if (!validation.valid) {
-				invalidFiles.push(`${file.name}: ${validation.error}`);
-				continue;
+			try {
+				// Validate file
+				const validation = validateFile(file);
+				if (!validation.valid) {
+					console.log(`File ${file.name} failed validation:`, validation.error);
+					invalidFiles.push(`${file.name}: ${validation.error}`);
+					continue;
+				}
+
+				validFileCount++;
+				console.log(`File ${file.name} passed validation`);
+
+				// Create preview URL
+				const preview = URL.createObjectURL(file);
+				console.log(`Created preview URL for ${file.name}`);
+
+				// Try to extract GPS data
+				console.log(`Extracting GPS data from ${file.name}...`);
+				const extractedLocation = await extractGPS(file);
+				
+				if (extractedLocation) {
+					console.log(`GPS data extracted from ${file.name}:`, extractedLocation);
+					gpsExtractedCount++;
+				} else {
+					console.log(`No GPS data found in ${file.name}`);
+				}
+
+				const uploadFile: UploadFile = {
+					id: generateId(),
+					file,
+					preview,
+					extractedLocation: extractedLocation || undefined,
+					location: extractedLocation || undefined,
+					uploaded: false,
+					uploading: false,
+					progress: 0,
+					retryCount: 0,
+					customName: file.name.split('.').slice(0, -1).join('.')
+				};
+
+				newFiles.push(uploadFile);
+				console.log(`Added ${file.name} to processing queue. Queue now has ${newFiles.length} files`);
+			} catch (error) {
+				console.error(`Error processing file ${file.name}:`, error);
+				invalidFiles.push(`${file.name}: Processing error - ${error instanceof Error ? error.message : 'Unknown error'}`);
 			}
-
-			validFileCount++;
-
-			// Create preview URL
-			const preview = URL.createObjectURL(file);
-
-			// Try to extract GPS data
-			const extractedLocation = await extractGPS(file);
-			if (extractedLocation) {
-				gpsExtractedCount++;
-			}
-
-			const uploadFile: UploadFile = {
-				id: generateId(),
-				file,
-				preview,
-				extractedLocation: extractedLocation || undefined,
-				location: extractedLocation || undefined,
-				uploaded: false,
-				uploading: false,
-				progress: 0,
-				retryCount: 0,
-				customName: file.name.split('.').slice(0, -1).join('.')
-			};
-
-			newFiles.push(uploadFile);
+			
+			console.log(`Completed processing file ${i + 1}/${files.length}: ${file.name}`);
 		}
+
+		console.log(`Loop completed! Processed all ${files.length} files`);
+		console.log(`Processed ${validFileCount} valid files out of ${files.length} total`);
+
+		console.log('Current uploadFiles before adding new ones:', uploadFiles.length);
 
 		// Add valid files to the list
 		uploadFiles = [...uploadFiles, ...newFiles];
+		
+		console.log('New uploadFiles after adding:', uploadFiles.length);
+		console.log('All files in uploadFiles:', uploadFiles.map(f => f.file.name));
 
 		processingFiles = false;
 
-		// Show feedback
+		// Enhanced feedback for multiple files
 		if (validFileCount > 0) {
-			showSuccess(
-				`Added ${validFileCount} photo${validFileCount !== 1 ? 's' : ''}` +
-				(gpsExtractedCount > 0 ? ` (${gpsExtractedCount} with GPS data)` : '')
-			);
+			const message = validFileCount === 1 
+				? `Added 1 photo${gpsExtractedCount > 0 ? ' (with GPS data)' : ''}` 
+				: `Added ${validFileCount} photos${gpsExtractedCount > 0 ? ` (${gpsExtractedCount} with GPS data)` : ''} 🎉`;
+			showSuccess(message);
 		}
 
 		// Show warnings for invalid files
@@ -253,14 +299,41 @@
 				showInfo('💡 Tip: Click "Add Location" on photos without GPS data');
 			}, 1000);
 		}
+
+		console.log('=== FILE PROCESSING COMPLETE ===');
 	}
 
 	function handleFileSelect(event: Event) {
 		const input = event.target as HTMLInputElement;
+		console.log('=== FILE SELECTION EVENT ===');
+		console.log('Input files length:', input.files?.length);
+		
 		if (input.files && input.files.length > 0) {
-			processFiles(input.files);
+			console.log(`Selected ${input.files.length} file(s):`);
+			for (let i = 0; i < input.files.length; i++) {
+				console.log(`  ${i + 1}. ${input.files[i].name} (${input.files[i].size} bytes, ${input.files[i].type})`);
+			}
+			
+			// Check if we're already processing files
+			if (processingFiles) {
+				console.log('WARNING: Already processing files, skipping this selection');
+				return;
+			}
+			
+			// CRITICAL FIX: Copy FileList to Array before clearing input
+			// This prevents the FileList from being corrupted when we clear input.value
+			const filesArray = Array.from(input.files);
+			
+			// Clear the input value to allow selecting the same files again
+			input.value = '';
+			
+			// Process the file array instead of the original FileList
+			processFiles(filesArray);
+		} else {
+			console.log('No files selected or input.files is null');
 		}
-		input.value = '';
+		
+		console.log('=== FILE SELECTION EVENT COMPLETE ===');
 	}
 
 	function triggerFileSelect() {
@@ -393,6 +466,13 @@
 			return;
 		}
 
+		// Enhanced feedback for multiple file uploads
+		if (filesToUpload.length === 1) {
+			showInfo('Starting upload...');
+		} else {
+			showInfo(`Starting batch upload of ${filesToUpload.length} photos... 🚀`);
+		}
+
 		isUploading = true;
 		let completed = 0;
 		let failed = 0;
@@ -412,12 +492,17 @@
 
 		isUploading = false;
 
-		// Show completion feedback
-		if (completed > 0) {
+		// Enhanced completion feedback
+		if (completed > 0 && failed === 0) {
+			const message = completed === 1 
+				? 'Successfully uploaded 1 photo! 🎉'
+				: `Successfully uploaded all ${completed} photos! 🎉`;
+			showSuccess(message);
+		} else if (completed > 0 && failed > 0) {
 			showSuccess(`Successfully uploaded ${completed} photo${completed !== 1 ? 's' : ''}! 🎉`);
-		}
-		if (failed > 0) {
 			showError(`${failed} upload${failed !== 1 ? 's' : ''} failed. Check errors and retry.`);
+		} else if (failed > 0) {
+			showError(`All ${failed} upload${failed !== 1 ? 's' : ''} failed. Check errors and retry.`);
 		}
 	}
 
@@ -457,7 +542,9 @@
 
 		const files = event.dataTransfer?.files;
 		if (files && files.length > 0) {
-			processFiles(files);
+			// CRITICAL FIX: Copy FileList to Array to prevent corruption
+			const filesArray = Array.from(files);
+			processFiles(filesArray);
 		}
 	}
 
@@ -590,12 +677,12 @@
 						<div class="xl:col-span-1 space-y-6">
 							<!-- Drag & Drop Zone -->
 							<div
-								class="upload-area relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 shadow-sm"
+								class="upload-area relative border-2 border-dashed rounded-2xl p-6 text-center transition-all duration-300 shadow-sm"
 								class:border-blue-400={dragActive}
 								class:bg-blue-50={dragActive}
 								class:border-gray-300={!dragActive}
 								class:scale-105={dragActive}
-								style="background-color: var(--bg-primary); border-color: {dragActive ? '#60a5fa' : 'var(--border-color)'};  min-height: 280px;"
+								style="background-color: var(--bg-primary); border-color: {dragActive ? '#60a5fa' : 'var(--border-color)'};  min-height: 220px;"
 								on:dragover={handleDragOver}
 								on:dragleave={handleDragLeave}
 								on:drop={handleDrop}
@@ -606,33 +693,35 @@
 							>
 								{#if processingFiles}
 									<div class="processing-indicator">
-										<div class="animate-spin text-4xl mb-4">⚙️</div>
+										<div class="animate-spin text-3xl mb-3">⚙️</div>
 										<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">Processing Files...</h3>
-										<p style="color: var(--text-secondary);">Extracting GPS data and creating previews</p>
+										<p class="text-sm" style="color: var(--text-secondary);">Extracting GPS data and creating previews</p>
+										<div class="mt-3 bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm">
+											✨ Multiple files processing
+										</div>
 									</div>
 								{:else}
 									<div class="upload-content">
-										<div class="text-6xl mb-6 transition-transform duration-300" class:scale-110={dragActive}>
+										<div class="text-4xl mb-4 transition-transform duration-300" class:scale-110={dragActive}>
 											{dragActive ? '⬇️' : '📸'}
 										</div>
-										<h3 class="text-xl font-semibold mb-3" style="color: var(--text-primary);">
+										<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">
 											{dragActive ? 'Drop your photos here!' : 'Upload Travel Photos'}
 										</h3>
-										<p class="mb-6" style="color: var(--text-secondary);">
-											Drag and drop photos or click to browse your files
+										<p class="mb-4 text-sm" style="color: var(--text-secondary);">
+											{dragActive ? 'Drop multiple photos at once!' : 'Drag and drop photos or click to browse'}
 										</p>
 										
-										<div class="space-y-3">
+										<div class="space-y-2">
 											<button
-												class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+												class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
 												on:click|stopPropagation={triggerFileSelect}
 											>
 												Choose Photos
 											</button>
-											<div class="text-sm" style="color: var(--text-secondary);">
-												<p class="font-medium">Supported: JPG, PNG, WebP, HEIC</p>
-												<p>Max size: {MAX_FILE_SIZE / 1024 / 1024}MB per file</p>
-												<p class="mt-2 text-xs">💡 Press Ctrl+U (Cmd+U) to quick upload</p>
+											<div class="text-xs" style="color: var(--text-secondary);">
+												<p class="font-medium">✨ Multi-select: Ctrl+Click, Shift+Click, or Ctrl+A</p>
+												<p class="mt-1">JPG, PNG, WebP, HEIC • Max {MAX_FILE_SIZE / 1024 / 1024}MB • Ctrl+U to upload</p>
 											</div>
 										</div>
 									</div>
@@ -704,11 +793,14 @@
 									<p class="mb-6" style="color: var(--text-secondary);">
 										Upload photos with GPS data to start creating geography games
 									</p>
+									<p class="text-sm mb-6" style="color: var(--text-secondary);">
+										💡 <strong>Tip:</strong> Hold Ctrl (or Cmd) and click to select multiple photos at once
+									</p>
 									<button 
 										class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors"
 										on:click={triggerFileSelect}
 									>
-										Get Started
+										Choose Photos
 									</button>
 								</div>
 							{:else}

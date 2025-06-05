@@ -1,12 +1,12 @@
 # Playwright Test Setup
 
 ## Overview
-This document describes the Playwright test setup for the WhereAmI application.
+This document describes the Playwright test setup for the WhereAmI application. Tests are fully automated and headless using direct Supabase authentication.
 
 ## Configuration Changes
-1. **Headless by default**: All tests run headless unless specifically configured otherwise
-2. **Base URL**: Updated to use `https://whereami-5kp.pages.dev` (always contains the most up-to-date deployment)
-3. **Authentication**: Simplified authentication setup using email/password flow with environment variables
+1. **Fully headless**: All tests run headless including authentication setup
+2. **Base URL**: Uses `https://whereami-5kp.pages.dev` (always contains the most up-to-date deployment)
+3. **Authentication**: Automated using direct Supabase client authentication
 4. **HTML Report**: HTML reports are generated but never auto-open to avoid interrupting workflow
 
 ## Environment Variables
@@ -32,16 +32,6 @@ npx playwright test
 npx playwright test tests/check-website-errors.spec.js
 ```
 
-### With UI (headed) - Only for debugging
-```bash
-npx playwright test --headed
-```
-
-### Setup Authentication (headed mode for manual auth)
-```bash
-npx playwright test tests/auth.setup.ts --headed
-```
-
 ### View HTML Report (when needed)
 ```bash
 npx playwright show-report
@@ -49,20 +39,18 @@ npx playwright show-report
 
 ## Authentication Setup
 The authentication setup (`tests/auth.setup.ts`) will:
-1. Navigate to `/gallery` which triggers authentication
-2. Automatically fill in credentials from environment variables (`TEST_EMAIL` and `TEST_PASSWORD`)
+1. Navigate to the home page
+2. Directly authenticate using the Supabase client API with provided credentials
 3. Save authentication state to `playwright/.auth/user.json`
-4. Run in headed mode locally to allow manual intervention if needed
-5. Run headless in CI environments
+4. Verify authentication by checking protected routes
+5. Run completely headless in all environments
 
 ## Test Structure
-- **Setup project**: Handles authentication setup (headed locally, headless in CI)
-- **Main browsers**: chromium, firefox, webkit (all run headless, use saved auth state)
-- **No-auth project**: For tests that don't need authentication (headless)
-- **API tests**: For API endpoint testing (headless)
+- **Setup project**: Handles authentication setup (always headless)
+- **Main browsers**: chromium, firefox, webkit (all headless, use saved auth state)
 
 ## URLs
-All tests now use `https://whereami-5kp.pages.dev` as the base URL, which always contains the most up-to-date deployment.
+All tests use `https://whereami-5kp.pages.dev` as the base URL, which always contains the most up-to-date deployment.
 
 ## Reports
 - **Console output**: Uses list reporter for clean console output during test runs
@@ -70,9 +58,15 @@ All tests now use `https://whereami-5kp.pages.dev` as the base URL, which always
 - **Screenshots**: Test screenshots are saved to `tests/screenshots/` for debugging and verification
 
 ## Environment Variables
-- `CI`: When set, forces all tests including auth setup to run headless
-- `TEST_EMAIL`: Email address for test authentication (defaults to fallback if not set)
-- `TEST_PASSWORD`: Password for test authentication (defaults to fallback if not set)
+- `TEST_EMAIL`: Email address for test authentication
+- `TEST_PASSWORD`: Password for test authentication
 
 ## Screenshots
-Test screenshots are saved to `tests/screenshots/` for debugging and verification. 
+Test screenshots are saved to `tests/screenshots/` for debugging and verification.
+
+## Troubleshooting
+If authentication fails:
+1. Verify your credentials in the `.env` file
+2. Check the authentication setup screenshot at `tests/screenshots/auth-setup-complete.png`
+3. Ensure your test account exists and has proper permissions
+4. Review console output for authentication errors 
