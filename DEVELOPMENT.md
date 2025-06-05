@@ -15,7 +15,13 @@
 
 ## 🚀 Development Tasks & Features
 
-- [ ] When in game, if you click the whereami logo that should exit the current game
+### Game Fixes/Optimizations
+
+- [x] When moving onto the next round, the map loads forever
+
+### General
+
+- [x] When in game, if you click the whereami logo that should exit the current game
 - [ ] Logging out and back in resets the user's display name and profile picture
 - [ ] Uploading pictures still is a bit buggy. For example, when I upload 4 pictures, only 3 actually get uploaded
 - [ ] If the user only updates their name then it should not update the profile picture
@@ -28,6 +34,20 @@
 
 ## Completed Tasks
 
+- [x] **Map Loading Fix for Next Round Transitions**: Successfully resolved the issue where the map would load forever when transitioning to the next round in the game:
+  - 🔧 **Root Cause**: The reactive statement in GameRound component was resetting `mapReady = false` when transitioning to the next round, causing the map to show loading state indefinitely
+  - ✨ **Solution**: Removed the unnecessary `mapReady = false` reset from the reactive statement since the map doesn't need to be reinitialized between rounds
+  - 🎯 **State Management**: Cleaned up redundant state resets in `handleNextRound()` function to avoid duplication with reactive statement
+  - 🧪 **Comprehensive Testing**: Created dedicated Playwright test to verify map transitions work correctly without infinite loading
+  - ✅ **Verified Fix**: Test results show `Map loading indicator visible: false`, `Map is interactive: true`, `Submit button visible in round 2: true`
+  - 🚀 **Successfully Deployed**: Game now properly transitions between rounds with map remaining interactive and ready for the next guess
+- [x] **Map Click Handler Fix for Next Round Transitions**: Successfully resolved the issue where the map would not respond to clicks when transitioning to the next round in the game:
+  - 🔧 **Root Cause**: The click handler in the Map component was only added once during `onMount` if `clickable` was initially true, but there was no reactive handling when the `clickable` prop changed from `false` (during results) back to `true` (for the next round)
+  - ✨ **Solution**: Added a reactive statement to properly manage click handler attachment/removal when the `clickable` prop changes, and refactored to use a stored click handler reference for proper cleanup
+  - 🎯 **State Management**: The map now properly adds/removes click handlers reactively based on the `clickable` prop, making it interactive for new rounds
+  - 🧪 **Comprehensive Testing**: Created dedicated Playwright test to verify map click functionality works correctly through round transitions
+  - ✅ **Verified Fix**: Test results show map remains interactive and responsive to clicks in subsequent rounds
+  - 🚀 **Successfully Deployed**: Game now provides seamless interaction when progressing through multiple rounds
 - [x] Select Page Button is not vertically centered
 - [x] Remove the upload photos button and replace it with the create game/clear buttons and # selected text, the buttons should always be on the screen but grayed out and unclickable when 0 pictures are selected
 - [x] Remove the instructions div, modify the text below create game to have shortened instructions
@@ -88,6 +108,14 @@
   - 🚀 **Successfully Deployed**: All changes tested and deployed, enhancing the game discovery experience significantly
 - [x] Currently in Public Games it says "By <user-id>" but it should use the User's display name
 - [x] Profile stats are not right games created is always 0, images uploaded is always 0
+- [x] **Game Results Display Fix**: Successfully resolved the issue where the game would show a loading screen instead of results after making a guess:
+  - 🔧 **Root Cause**: The reactive statement in GameRound component was resetting `showResult` to `false` when the game store updated round data after guess submission
+  - ✨ **Template Logic Fix**: Updated template logic from `{:else if guessResult}` to `{:else}` with nested `{#if guessResult}` to ensure proper state handling
+  - 🎯 **Reactive Statement Fix**: Modified the reset reactive statement to only trigger on round ID changes, not data updates: `$: if ($currentRound && $currentRound.id !== lastRoundId)`
+  - 🔄 **Loading State**: Added proper loading state display when `showResult` is true but `guessResult` is still processing
+  - 🧪 **Comprehensive Testing**: Created Playwright test to verify results display correctly with score, distance, and next round button
+  - ✅ **Verified Fix**: Test results show `Result panel visible: true`, `Distance visible: true`, `Next button visible: true`
+  - 🚀 **Successfully Deployed**: Game now properly transitions from guess submission to results display without loading screen issues
 - [x] **Upload Photos UI Optimization**: Successfully redesigned the upload photos screen to use space more efficiently and look more modern:
   - 📏 **Compact Photo Preview**: Reduced photo thumbnail size from 128px to 96px to take less vertical space
   - 🔗 **Combined File Name and Photo Name**: Merged the separate file name header and "Photo Name" input field into a single editable text field
@@ -125,136 +153,4 @@
   - 🔧 **Root Cause**: Clearing `input.value = ''` was corrupting the FileList object while the async file processing loop was still iterating over it
   - ✨ **Solution**: Copy FileList to Array using `Array.from(files)` before clearing the input value to prevent corruption
   - 🔄 **Both Handlers Fixed**: Applied the fix to both file input selection (`handleFileSelect`) and drag-and-drop (`handleDrop`) handlers
-  - 🎯 **Type Safety**: Updated `processFiles` function signature to accept both `FileList` and `File[]` for flexibility
-  - 🧪 **Testing**: Verified the fix works correctly - all selected files are now processed instead of just the first one
-  - 🚀 **Deployment**: Successfully deployed and confirmed multiple file selection now works as expected
-  - ✅ **Result**: Users can now successfully select and process multiple files simultaneously using Ctrl+Click, Shift+Click, Ctrl+A, or drag-and-drop
-- [x] **Multiple Image Selection Enhancement**: Successfully improved the multiple image upload experience with enhanced UI feedback and clearer instructions:
-  - ✨ **Enhanced User Guidance**: Added clear instructions about selecting multiple photos using Ctrl+A (or Cmd+A)
-  - 📚 **Better Visual Feedback**: Improved processing messages to clearly indicate when multiple files are being handled
-  - 🚀 **Batch Upload Indicators**: Enhanced upload feedback to show batch processing status and completion
-  - 💡 **Help Text**: Added tooltips and help text throughout the interface to guide users on multiple selection
-  - 🔧 **Debug Logging**: Added console logging to help diagnose any selection issues
-  - 🎯 **Clear Instructions**: Made it obvious in both drag-drop and click-to-browse scenarios that multiple files are supported
-  - ✅ **Verified Functionality**: The system already supported multiple files - improvements focused on making this clearer to users
-- [x] **Remove Game Deletion Success Popup**: Successfully removed the "Game deleted successfully!" popup that appeared after deleting a game:
-  - 🚫 **Removed Alert**: Eliminated the success alert that showed after game deletion in the Browse page
-  - ✨ **Better UX**: Users can now see the game disappear from the list immediately without an intrusive popup
-  - 🎯 **Visual Feedback**: The immediate removal of the game card provides clear visual confirmation that the deletion was successful
-  - 🔄 **Error Handling**: Kept error alerts for failed deletions to ensure users are informed of any issues
-- [x] **Game Deletion Authentication Fix**: Successfully resolved the "please sign in to delete games" error that occurred even when users were already authenticated:
-  - 🔧 **Root Cause**: The game deletion endpoint was using a different authentication method (Supabase API call) compared to other endpoints (local JWT parsing)
-  - ✨ **Solution**: Updated `/api/games/[gameId]` DELETE endpoint to use the same JWT token parsing method as all other endpoints
-  - 🔐 **Consistency**: All endpoints now use the same authentication verification approach for reliability
-  - 🧪 **Testing**: Verified the fix works correctly with Playwright tests showing proper authentication handling
-  - ✅ **Result**: Users can now successfully delete their games without false authentication errors
-- [x] **Public Games Display Fix**: Successfully resolved the issue where public games were not being shown on the Browse page:
-  - 🔧 **Root Cause**: The `/api/games/public` endpoint was only returning empty arrays as placeholder data
-  - ✨ **Solution**: Completely rewrote the endpoint to fetch actual games from GAME_DATA KV namespace
-  - 📊 **Full Implementation**: Added functionality to read from `public_games_index`, filter deleted games, and apply search/difficulty/rating/tag filters
-  - 🎯 **Sorting & Pagination**: Implemented sorting by newest/popular/rating with proper pagination support
-  - 🔄 **Response Structure**: Returns paginated response with games array, total count, limit, offset, and hasMore fields
-  - 🚀 **Deployment**: Successfully deployed and verified 3 existing public games are now properly displayed
-  - ✅ **Testing**: Confirmed API endpoint returns proper JSON data with pagination metadata via curl testing
-- [x] **Game Deletion Functionality**: Successfully implemented comprehensive game deletion feature allowing users to delete their own games:
-  - 🗑️ **DELETE API Endpoint**: Added DELETE method to `/api/games/[gameId]` with proper authentication and authorization checks
-  - 🔐 **Security**: Users can only delete their own games with proper JWT token verification and ownership validation
-  - 🗄️ **Complete Cleanup**: Removes game from GAME_DATA, user's games list in USER_DATA, public games index, and updates user game count
-  - 🎨 **UI Implementation**: Added delete buttons to user game cards in Browse page with confirmation modal
-  - ⚠️ **Confirmation Modal**: Dark mode compatible confirmation dialog with proper styling and event handling
-  - 🔄 **State Management**: Proper loading states, error handling, and immediate UI updates after deletion
-  - 🛡️ **Error Handling**: Comprehensive 401/403/404 error responses with user-friendly messages
-  - 🚀 **API Client**: Updated `src/lib/utils/api.ts` with `deleteGame` method and proper error handling
-  - ✅ **Testing**: Successfully deployed and verified deletion functionality works end-to-end
-- [x] **Game Data Namespace Migration**: Successfully migrated all game storage from IMAGE_DATA to GAME_DATA namespace:
-  - 📁 **Correct Organization**: Games are now properly stored in GAME_DATA namespace instead of IMAGE_DATA
-  - 🔄 **Updated All Endpoints**: Modified game creation, retrieval, user games, and images endpoints to use GAME_DATA
-  - 🗄️ **Data Migration**: Successfully migrated 4 existing games and public games index to new namespace
-  - ✅ **Verified Functionality**: Confirmed all game operations work correctly with the new storage organization
-  - 🧹 **Clean Architecture**: IMAGE_DATA now only contains image metadata, GAME_DATA contains game metadata
-- [x] **Game Images API and Authentication Fix**: Successfully resolved the remaining game initialization issues:
-  - 🔧 **Root Cause**: Game images endpoint `/api/games/[gameId]/images` was returning 404 due to incorrect routing and authentication method mismatch in user games endpoint
-  - ✨ **Game Images Solution**: Created dedicated SvelteKit route at `src/routes/api/games/[gameId]/images/+server.ts` for proper file-based routing
-  - 🔐 **Authentication Fix**: Updated `/api/games/user` endpoint to use JWT token parsing instead of Supabase API calls, matching other working endpoints
-  - 📊 **Verified Functionality**: Game images endpoint now properly returns image metadata array for game initialization
-  - 🎯 **Consistent Auth**: All game-related endpoints now use the same JWT authentication method for reliability
-  - 🚀 **Complete Game Flow**: Game creation, image retrieval, and user games browsing now work end-to-end
-  - ✅ **Testing**: Confirmed game images return proper JSON data and authentication works consistently across all endpoints
-- [x] **Game Creation and User Games API Fix**: Successfully resolved multiple issues with game creation and browsing:
-  - 🔧 **Root Cause**: Missing SvelteKit API route for `/api/games/user` causing 404 errors when browsing user games
-  - ✨ **Solution**: Created comprehensive SvelteKit route at `src/routes/api/games/user/+server.ts` matching Cloudflare Functions functionality
-  - 🔐 **Authentication**: Proper Supabase JWT token verification with user authorization
-  - 📊 **Game Storage**: Games are correctly stored in IMAGE_DATA KV with `game:${gameId}` keys and user games lists in USER_DATA
-  - 🗄️ **Data Verification**: Created debug endpoint to verify KV storage - confirmed games are being saved properly with correct metadata
-  - 🎯 **User Games Retrieval**: Endpoint now properly fetches user's game list, validates ownership, and enriches with computed fields
-  - 🚀 **Deployment**: Successfully deployed and verified endpoint now returns proper authentication responses instead of 404
-  - ✅ **Testing**: Confirmed API endpoint responds correctly with proper error handling and authentication requirements
-- [x] **Game Creation API Endpoint Fix**: Successfully resolved the 405 "Method Not Allowed" error and "1 or more images not found" error when creating custom games:
-  - 🔧 **Root Cause**: Missing SvelteKit API route for `/api/games/create` - only Cloudflare Functions version existed
-  - ✨ **Solution**: Created matching SvelteKit route at `src/routes/api/games/create/+server.ts` with full functionality
-  - 🔐 **Authentication**: Proper Supabase JWT token verification and user authorization
-  - 📊 **Game Storage**: Complete game metadata storage in KV with user association and public game indexing
-  - 🎯 **Validation**: Comprehensive input validation (3-50 images, user ownership verification)
-  - 🛠️ **Image Metadata Fix**: Fixed `getImageMetadata` function to use correct `image:${imageId}` key format for KV storage lookups
-  - 🚀 **Deployment**: Successfully deployed and verified endpoint now returns proper 401 (auth required) instead of 405
-  - ✅ **Testing**: Confirmed API endpoint responds correctly to POST requests with proper error handling
-- [x] **User Profile Enhancement**: Successfully implemented comprehensive user profile management features:
-  - ✨ **Display Name Editing**: Users can now set and edit their display name (distinct from their actual name) through a clean modal interface
-  - 📸 **Profile Picture Upload**: Added ability to upload and display profile pictures with proper validation (5MB limit, image files only)
-  - 🎨 **Enhanced Profile UI**: Updated profile page with "Edit Profile" button and improved layout showing profile picture
-  - 🔄 **Real-time Updates**: Profile changes are immediately reflected throughout the app (navigation, profile page)
-  - 🗄️ **Backend Infrastructure**: Created `/api/user/profile` endpoints for GET (retrieve), PUT (update display name), and POST (upload profile picture)
-  - 🎯 **Seamless Integration**: Profile pictures and display names now appear in navigation menu and throughout the application
-  - 🛡️ **Security**: Proper authentication and file validation for profile picture uploads
-  - 📱 **User Experience**: Intuitive modal interface with preview functionality and form validation
-- [x] **Playwright Test Configuration Update**: Successfully updated and fixed Playwright test configuration:
-  - 🔧 **Headless by default**: All tests now run headless unless specifically configured otherwise for better CI/CD performance
-  - 🌐 **Updated base URL**: Changed from various subdomain URLs to `https://whereami-5kp.pages.dev` which always contains the most up-to-date deployment
-  - 🔐 **Simplified authentication**: Recreated authentication setup with automatic credential filling and improved error handling
-  - 🛠️ **Fixed auth setup**: Resolved UI element interception issues with force clicks and toast message handling
-  - 📝 **Updated documentation**: Created comprehensive README-PLAYWRIGHT-SETUP.md with usage instructions
-  - ✅ **Verified functionality**: All tests now run successfully with proper authentication state management
-  - 🔄 **Consistent URLs**: Updated all test files to use the correct domain for reliable testing
-  - 🚫 **No auto-opening reports**: HTML reports are generated but never auto-open to avoid workflow interruption
-  - 🎯 **CI/Local optimization**: Auth setup runs headed locally for manual intervention but headless in CI environments
-  - 🧹 **Fixed linter errors**: Resolved TypeScript type issues in test files for cleaner code
-  - 🔒 **Secure credentials**: Moved test credentials to environment variables to prevent committing sensitive data
-  - 📦 **Environment setup**: Added dotenv configuration and proper .env file handling with .gitignore protection
-- [x] **Create Custom Game Tab Enhancement**: Successfully improved the create custom game modal with proper user interface controls:
-  - ✨ **Close Button**: Added an 'X' button in the modal header to close the modal, with proper theme-aware styling
-  - 🎯 **Create Game Button**: Confirmed existing "Create Game" button is properly positioned and functional
-  - 🖱️ **User Experience**: Close button includes hover effects and disabled state during game creation
-  - 🎨 **Theme Integration**: Close button properly uses CSS variables for consistent theming across light/dark modes
-  - ⌨️ **Accessibility**: Added proper aria-label for screen reader support
-  - 🔄 **Functionality**: Both close (X) and cancel buttons properly reset the modal state and clear selected images
-- [x] **Game Data Storage Infrastructure**: Successfully created comprehensive game data storage system with KV namespace:
-  - 🗄️ **New KV Namespace**: Created `GAME_DATA` KV namespace (ID: a86736cd257440bea9b9c403b3b3afe5) for storing completed games
-  - 📊 **Data Models**: Added TypeScript interfaces for `SavedGame`, `CompletedRound`, `GameShareData`, and `
-- [x] **Multiple Upload KV Count Fix**: Successfully resolved the race condition issue where uploading multiple pictures only incremented the user's KV count by one instead of the actual number uploaded:
-  - 🔧 **Root Cause**: Concurrent uploads were causing race conditions where multiple API calls would read the same initial count, increment by 1, and overwrite each other
-  - ✨ **Atomic Increment Solution**: Implemented atomic increment function with retry logic and exponential backoff to prevent race conditions during concurrent uploads
-  - 🎯 **Profile Stats Fix**: Fixed profile page to load actual user stats from API instead of displaying default zeros from the store
-  - 🔄 **Store Updates**: Updated authStore to properly populate userStats from profile API data
-  - 🧪 **Testing**: Created comprehensive Playwright test to verify multiple upload count accuracy
-  - ✅ **Verification**: User confirmed profile now displays correct upload count (13) instead of previous 0
-  - 🚀 **Deployment**: Successfully deployed with both backend race condition fix and frontend stats display fix
-- [x] **Public Games Display Name Fix**: Successfully resolved the issue where public games showed user IDs instead of display names:
-  - 🔧 **Root Cause**: The public games API was returning raw user IDs in the `createdBy` field instead of fetching and displaying user display names
-  - ✨ **Solution**: Updated `/api/games/public` endpoint to fetch user display names from USER_DATA KV and replace user IDs with actual display names
-  - 🎯 **Batch Processing**: Implemented efficient batch lookup of creator display names to avoid N+1 query problems
-  - 🔄 **Fallback Handling**: Added proper fallback to "Anonymous" when user data is not found or display name is missing
-  - 🚀 **Deployment**: Successfully deployed and verified that public games now show "By [Display Name]" instead of "By [user-id]"
-  - ✅ **User Experience**: Public games now display human-readable creator names, improving the browsing experience
-- [x] **Profile Stats Calculation Fix**: Successfully resolved the issue where profile stats always showed 0 for games created and images uploaded:
-  - 🔧 **Root Cause**: Profile endpoint was relying on stored counter values that weren't being updated consistently
-  - ✨ **Solution**: Updated profile GET endpoint to calculate actual stats by counting from KV data instead of relying on stored counters
-  - 🎯 **Real-time Calculation**: Profile now counts games from `user:${userId}:games` list and images from `user:${userId}:images` list
-  - 🔄 **Fallback Logic**: Added fallback to stored values if calculation fails to ensure reliability
-  - 🧪 **Debug Logging**: Added comprehensive logging to track stats calculation process
-  - ✅ **Accurate Stats**: Profile page now displays correct counts for games created and images uploaded based on actual KV data
-- [x] **Gallery Authentication State Fix**: Successfully resolved the issue where the Gallery page would show "not authenticated" even after logging in:
-  - 🔧 **Root Cause**: Gallery page wasn't reactively updating when authentication state changed after login
-  - ✨ **Solution**: Added reactive statement to Gallery page that listens for authentication changes and reloads user profile data
-  - 🎯 **Auto-refresh**: Gallery now automatically refreshes user profile and authentication state when user signs in
-  - 🔄 **State Synchronization**: Ensured proper synchronization between authentication state and profile data loading
-  - ✅ **Seamless Experience**: Users can now log in from the Gallery page and see authenticated content immediately without manual refresh
+  - 🎯 **Type Safety**: Updated `processFiles` function signature to accept both `FileList`

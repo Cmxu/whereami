@@ -25,6 +25,17 @@
 	let markerLayer: any;
 	let distanceLine: any;
 	let isMapReady = false;
+	let clickHandler: any = null;
+
+	function createClickHandler() {
+		return (e: any) => {
+			const location: Location = {
+				lat: Math.round(e.latlng.lat * 1000000) / 1000000, // Round to 6 decimal places
+				lng: Math.round(e.latlng.lng * 1000000) / 1000000
+			};
+			dispatch('mapClick', location);
+		};
+	}
 
 	onMount(async () => {
 		try {
@@ -58,16 +69,8 @@
 			// Create a layer group for markers
 			markerLayer = L.layerGroup().addTo(map);
 
-			// Add click handler if clickable
-			if (clickable) {
-				map.on('click', (e: any) => {
-					const location: Location = {
-						lat: Math.round(e.latlng.lat * 1000000) / 1000000, // Round to 6 decimal places
-						lng: Math.round(e.latlng.lng * 1000000) / 1000000
-					};
-					dispatch('mapClick', location);
-				});
-			}
+			// Create the click handler
+			clickHandler = createClickHandler();
 
 			// Map ready event
 			map.whenReady(() => {
@@ -172,6 +175,17 @@
 
 	$: if (map && markers && isMapReady) {
 		updateMarkers();
+	}
+
+	// Handle clickable prop changes
+	$: if (map && clickHandler && isMapReady) {
+		// Remove existing click handler
+		map.off('click', clickHandler);
+		
+		// Add click handler if clickable
+		if (clickable) {
+			map.on('click', clickHandler);
+		}
 	}
 </script>
 

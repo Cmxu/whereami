@@ -206,7 +206,7 @@
 
 		<!-- Footer -->
 		<div class="welcome-footer text-white/60 text-xs md:text-sm">
-			<p>WhereAmI V2.0 - Created by Calvin</p>
+			<p>WhereAmI v2.0 - created by calvin</p>
 		</div>
 	</div>
 </div>
