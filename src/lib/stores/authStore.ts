@@ -111,9 +111,53 @@ export async function loadUserProfile() {
 		if (response.ok) {
 			const { profile } = await response.json();
 			userProfile.set(profile);
+			
+			// Also update user stats from the profile data
+			if (profile) {
+				userStats.set({
+					gamesCreated: profile.gamesCreated || 0,
+					gamesPlayed: profile.gamesPlayed || 0,
+					imagesUploaded: profile.imagesUploaded || 0,
+					totalScore: profile.totalScore || 0,
+					averageScore: profile.averageScore || 0
+				});
+			}
 		}
 	} catch (error) {
 		console.error('Failed to load user profile:', error);
+	}
+}
+
+// Load user stats separately (can be called to refresh stats)
+export async function loadUserStats() {
+	try {
+		const {
+			data: { session }
+		} = await supabase.auth.getSession();
+		if (!session?.access_token) {
+			return;
+		}
+
+		const response = await fetch('/api/user/profile', {
+			headers: {
+				Authorization: `Bearer ${session.access_token}`
+			}
+		});
+
+		if (response.ok) {
+			const { profile } = await response.json();
+			if (profile) {
+				userStats.set({
+					gamesCreated: profile.gamesCreated || 0,
+					gamesPlayed: profile.gamesPlayed || 0,
+					imagesUploaded: profile.imagesUploaded || 0,
+					totalScore: profile.totalScore || 0,
+					averageScore: profile.averageScore || 0
+				});
+			}
+		}
+	} catch (error) {
+		console.error('Failed to load user stats:', error);
 	}
 }
 

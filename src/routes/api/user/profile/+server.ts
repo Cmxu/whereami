@@ -88,7 +88,7 @@ export const OPTIONS = async () => {
 export const GET = async ({ request, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
-		if (!env?.USER_DATA) {
+		if (!env?.USER_DATA || !env?.GAME_DATA || !env?.IMAGE_DATA) {
 			return json(
 				{ error: 'Server configuration error: KV stores not configured' },
 				{
@@ -122,17 +122,75 @@ export const GET = async ({ request, platform }: RequestEvent) => {
 
 		const userData = await getUserData(user.id, env);
 
+		// Calculate actual stats from KV data
+		let actualStats = {
+			gamesCreated: 0,
+			gamesPlayed: 0,
+			imagesUploaded: 0,
+			totalScore: 0,
+			averageScore: 0
+		};
+
+		try {
+			// Count games created by this user
+			const userGamesKey = `user:${user.id}:games`;
+			const userGamesData = await env.USER_DATA.get(userGamesKey);
+			if (userGamesData) {
+				const gameIds = JSON.parse(userGamesData);
+				actualStats.gamesCreated = gameIds.length;
+			}
+
+			// Count images uploaded by this user
+			// We need to get the user's images list
+			const userImagesKey = `user:${user.id}:images`;
+			const userImagesData = await env.USER_DATA.get(userImagesKey);
+			if (userImagesData) {
+				const imageIds = JSON.parse(userImagesData);
+				actualStats.imagesUploaded = imageIds.length;
+			}
+
+			// TODO: Calculate games played and scores from completed games in the future
+			// For now, use stored values if available
+			if (userData) {
+				actualStats.gamesPlayed = userData.gamesPlayed || 0;
+				actualStats.totalScore = userData.totalScore || 0;
+				actualStats.averageScore = userData.averageScore || 0;
+			}
+		} catch (error) {
+			console.error('Error calculating stats:', error);
+			// Fall back to stored values if calculation fails
+			if (userData) {
+				actualStats = {
+					gamesCreated: userData.gamesCreated || 0,
+					gamesPlayed: userData.gamesPlayed || 0,
+					imagesUploaded: userData.imagesUploaded || 0,
+					totalScore: userData.totalScore || 0,
+					averageScore: userData.averageScore || 0
+				};
+			}
+		}
+
+		const profileData = userData || {
+			id: user.id,
+			email: user.email,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			displayName: user.username,
+			profilePicture: null,
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString()
+		};
+
+		// Merge calculated stats with profile data
+		const profileWithStats = {
+			...profileData,
+			...actualStats
+		};
+
 		return json(
 			{
 				success: true,
-				profile: userData || {
-					id: user.id,
-					email: user.email,
-					firstName: user.firstName,
-					lastName: user.lastName,
-					displayName: user.username,
-					profilePicture: null
-				}
+				profile: profileWithStats
 			},
 			{
 				headers: { 'Access-Control-Allow-Origin': '*' }

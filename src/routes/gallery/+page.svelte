@@ -60,11 +60,6 @@
 		// Load EXIF reader library
 		await loadExifReader();
 
-		// Show sign in prompt for unauthenticated users
-		if (!$isAuthenticated) {
-			showInfo('Sign in to view and upload your photos');
-		}
-
 		// Initialize tab from URL on mount
 		const urlParams = new URLSearchParams($page.url.search);
 		const tabParam = urlParams.get('tab');
@@ -73,7 +68,20 @@
 		} else {
 			activeTab = 'gallery';
 		}
+		
+		// Show sign in prompt for unauthenticated users (only once on initial load)
+		if (!$isAuthenticated) {
+			showInfo('Sign in to view and upload your photos');
+		}
 	});
+
+	// React to authentication changes - reload profile when user signs in
+	$: if ($isAuthenticated) {
+		// Import the auth store functions and reload profile data
+		import('$lib/stores/authStore').then(({ loadUserProfile }) => {
+			loadUserProfile();
+		});
+	}
 
 	async function loadExifReader() {
 		try {
@@ -706,7 +714,7 @@
 											{dragActive ? '⬇️' : '📸'}
 										</div>
 										<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">
-											{dragActive ? 'Drop your photos here!' : 'Upload Travel Photos'}
+											{dragActive ? 'Drop your photos here!' : 'Upload Photos'}
 										</h3>
 										<p class="mb-4 text-sm" style="color: var(--text-secondary);">
 											{dragActive
@@ -834,7 +842,7 @@
 											<div class="flex flex-col sm:flex-row">
 												<!-- Photo Preview -->
 												<div
-													class="photo-preview w-full sm:w-32 h-32 bg-gray-100 flex-shrink-0 relative"
+													class="photo-preview w-full sm:w-24 h-24 bg-gray-100 flex-shrink-0 relative"
 												>
 													<img
 														src={file.preview}
@@ -844,9 +852,9 @@
 													/>
 													{#if file.uploaded}
 														<div
-															class="absolute top-2 right-2 bg-green-600 text-white rounded-full p-1"
+															class="absolute top-1 right-1 bg-green-600 text-white rounded-full p-1"
 														>
-															<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+															<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
 																<path
 																	fill-rule="evenodd"
 																	d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -858,21 +866,28 @@
 												</div>
 
 												<!-- Photo Info -->
-												<div class="photo-info flex-1 p-4 sm:p-6">
-													<div class="flex justify-between items-start mb-3">
-														<h4
-															class="font-semibold truncate pr-4 text-lg"
-															title={file.file.name}
-															style="color: var(--text-primary);"
-														>
-															{file.file.name}
-														</h4>
+												<div class="photo-info flex-1 p-3 sm:p-4">
+													<!-- Photo Name (Combined filename and custom name) -->
+													<div class="flex justify-between items-center mb-3">
+														<div class="flex-1 mr-3">
+															<input
+																type="text"
+																class="input-field text-sm font-medium w-full"
+																placeholder="Photo name..."
+																bind:value={file.customName}
+																on:input={() => (uploadFiles = [...uploadFiles])}
+																title="Edit photo name"
+															/>
+															<p class="text-xs mt-1" style="color: var(--text-secondary);">
+																{(file.file.size / 1024 / 1024).toFixed(1)} MB • {file.file.name}
+															</p>
+														</div>
 														<button
-															class="text-gray-400 hover:text-red-500 transition-colors p-1"
+															class="text-gray-400 hover:text-red-500 transition-colors p-1 flex-shrink-0"
 															on:click={() => removeFile(index)}
 															aria-label="Remove photo"
 														>
-															<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+															<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
 																<path
 																	fill-rule="evenodd"
 																	d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -882,60 +897,30 @@
 														</button>
 													</div>
 
-													<!-- Custom Name Input -->
-													<div class="custom-name-input mb-4">
-														<label
-															for="customName{index}"
-															class="block text-sm font-medium mb-2"
-															style="color: var(--text-primary);"
-														>
-															Photo Name
-														</label>
-														<input
-															id="customName{index}"
-															type="text"
-															class="input-field w-full"
-															placeholder="Enter custom name..."
-															bind:value={file.customName}
-															on:input={() => (uploadFiles = [...uploadFiles])}
-														/>
-														<p class="text-xs mt-1" style="color: var(--text-secondary);">
-															Leave empty to use original filename
-														</p>
-													</div>
-
-													<div class="text-sm mb-3" style="color: var(--text-secondary);">
-														{(file.file.size / 1024 / 1024).toFixed(1)} MB
-													</div>
-
 													<!-- Location Status -->
-													<div class="location-status mb-4">
+													<div class="location-status mb-3">
 														{#if file.location}
 															<div
-																class="flex items-center text-green-600 text-sm bg-green-50 rounded-lg p-3"
+																class="flex items-center text-green-600 text-xs bg-green-50 rounded-md p-2"
 															>
-																<span class="mr-2">📍</span>
+																<span class="mr-1">📍</span>
 																<div class="flex-1">
-																	<div class="font-medium">
+																	<span class="font-medium">
 																		{file.location.lat.toFixed(4)}, {file.location.lng.toFixed(4)}
-																	</div>
+																	</span>
 																	{#if file.extractedLocation}
-																		<div class="text-xs text-green-700 mt-1">
-																			✨ Extracted from GPS data
-																		</div>
+																		<span class="text-green-700 ml-1">• GPS</span>
 																	{:else}
-																		<div class="text-xs text-green-700 mt-1">📍 Manually added</div>
+																		<span class="text-green-700 ml-1">• Manual</span>
 																	{/if}
 																</div>
 															</div>
 														{:else}
 															<div
-																class="flex items-center text-amber-600 text-sm bg-amber-50 rounded-lg p-3"
+																class="flex items-center text-amber-600 text-xs bg-amber-50 rounded-md p-2"
 															>
-																<span class="mr-2">⚠️</span>
-																<span class="flex-1"
-																	>No location data - click "Add Location" to set</span
-																>
+																<span class="mr-1">⚠️</span>
+																<span class="flex-1">No location - click "Add Location"</span>
 															</div>
 														{/if}
 													</div>
@@ -943,61 +928,61 @@
 													<!-- Upload Status & Actions -->
 													<div class="status-actions">
 														{#if file.uploaded}
-															<div class="flex items-center text-green-600 font-medium">
-																<span class="mr-2">✅</span>
-																<span>Successfully uploaded</span>
+															<div class="flex items-center text-green-600 text-sm font-medium">
+																<span class="mr-1">✅</span>
+																<span>Uploaded</span>
 															</div>
 														{:else if file.uploading}
 															<div class="upload-progress">
-																<div class="flex justify-between text-sm text-blue-600 mb-2">
+																<div class="flex justify-between text-xs text-blue-600 mb-1">
 																	<span>Uploading...</span>
 																	<span>{Math.round(file.progress)}%</span>
 																</div>
-																<div class="bg-gray-200 rounded-full h-2 overflow-hidden">
+																<div class="bg-gray-200 rounded-full h-1 overflow-hidden">
 																	<div
-																		class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+																		class="bg-blue-600 h-1 rounded-full transition-all duration-300"
 																		style="width: {file.progress}%"
 																	></div>
 																</div>
 															</div>
 														{:else if file.error}
 															<div class="error-state">
-																<div class="text-red-600 text-sm mb-3 bg-red-50 rounded-lg p-3">
+																<div class="text-red-600 text-xs mb-2 bg-red-50 rounded-md p-2">
 																	<div class="flex items-center mb-1">
-																		<span class="mr-2">❌</span>
-																		<span class="font-medium">Upload failed</span>
+																		<span class="mr-1">❌</span>
+																		<span class="font-medium">Failed</span>
 																	</div>
 																	<div class="text-xs">{file.error}</div>
 																</div>
 																{#if file.retryCount < MAX_RETRY_ATTEMPTS}
 																	<button
-																		class="bg-orange-100 hover:bg-orange-200 text-orange-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+																		class="bg-orange-100 hover:bg-orange-200 text-orange-700 px-3 py-1 rounded-md text-xs font-medium transition-colors"
 																		on:click={() => retryUpload(index)}
 																	>
-																		🔄 Retry Upload ({file.retryCount + 1}/{MAX_RETRY_ATTEMPTS})
+																		🔄 Retry ({file.retryCount + 1}/{MAX_RETRY_ATTEMPTS})
 																	</button>
 																{:else}
 																	<div class="text-xs text-gray-500">
-																		Maximum retry attempts reached
+																		Max retries reached
 																	</div>
 																{/if}
 															</div>
 														{:else}
-															<div class="actions flex gap-3">
+															<div class="actions flex gap-2">
 																<button
-																	class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+																	class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1"
 																	on:click={() => editLocation(index)}
 																>
 																	<span>{file.location ? '✏️' : '📍'}</span>
-																	{file.location ? 'Edit Location' : 'Add Location'}
+																	<span>{file.location ? 'Edit' : 'Add'}</span>
 																</button>
 																{#if file.location}
 																	<button
-																		class="bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+																		class="bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1 rounded-md text-xs font-medium transition-colors"
 																		on:click={() => uploadFile(file)}
 																		disabled={isUploading}
 																	>
-																		🚀 Upload Now
+																		🚀 Upload
 																	</button>
 																{/if}
 															</div>

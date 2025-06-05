@@ -98,6 +98,43 @@ async function upsertUserProfile(user: AuthenticatedUser, env: any): Promise<voi
 	await saveUserData(user.id, profile, env);
 }
 
+// Update user's upload count with retry mechanism to prevent race conditions
+const MAX_RETRY_ATTEMPTS = 10;
+const BASE_DELAY = 50; // Base delay in milliseconds
+
+async function atomicIncrementUserImages(userId: string, env: any): Promise<void> {
+	for (let attempt = 0; attempt < MAX_RETRY_ATTEMPTS; attempt++) {
+		try {
+			const userData = await getUserData(userId, env);
+			if (!userData) {
+				console.warn(`User data not found for ${userId}, skipping count update`);
+				return;
+			}
+
+			const currentCount = userData.imagesUploaded || 0;
+			userData.imagesUploaded = currentCount + 1;
+			userData.updatedAt = new Date().toISOString();
+			
+			await saveUserData(userId, userData, env);
+			
+			// If we get here without error, the update succeeded
+			return;
+		} catch (error) {
+			console.warn(`Attempt ${attempt + 1} failed to update user image count:`, error);
+			
+			if (attempt === MAX_RETRY_ATTEMPTS - 1) {
+				// Final attempt failed, log error but don't fail the entire upload
+				console.error(`Failed to update user image count after ${MAX_RETRY_ATTEMPTS} attempts:`, error);
+				return;
+			}
+			
+			// Wait with exponential backoff before retrying
+			const delay = BASE_DELAY * Math.pow(2, attempt) + Math.random() * 10;
+			await new Promise(resolve => setTimeout(resolve, delay));
+		}
+	}
+}
+
 // Handle CORS preflight requests
 export const OPTIONS = async () => {
 	return new Response(null, {
@@ -322,13 +359,8 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			// Store image metadata in KV
 			await env.IMAGE_DATA.put(`image:${uniqueId}`, JSON.stringify(metadata));
 
-			// Update user's upload count
-			const userData = await getUserData(user.id, env);
-			if (userData) {
-				userData.imagesUploaded = (userData.imagesUploaded || 0) + 1;
-				userData.updatedAt = new Date().toISOString();
-				await saveUserData(user.id, userData, env);
-			}
+			// Update user's upload count with atomic increment
+			await atomicIncrementUserImages(user.id, env);
 
 			// Add to user's images list
 			const userImagesKey = `user:${user.id}:images`;

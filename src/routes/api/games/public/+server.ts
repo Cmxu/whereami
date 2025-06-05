@@ -13,6 +13,21 @@ async function getGameMetadata(gameId: string, env: any): Promise<CustomGame | n
 	}
 }
 
+// Helper function to get user display name
+async function getUserDisplayName(userId: string, env: any): Promise<string> {
+	try {
+		const userData = await env.USER_DATA.get(`user:${userId}`);
+		if (userData) {
+			const profile = JSON.parse(userData);
+			return profile.displayName || profile.username || profile.email || 'Anonymous';
+		}
+		return 'Anonymous';
+	} catch (error) {
+		console.error('Error getting user display name:', error);
+		return 'Anonymous';
+	}
+}
+
 export const GET = async ({ url, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
@@ -140,9 +155,18 @@ export const GET = async ({ url, platform }: RequestEvent) => {
 		// Apply pagination
 		const paginatedGames = validGames.slice(offset, offset + limit);
 
-		// Add computed fields
+		// Get display names for all creators
+		const creatorIds = [...new Set(paginatedGames.map(game => game.createdBy))];
+		const displayNamePromises = creatorIds.map(id => getUserDisplayName(id, env));
+		const displayNames = await Promise.all(displayNamePromises);
+		const creatorDisplayNames = Object.fromEntries(
+			creatorIds.map((id, index) => [id, displayNames[index]])
+		);
+
+		// Add computed fields and replace createdBy with display name
 		const enrichedGames = paginatedGames.map((game) => ({
 			...game,
+			createdBy: creatorDisplayNames[game.createdBy] || 'Anonymous',
 			averageRating: (game.ratingCount || 0) > 0 ? (game.rating || 0) / (game.ratingCount || 1) : 0,
 			imageCount: game.imageIds.length
 		}));
@@ -160,9 +184,9 @@ export const GET = async ({ url, platform }: RequestEvent) => {
 			}
 		);
 	} catch (error) {
-		console.error('Error fetching public games:', error);
+		console.error('Error getting public games:', error);
 		return json(
-			{ error: 'Failed to fetch public games' },
+			{ error: 'Internal server error' },
 			{
 				status: 500,
 				headers: { 'Access-Control-Allow-Origin': '*' }

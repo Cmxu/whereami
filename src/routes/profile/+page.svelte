@@ -8,7 +8,8 @@
 		userStats,
 		userProfile,
 		displayName,
-		loadUserProfile
+		loadUserProfile,
+		loadUserStats
 	} from '$lib/stores/authStore';
 	import { showSuccess, showError } from '$lib/stores/toastStore';
 	import AuthButton from '$lib/components/AuthButton.svelte';
@@ -23,6 +24,9 @@
 		// Redirect to home if not authenticated
 		if (!$isAuthenticated) {
 			showAuthModal = true;
+		} else {
+			// Load fresh user stats when profile page loads
+			loadUserStats();
 		}
 	});
 

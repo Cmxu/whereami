@@ -15,15 +15,15 @@
 
 ## 🚀 Development Tasks & Features
 
-- [ ] On the upload photos screen, adjust the UI for each photo so it takes less space. For example, you don't need the file name and the photo name box, they can be the same. Just reorganize it so it fits better and looks more modern.
-- [ ] Currently in Public Games it says "By <user-id>" but it should use the User's display name
+- [ ] Logging out and back in resets the user's display name and profile picture
+- [ ] Uploading pictures still is a bit buggy. For example, when I upload 4 pictures, only 3 actually get uploaded
+- [ ] If the user only updates their name then it should not update the profile picture
 - [ ] Make the games in the browse tab show thumbnails for the first 3 photos
-- [ ] Lengthen the filters section on the browse tab to be the same length as the games div below it
-- [ ] Implement the search function on the browse games screen
+- [ ] Lengthen the filters section on the browse tab to be the same length as the games div below it (like browse)
+- [ ] Implement the search function on the browse games screen (like browse)
 - [ ] If the user is already on the Gallery page and logs in, the gallery page says not authenticated until after some user action
 - [ ] Show the default state for the dropdown menus on the browse games screen (i.e. Most Played and All Difficulties)
 - [ ] Clicking on the map/placing a pin zooms out, clicking and placing a pin should not affect the zoom
-- [ ] Profile stats are not right games created is always 0, images uploaded is always 0
 - [ ] Refreshing the page makes the game think it's logged out even though you are not
 - [ ] Optimize image loading and compression
 - [ ] Add proper error boundaries for API failures
@@ -32,6 +32,17 @@
 
 ## Completed Tasks
 
+- [x] Currently in Public Games it says "By <user-id>" but it should use the User's display name
+- [x] Profile stats are not right games created is always 0, images uploaded is always 0
+- [x] **Upload Photos UI Optimization**: Successfully redesigned the upload photos screen to use space more efficiently and look more modern:
+  - 📏 **Compact Photo Preview**: Reduced photo thumbnail size from 128px to 96px to take less vertical space
+  - 🔗 **Combined File Name and Photo Name**: Merged the separate file name header and "Photo Name" input field into a single editable text field
+  - 📊 **Simplified File Info**: Moved file size and original filename to a smaller subtitle line below the name input
+  - 🎨 **Reduced Spacing**: Decreased padding, margins, and text sizes throughout the photo items (p-3/p-4 instead of p-4/p-6)
+  - 🔲 **Smaller Components**: Made all buttons, status indicators, and action items more compact with smaller padding and text
+  - ✨ **Modern Layout**: Streamlined location status indicators with inline labels and reduced the overall visual noise
+  - 💫 **Improved User Experience**: Photo name editing is now more intuitive with the editable field prominently displayed
+  - 🚀 **Successfully Deployed**: Changes tested and deployed, confirmed working without breaking existing functionality
 - [x] **Spring Cleaning & Code Optimization**: Successfully cleaned up the codebase to improve maintainability and remove technical debt:
   - 🧹 **Accessibility Fixes**: Fixed all accessibility warnings by properly associating form labels with input controls in gallery and profile edit components
   - 🗑️ **Debug Code Removal**: Removed excessive console.log statements from production code while preserving essential error logging
@@ -165,3 +176,31 @@
 - [x] **Game Data Storage Infrastructure**: Successfully created comprehensive game data storage system with KV namespace:
   - 🗄️ **New KV Namespace**: Created `GAME_DATA` KV namespace (ID: a86736cd257440bea9b9c403b3b3afe5) for storing completed games
   - 📊 **Data Models**: Added TypeScript interfaces for `SavedGame`, `CompletedRound`, `GameShareData`, and `
+- [x] **Multiple Upload KV Count Fix**: Successfully resolved the race condition issue where uploading multiple pictures only incremented the user's KV count by one instead of the actual number uploaded:
+  - 🔧 **Root Cause**: Concurrent uploads were causing race conditions where multiple API calls would read the same initial count, increment by 1, and overwrite each other
+  - ✨ **Atomic Increment Solution**: Implemented atomic increment function with retry logic and exponential backoff to prevent race conditions during concurrent uploads
+  - 🎯 **Profile Stats Fix**: Fixed profile page to load actual user stats from API instead of displaying default zeros from the store
+  - 🔄 **Store Updates**: Updated authStore to properly populate userStats from profile API data
+  - 🧪 **Testing**: Created comprehensive Playwright test to verify multiple upload count accuracy
+  - ✅ **Verification**: User confirmed profile now displays correct upload count (13) instead of previous 0
+  - 🚀 **Deployment**: Successfully deployed with both backend race condition fix and frontend stats display fix
+- [x] **Public Games Display Name Fix**: Successfully resolved the issue where public games showed user IDs instead of display names:
+  - 🔧 **Root Cause**: The public games API was returning raw user IDs in the `createdBy` field instead of fetching and displaying user display names
+  - ✨ **Solution**: Updated `/api/games/public` endpoint to fetch user display names from USER_DATA KV and replace user IDs with actual display names
+  - 🎯 **Batch Processing**: Implemented efficient batch lookup of creator display names to avoid N+1 query problems
+  - 🔄 **Fallback Handling**: Added proper fallback to "Anonymous" when user data is not found or display name is missing
+  - 🚀 **Deployment**: Successfully deployed and verified that public games now show "By [Display Name]" instead of "By [user-id]"
+  - ✅ **User Experience**: Public games now display human-readable creator names, improving the browsing experience
+- [x] **Profile Stats Calculation Fix**: Successfully resolved the issue where profile stats always showed 0 for games created and images uploaded:
+  - 🔧 **Root Cause**: Profile endpoint was relying on stored counter values that weren't being updated consistently
+  - ✨ **Solution**: Updated profile GET endpoint to calculate actual stats by counting from KV data instead of relying on stored counters
+  - 🎯 **Real-time Calculation**: Profile now counts games from `user:${userId}:games` list and images from `user:${userId}:images` list
+  - 🔄 **Fallback Logic**: Added fallback to stored values if calculation fails to ensure reliability
+  - 🧪 **Debug Logging**: Added comprehensive logging to track stats calculation process
+  - ✅ **Accurate Stats**: Profile page now displays correct counts for games created and images uploaded based on actual KV data
+- [x] **Gallery Authentication State Fix**: Successfully resolved the issue where the Gallery page would show "not authenticated" even after logging in:
+  - 🔧 **Root Cause**: Gallery page wasn't reactively updating when authentication state changed after login
+  - ✨ **Solution**: Added reactive statement to Gallery page that listens for authentication changes and reloads user profile data
+  - 🎯 **Auto-refresh**: Gallery now automatically refreshes user profile and authentication state when user signs in
+  - 🔄 **State Synchronization**: Ensured proper synchronization between authentication state and profile data loading
+  - ✅ **Seamless Experience**: Users can now log in from the Gallery page and see authenticated content immediately without manual refresh
