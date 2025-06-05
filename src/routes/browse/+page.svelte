@@ -36,6 +36,9 @@
 	let itemsPerPage = 12;
 	let totalGames = 0;
 
+	// Image thumbnails for games
+	let gameThumbnails: { [gameId: string]: string[] } = {};
+
 	// Handle URL parameters
 	onMount(() => {
 		const urlParams = new URLSearchParams($page.url.search);
@@ -78,6 +81,9 @@
 			// Handle the paginated response format
 			publicGames = response.games || [];
 			totalGames = response.total || 0;
+
+			// Load thumbnails for each game
+			await loadGameThumbnails(publicGames);
 		} catch (err) {
 			gamesError = err instanceof Error ? err.message : 'Failed to load public games';
 		} finally {
@@ -95,11 +101,37 @@
 			loadingGames = true;
 			gamesError = null;
 			userGames = await api.getUserGames();
+
+			// Load thumbnails for each game
+			await loadGameThumbnails(userGames);
 		} catch (err) {
 			gamesError = err instanceof Error ? err.message : 'Failed to load your games';
 		} finally {
 			loadingGames = false;
 		}
+	}
+
+	async function loadGameThumbnails(games: CustomGame[]) {
+		// Load thumbnails for the first 3 images of each game
+		const thumbnailPromises = games.map(async (game) => {
+			try {
+				const response = await fetch(`/api/games/${game.id}/images`);
+				if (response.ok) {
+					const images = await response.json();
+					const thumbnails = images
+						.slice(0, 3)
+						.map((img: any) => `/api/images/${img.id}/${img.filename}?w=150&h=100&fit=cover&q=80`);
+					gameThumbnails[game.id] = thumbnails;
+				}
+			} catch (error) {
+				console.error(`Failed to load thumbnails for game ${game.id}:`, error);
+				gameThumbnails[game.id] = [];
+			}
+		});
+
+		await Promise.all(thumbnailPromises);
+		// Trigger reactivity
+		gameThumbnails = { ...gameThumbnails };
 	}
 
 	function switchGameFilter(filter: GameFilter) {
@@ -234,78 +266,96 @@
 		class="page-header border-b"
 		style="background-color: var(--bg-primary); border-color: var(--border-color);"
 	>
-		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-				<div>
-					<h1 class="text-3xl font-bold" style="color: var(--text-primary);">Browse Games</h1>
-					<p style="color: var(--text-secondary);">
-						Discover and play community-created geography games
-					</p>
-				</div>
-				{#if $isAuthenticated}
-					<a href="/create" class="btn-primary flex items-center gap-2">
-						<span>🎯</span>
-						Create Game
-					</a>
-				{/if}
-			</div>
-		</div>
-	</div>
-
-	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-		<!-- Filters -->
-		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 			<div
-				class="filters-section rounded-lg border p-6 mb-8"
-				style="background-color: var(--bg-primary); border-color: var(--border-color);"
+				class="header-content py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between"
 			>
-				<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-					<!-- Filter tabs -->
-					<div class="flex rounded-lg p-1" style="background-color: var(--bg-tertiary);">
+				<!-- Page title and toggle button -->
+				<div class="flex items-center justify-between w-full">
+					<div class="header-text">
+						<h1 class="text-3xl font-bold" style="color: var(--text-primary);">
+							Browse Games
+						</h1>
+						<p class="text-md mt-2" style="color: var(--text-secondary);">
+							Discover and play community-created geography games
+						</p>
+					</div>
+
+					<!-- Toggle Button -->
+					<div
+						class="flex bg-gray-100 rounded-lg p-1"
+						style="background-color: var(--bg-tertiary);"
+					>
 						<button
-							class="filter-tab {gameFilter === 'public' ? 'active' : ''}"
+							class="tab-button {gameFilter === 'public' ? 'active' : ''}"
 							on:click={() => switchGameFilter('public')}
 						>
 							🌍 Public Games
 						</button>
 						<button
-							class="filter-tab {gameFilter === 'my-games' ? 'active' : ''}"
+							class="tab-button {gameFilter === 'my-games' ? 'active' : ''}"
 							on:click={() => switchGameFilter('my-games')}
 							disabled={!$isAuthenticated}
 						>
 							🎮 My Games
 						</button>
 					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
-					<!-- Search and filters -->
-					<div class="flex flex-col sm:flex-row gap-4 flex-1 lg:max-w-xl">
-						<div class="flex-1">
-							<input
-								type="text"
-								placeholder="Search games..."
-								bind:value={searchQuery}
-								on:input={handleSearch}
-								class="input-field text-sm"
-							/>
-						</div>
+	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+		<!-- Filters -->
+		<div
+			class="filters-section rounded-lg border p-6 mb-8"
+			style="background-color: var(--bg-primary); border-color: var(--border-color);"
+		>
+			<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+				<!-- Search -->
+				<div class="search-field">
+					<input
+						type="text"
+						placeholder="Search games..."
+						bind:value={searchQuery}
+						on:input={handleSearch}
+						class="input-field h-11 w-full"
+					/>
+				</div>
 
-						<select
-							bind:value={difficultyFilter}
-							on:change={handleFilterChange}
-							class="input-field text-sm"
-						>
-							<option value="">All Difficulties</option>
-							<option value="easy">Easy</option>
-							<option value="medium">Medium</option>
-							<option value="hard">Hard</option>
-						</select>
+				<!-- Difficulty Filter -->
+				<div class="filter-field">
+					<select
+						bind:value={difficultyFilter}
+						on:change={handleFilterChange}
+						class="input-field h-11 w-full"
+					>
+						<option value="all">All Difficulties</option>
+						<option value="easy">Easy</option>
+						<option value="medium">Medium</option>
+						<option value="hard">Hard</option>
+					</select>
+				</div>
 
-						<select bind:value={sortBy} on:change={handleFilterChange} class="input-field text-sm">
-							<option value="created_at">Newest</option>
-							<option value="play_count">Most Played</option>
-							<option value="average_rating">Highest Rated</option>
-						</select>
-					</div>
+				<!-- Sort -->
+				<div class="sort-field">
+					<select bind:value={sortBy} on:change={handleFilterChange} class="input-field h-11 w-full">
+						<option value="newest">Newest</option>
+						<option value="popular">Most Played</option>
+						<option value="rating">Highest Rated</option>
+					</select>
+				</div>
+
+				<!-- Create Game Button -->
+				<div class="action-field">
+					{#if $isAuthenticated}
+						<button class="btn-primary w-full h-11 flex items-center justify-center gap-2" on:click={handleCreateGame}>
+							<span>🎯</span>
+							Create Game
+						</button>
+					{:else}
+						<div class="h-11"></div>
+					{/if}
 				</div>
 			</div>
 		</div>
@@ -349,10 +399,42 @@
 							class="game-card rounded-lg border overflow-hidden shadow-sm hover:shadow-md transition-shadow"
 							style="background-color: var(--bg-primary); border-color: var(--border-color);"
 						>
+							<!-- Game Thumbnails -->
+							{#if gameThumbnails[game.id] && gameThumbnails[game.id].length > 0}
+								<div class="game-thumbnails flex h-24 overflow-hidden">
+									{#each gameThumbnails[game.id] as thumbnail, index}
+										<div class="flex-1 relative">
+											<img
+												src={thumbnail}
+												alt="Game preview {index + 1}"
+												class="w-full h-full object-cover"
+												loading="lazy"
+											/>
+										</div>
+									{/each}
+									{#if gameThumbnails[game.id].length < 3}
+										{#each Array(3 - gameThumbnails[game.id].length) as _, index}
+											<div
+												class="flex-1 bg-gray-200 flex items-center justify-center"
+												style="background-color: var(--bg-tertiary);"
+											>
+												<span class="text-xs text-gray-400">📷</span>
+											</div>
+										{/each}
+									{/if}
+								</div>
+							{:else}
+								<div class="game-thumbnails flex h-24 overflow-hidden bg-gray-200" style="background-color: var(--bg-tertiary);">
+									<div class="w-full flex items-center justify-center">
+										<span class="text-gray-400">📷 {game.imageIds.length} photos</span>
+									</div>
+								</div>
+							{/if}
+
 							<div class="game-header p-4 border-b" style="border-color: var(--border-color);">
 								<h3 class="font-semibold mb-1" style="color: var(--text-primary);">{game.name}</h3>
 								{#if game.description}
-									<p class="text-sm" style="color: var(--text-secondary);">{game.description}</p>
+									<p class="text-sm line-clamp-2" style="color: var(--text-secondary);">{game.description}</p>
 								{/if}
 							</div>
 
@@ -472,13 +554,45 @@
 							class="game-card rounded-lg border overflow-hidden shadow-sm hover:shadow-md transition-shadow"
 							style="background-color: var(--bg-primary); border-color: var(--border-color);"
 						>
+							<!-- Game Thumbnails -->
+							{#if gameThumbnails[game.id] && gameThumbnails[game.id].length > 0}
+								<div class="game-thumbnails flex h-24 overflow-hidden">
+									{#each gameThumbnails[game.id] as thumbnail, index}
+										<div class="flex-1 relative">
+											<img
+												src={thumbnail}
+												alt="Game preview {index + 1}"
+												class="w-full h-full object-cover"
+												loading="lazy"
+											/>
+										</div>
+									{/each}
+									{#if gameThumbnails[game.id].length < 3}
+										{#each Array(3 - gameThumbnails[game.id].length) as _, index}
+											<div
+												class="flex-1 bg-gray-200 flex items-center justify-center"
+												style="background-color: var(--bg-tertiary);"
+											>
+												<span class="text-xs text-gray-400">📷</span>
+											</div>
+										{/each}
+									{/if}
+								</div>
+							{:else}
+								<div class="game-thumbnails flex h-24 overflow-hidden bg-gray-200" style="background-color: var(--bg-tertiary);">
+									<div class="w-full flex items-center justify-center">
+										<span class="text-gray-400">📷 {game.imageIds.length} photos</span>
+									</div>
+								</div>
+							{/if}
+
 							<a href="/games/{game.id}" class="game-link block">
 								<div class="game-header p-4 border-b" style="border-color: var(--border-color);">
 									<h3 class="font-semibold mb-1" style="color: var(--text-primary);">
 										{game.name}
 									</h3>
 									{#if game.description}
-										<p class="text-sm" style="color: var(--text-secondary);">{game.description}</p>
+										<p class="text-sm line-clamp-2" style="color: var(--text-secondary);">{game.description}</p>
 									{/if}
 								</div>
 
@@ -586,35 +700,52 @@
 {/if}
 
 <style>
-	.filter-tab {
+	.tab-button {
 		padding: 0.5rem 1rem;
-		border-radius: 0.375rem;
+		font-size: 0.875rem;
 		font-weight: 500;
+		border-radius: 0.375rem;
 		transition: all 0.2s;
 		color: var(--text-secondary);
 		background: transparent;
 		border: none;
 		cursor: pointer;
+		position: relative;
 	}
 
-	.filter-tab:hover:not(:disabled) {
+	.tab-button:hover:not(:disabled) {
 		color: var(--text-primary);
-		background-color: var(--bg-secondary);
+		background: var(--bg-secondary);
 	}
 
-	.filter-tab.active {
-		color: var(--btn-primary-bg);
-		background-color: var(--bg-primary);
+	.tab-button.active {
+		color: var(--text-primary);
+		background: var(--bg-primary);
 		box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 	}
 
-	.filter-tab:disabled {
+	.tab-button:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
 	}
 
 	.game-card:hover {
 		transform: translateY(-2px);
+	}
+
+	.game-thumbnails img {
+		transition: transform 0.2s ease;
+	}
+
+	.game-card:hover .game-thumbnails img {
+		transform: scale(1.05);
+	}
+
+	.line-clamp-2 {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
 	}
 
 	.loading-spinner {
@@ -638,6 +769,28 @@
 	@media (max-width: 768px) {
 		.games-grid {
 			grid-template-columns: 1fr;
+		}
+
+		.filters-section .grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.header-content {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.header-content > div {
+			flex-direction: column;
+			align-items: center;
+			gap: 1rem;
+		}
+
+		.tab-button {
+			flex: 1;
+			text-align: center;
 		}
 	}
 </style>

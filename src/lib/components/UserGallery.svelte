@@ -247,31 +247,24 @@
 </script>
 
 <div class="user-gallery">
-	<!-- Gallery Header -->
-	<div class="gallery-header mb-6">
-		<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-			<div>
-				<h2 class="text-2xl font-bold text-gray-800">Your Photo Gallery</h2>
-				<p class="text-gray-600">{images.length} photos uploaded</p>
+	{#if selectable && multiSelect && selectedCount > 0}
+		<!-- Selection Actions -->
+		<div class="selection-actions mb-6 flex justify-end">
+			<div class="flex gap-2 items-center">
+				<span class="text-sm text-gray-600">{selectedCount} selected</span>
+				<button class="btn-secondary text-sm" on:click={deselectAll}>Clear</button>
+				{#if canCreateGame}
+					<button class="btn-primary text-sm" on:click={createGameFromSelected}>
+						Create Game ({selectedCount})
+					</button>
+				{/if}
 			</div>
-
-			{#if selectable && multiSelect && selectedCount > 0}
-				<div class="selection-actions flex gap-2">
-					<span class="text-sm text-gray-600 self-center">{selectedCount} selected</span>
-					<button class="btn-secondary text-sm" on:click={deselectAll}>Clear</button>
-					{#if canCreateGame}
-						<button class="btn-primary text-sm" on:click={createGameFromSelected}>
-							Create Game ({selectedCount})
-						</button>
-					{/if}
-				</div>
-			{/if}
 		</div>
-	</div>
+	{/if}
 
 	<!-- Filters and Search -->
 	<div
-		class="gallery-filters mb-6 p-4 rounded-lg border"
+		class="gallery-filters mb-8 p-6 rounded-lg border"
 		style="background-color: var(--bg-primary); border-color: var(--border-color);"
 	>
 		<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
@@ -280,14 +273,14 @@
 				<input
 					type="text"
 					placeholder="Search photos..."
-					class="input-field h-11"
+					class="input-field h-11 w-full"
 					bind:value={searchQuery}
 				/>
 			</div>
 
 			<!-- Sort -->
 			<div class="sort-field">
-				<select class="input-field h-11" bind:value={sortBy}>
+				<select class="input-field h-11 w-full" bind:value={sortBy}>
 					<option value="newest">Newest First</option>
 					<option value="oldest">Oldest First</option>
 					<option value="name">Name A-Z</option>
@@ -296,7 +289,7 @@
 
 			<!-- Filter -->
 			<div class="filter-field">
-				<select class="input-field h-11" bind:value={filterBy}>
+				<select class="input-field h-11 w-full" bind:value={filterBy}>
 					<option value="all">All Photos</option>
 					<option value="public">Public Only</option>
 					<option value="private">Private Only</option>
@@ -306,12 +299,12 @@
 			<!-- Batch Actions -->
 			<div class="batch-actions">
 				{#if selectable && multiSelect}
-					<button class="btn-secondary w-full text-sm h-11" on:click={selectAll}>
+					<button class="btn-secondary w-full h-11" on:click={selectAll}>
 						Select Page
 					</button>
 				{:else}
 					<button
-						class="btn-primary w-full text-sm h-11 flex items-center justify-center gap-2"
+						class="btn-primary w-full h-11 flex items-center justify-center gap-2"
 						on:click={() => dispatch('switchToUpload')}
 					>
 						⬆️ Upload

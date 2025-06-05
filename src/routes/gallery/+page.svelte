@@ -579,7 +579,7 @@
 							<h1 class="text-3xl font-bold" style="color: var(--text-primary);">
 								Your Photo Gallery
 							</h1>
-							<p class="text-lg mt-2" style="color: var(--text-secondary);">
+							<p class="text-md mt-2" style="color: var(--text-secondary);">
 								Manage your uploaded photos and create custom geography games
 							</p>
 						</div>
