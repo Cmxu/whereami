@@ -19,6 +19,11 @@
 	let newGameTags: string[] = [];
 	let newGameDifficulty: 'easy' | 'medium' | 'hard' | undefined = undefined;
 	let creating = false;
+	let userGalleryComponent: UserGallery;
+
+	// Reactive variables for header display
+	$: selectedCount = selectedImages.length;
+	$: canCreateGame = selectedCount >= 3 && selectedCount <= 20;
 
 	onMount(() => {
 		// Show sign in prompt for unauthenticated users
@@ -111,6 +116,21 @@
 	function handleUploadPhotos() {
 		goto('/gallery?tab=upload');
 	}
+
+	function clearSelection() {
+		selectedImages = [];
+		if (userGalleryComponent) {
+			userGalleryComponent.deselectAll();
+		}
+	}
+
+	function createGameFromHeader() {
+		if (selectedImages.length >= 3) {
+			showCreateGameModal = true;
+		} else {
+			showInfo(`Select at least 3 photos to create a game (${selectedImages.length}/3)`);
+		}
+	}
 </script>
 
 <svelte:head>
@@ -140,61 +160,64 @@
 			class="page-header border-b"
 			style="background-color: var(--bg-primary); border-color: var(--border-color);"
 		>
-			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-					<div>
-						<h1 class="text-3xl font-bold" style="color: var(--text-primary);">Create Game</h1>
-						<p style="color: var(--text-secondary);">
-							Create your own geography guessing game using your photos
-						</p>
+			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+				<div class="header-content py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+					<div class="flex items-center justify-between w-full">
+						<div class="header-text">
+							<h1 class="text-3xl font-bold" style="color: var(--text-primary);">Create Game</h1>
+							<p class="text-md mt-2" style="color: var(--text-secondary);">
+								Select 3-20 photos to create your custom geography game
+							</p>
+						</div>
+
+						<!-- Action Buttons -->
+						<div class="action-section flex items-center gap-4">
+							<div class="selection-info">
+								<span class="text-sm font-medium" style="color: var(--text-primary);">
+									{selectedCount} photos selected
+								</span>
+								{#if selectedCount > 0}
+									<span class="text-xs ml-2" style="color: var(--text-secondary);">
+										(need 3-20 for game)
+									</span>
+								{/if}
+							</div>
+							<div class="action-buttons flex gap-2">
+								<button 
+									class="btn-secondary px-4 py-2"
+									class:disabled={selectedCount === 0}
+									disabled={selectedCount === 0}
+									on:click={clearSelection}
+								>
+									Clear
+								</button>
+								<button 
+									class="btn-primary px-4 py-2"
+									class:disabled={!canCreateGame}
+									disabled={!canCreateGame}
+									on:click={createGameFromHeader}
+								>
+									Create Game
+									{#if selectedCount > 0}
+										({selectedCount})
+									{/if}
+								</button>
+							</div>
+						</div>
 					</div>
-					<a href="/gallery?tab=upload" class="btn-secondary"> 📸 Upload Photos </a>
 				</div>
 			</div>
 		</div>
 
 		<!-- Content -->
 		<div class="create-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-			<!-- Instructions -->
-			<div
-				class="instructions border rounded-lg p-6 mb-6"
-				style="background-color: var(--bg-primary); border-color: var(--border-color);"
-			>
-				<div class="text-center">
-					<div class="text-gray-400 text-5xl mb-4">🖼️</div>
-					<h3 class="text-lg font-semibold mb-2" style="color: var(--text-primary);">
-						Select Photos for Your Game
-					</h3>
-					<p class="mb-4" style="color: var(--text-secondary);">
-						Choose 3-20 photos from your gallery below. Each photo will be a round in your custom
-						geography game.
-					</p>
-					<div
-						class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm"
-						style="color: var(--text-secondary);"
-					>
-						<div class="flex items-center justify-center gap-2">
-							<span class="text-green-600">✓</span>
-							<span>Minimum 3 photos</span>
-						</div>
-						<div class="flex items-center justify-center gap-2">
-							<span class="text-green-600">✓</span>
-							<span>Maximum 20 photos</span>
-						</div>
-						<div class="flex items-center justify-center gap-2">
-							<span class="text-green-600">✓</span>
-							<span>Photos need GPS data</span>
-						</div>
-					</div>
-				</div>
-			</div>
-
 			<!-- Photo Gallery -->
 			<UserGallery
 				selectable={true}
 				multiSelect={true}
-				maxSelection={20}
-				on:createGame={handleImageSelect}
+				on:imagesSelect={(event) => (selectedImages = event.detail)}
+				on:switchToUpload={handleUploadPhotos}
+				bind:this={userGalleryComponent}
 			/>
 		</div>
 	</div>
@@ -452,6 +475,85 @@
 
 		.image-preview-grid {
 			grid-template-columns: repeat(4, 1fr);
+		}
+	}
+
+	.tab-button {
+		padding: 0.5rem 1rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		border-radius: 0.375rem;
+		transition: all 0.2s;
+		color: var(--text-secondary);
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		position: relative;
+	}
+
+	.tab-button:hover:not(:disabled) {
+		color: var(--text-primary);
+		background: var(--bg-secondary);
+	}
+
+	.tab-button.active {
+		color: var(--text-primary);
+		background: var(--bg-primary);
+		box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+	}
+
+	.tab-button:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.disabled:hover {
+		background: transparent !important;
+		color: var(--text-secondary) !important;
+	}
+
+	@media (max-width: 640px) {
+		.header-content {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.header-content > div {
+			flex-direction: column;
+			align-items: center;
+			gap: 1rem;
+		}
+
+		.action-section {
+			align-items: center !important;
+			width: 100%;
+			flex-direction: column;
+			gap: 1rem !important;
+		}
+
+		.selection-info {
+			text-align: center !important;
+		}
+
+		.selection-info .text-xs {
+			display: block !important;
+			margin-left: 0 !important;
+			margin-top: 0.25rem;
+		}
+
+		.action-buttons {
+			width: 100%;
+			justify-content: center;
+		}
+
+		.action-buttons button {
+			flex: 1;
+			max-width: 120px;
 		}
 	}
 </style>

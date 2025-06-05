@@ -107,6 +107,12 @@
 		}
 		selectedImages = new Set(selectedImages);
 
+		// Dispatch selection changes to parent
+		if (multiSelect) {
+			const selected = images.filter((img) => selectedImages.has(img.id));
+			dispatch('imagesSelect', selected);
+		}
+
 		if (!multiSelect && selectedImages.size === 1) {
 			dispatch('imageSelect', image);
 		}
@@ -120,11 +126,22 @@
 			}
 		});
 		selectedImages = new Set(selectedImages);
+
+		// Dispatch selection changes to parent
+		if (multiSelect) {
+			const selected = images.filter((img) => selectedImages.has(img.id));
+			dispatch('imagesSelect', selected);
+		}
 	}
 
-	function deselectAll() {
+	export function deselectAll() {
 		selectedImages.clear();
 		selectedImages = new Set(selectedImages);
+
+		// Dispatch selection changes to parent
+		if (multiSelect) {
+			dispatch('imagesSelect', []);
+		}
 	}
 
 	function getPaginatedImages() {
@@ -247,21 +264,6 @@
 </script>
 
 <div class="user-gallery">
-	{#if selectable && multiSelect && selectedCount > 0}
-		<!-- Selection Actions -->
-		<div class="selection-actions mb-6 flex justify-end">
-			<div class="flex gap-2 items-center">
-				<span class="text-sm text-gray-600">{selectedCount} selected</span>
-				<button class="btn-secondary text-sm" on:click={deselectAll}>Clear</button>
-				{#if canCreateGame}
-					<button class="btn-primary text-sm" on:click={createGameFromSelected}>
-						Create Game ({selectedCount})
-					</button>
-				{/if}
-			</div>
-		</div>
-	{/if}
-
 	<!-- Filters and Search -->
 	<div
 		class="gallery-filters mb-8 p-6 rounded-lg border"
@@ -299,7 +301,7 @@
 			<!-- Batch Actions -->
 			<div class="batch-actions">
 				{#if selectable && multiSelect}
-					<button class="btn-secondary w-full h-11" on:click={selectAll}>
+					<button class="btn-secondary w-full h-11 flex items-center justify-center" on:click={selectAll}>
 						Select Page
 					</button>
 				{:else}
@@ -623,13 +625,23 @@
 	}
 
 	.selection-overlay {
-		background: rgba(0, 0, 0, 0.5);
 		border-radius: 4px;
 		padding: 2px;
 	}
 
 	.selected-indicator {
 		animation: pulse 2s infinite;
+	}
+
+	.disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.disabled:hover {
+		background: transparent !important;
+		color: var(--text-secondary) !important;
+		transform: none !important;
 	}
 
 	@keyframes pulse {

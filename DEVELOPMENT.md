@@ -15,23 +15,28 @@
 
 ## 🚀 Development Tasks & Features
 
+- [ ] When in game, if you click the whereami logo that should exit the current game
 - [ ] Logging out and back in resets the user's display name and profile picture
 - [ ] Uploading pictures still is a bit buggy. For example, when I upload 4 pictures, only 3 actually get uploaded
 - [ ] If the user only updates their name then it should not update the profile picture
-- [x] Make the games in the browse tab show thumbnails for the first 3 photos
-- [x] Lengthen the filters section on the browse tab to be the same length as the games div below it (like browse)
-- [x] Implement the search function on the browse games screen (like browse)
-- [x] Show the default state for the dropdown menus on the browse games screen (i.e. Most Played and All Difficulties)
 - [ ] If the user is already on the Gallery page and logs in, the gallery page says not authenticated until after some user action
 - [ ] Clicking on the map/placing a pin zooms out, clicking and placing a pin should not affect the zoom
 - [ ] Refreshing the page makes the game think it's logged out even though you are not
 - [ ] Optimize image loading and compression
 - [ ] Add proper error boundaries for API failures
 - [ ] Adjust profile picture, zoom and move
-- [ ] Implement retry logic for failed network requests
 
 ## Completed Tasks
 
+- [x] Select Page Button is not vertically centered
+- [x] Remove the upload photos button and replace it with the create game/clear buttons and # selected text, the buttons should always be on the screen but grayed out and unclickable when 0 pictures are selected
+- [x] Remove the instructions div, modify the text below create game to have shortened instructions
+- [x] Match the styling of browse and gallery tabs for font styling spacing etc
+- [x] Move create game/clear buttons and selected text to the header position where toggle buttons are on browse/gallery screens
+- [x] Make the games in the browse tab show thumbnails for the first 3 photos
+- [x] Lengthen the filters section on the browse tab to be the same length as the games div below it (like browse)
+- [x] Implement the search function on the browse games screen (like browse)
+- [x] Show the default state for the dropdown menus on the browse games screen (i.e. Most Played and All Difficulties)
 - [x] **Gallery Content Area Layout Optimization**: Successfully aligned the gallery page content area with the browse page for consistent spacing and filter bar styling:
   - 📏 **Matched Filter Bar Padding**: Updated gallery filter bar from `p-4` to `p-6` to match browse page padding exactly
   - 📐 **Consistent Spacing**: Changed filter bar margin from `mb-6` to `mb-8` to align with browse page spacing standards
