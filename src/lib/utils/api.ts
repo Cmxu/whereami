@@ -7,7 +7,8 @@ import type {
 	ShareableGame,
 	UserProfile,
 	GameSearchFilters,
-	SocialShare
+	SocialShare,
+	PaginatedResponse
 } from '$lib/types';
 
 export class WhereAmIAPI {
@@ -197,7 +198,7 @@ export class WhereAmIAPI {
 		limit: number = 20,
 		offset: number = 0,
 		filters?: GameSearchFilters
-	): Promise<CustomGame[]> {
+	): Promise<PaginatedResponse<CustomGame>> {
 		const params = new URLSearchParams({
 			limit: limit.toString(),
 			offset: offset.toString()
@@ -479,24 +480,52 @@ export class WhereAmIAPI {
 	 * Get user's created games (requires authentication)
 	 */
 	async getUserGames(userId?: string): Promise<CustomGame[]> {
-		if (!userId && !this.isAuthenticated) {
+		if (!this.isAuthenticated && !userId) {
 			throw new Error('Authentication required to view user games');
 		}
 
-		const endpoint = userId ? `/games/users/${userId}` : '/games/user';
-		const response = await fetch(`${this.baseUrl}${endpoint}`, {
-			headers: this.getHeaders()
+		const endpoint = userId ? `/api/games/user/${userId}` : `${this.baseUrl}/games/user`;
+		const response = await fetch(endpoint, {
+			headers: this.isAuthenticated ? this.getHeaders() : {}
 		});
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				throw new Error('Please sign in to view games');
+				throw new Error('Please sign in to view your games');
 			}
 			throw new Error('Failed to fetch user games');
 		}
 
 		const data = await response.json();
 		return data.games || data; // Handle both old and new response formats
+	}
+
+	/**
+	 * Delete a game (requires authentication)
+	 */
+	async deleteGame(gameId: string): Promise<void> {
+		if (!this.isAuthenticated) {
+			throw new Error('Authentication required to delete games');
+		}
+
+		const response = await fetch(`${this.baseUrl}/games/${gameId}`, {
+			method: 'DELETE',
+			headers: this.getHeaders()
+		});
+
+		if (!response.ok) {
+			if (response.status === 401) {
+				throw new Error('Please sign in to delete games');
+			}
+			if (response.status === 403) {
+				throw new Error('You can only delete your own games');
+			}
+			if (response.status === 404) {
+				throw new Error('Game not found');
+			}
+			const error = await response.json().catch(() => ({ error: 'Failed to delete game' }));
+			throw new Error(error.error || 'Failed to delete game');
+		}
 	}
 
 	/**

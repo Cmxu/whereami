@@ -15,6 +15,29 @@ export const userName = derived(
 		$user?.user_metadata?.full_name || $user?.user_metadata?.name || $user?.email || 'Anonymous'
 );
 
+// Extended profile data
+export const userProfile = writable<{
+	id?: string;
+	email?: string;
+	firstName?: string;
+	lastName?: string;
+	displayName?: string;
+	profilePicture?: string | null;
+	createdAt?: string;
+	updatedAt?: string;
+} | null>(null);
+
+// Derived display name from profile or user metadata
+export const displayName = derived(
+	[userProfile, user],
+	([$userProfile, $user]) => 
+		$userProfile?.displayName || 
+		$user?.user_metadata?.full_name || 
+		$user?.user_metadata?.name || 
+		$user?.email || 
+		'Anonymous'
+);
+
 // Loading states
 export const authLoading = writable(true);
 export const authError = writable<string | null>(null);
@@ -49,18 +72,46 @@ export async function initAuth() {
 			setAuthError(error.message);
 		} else {
 			setUser(session?.user || null);
+			if (session?.user) {
+				await loadUserProfile();
+			}
 		}
 
 		// Listen for auth changes
-		supabase.auth.onAuthStateChange((event, session) => {
+		supabase.auth.onAuthStateChange(async (event, session) => {
 			setUser(session?.user || null);
 			if (event === 'SIGNED_OUT') {
 				clearAuth();
+			} else if (session?.user) {
+				await loadUserProfile();
 			}
 		});
 	} catch (error) {
 		console.error('Auth initialization error:', error);
 		setAuthError('Failed to initialize authentication');
+	}
+}
+
+// Load user profile data
+export async function loadUserProfile() {
+	try {
+		const { data: { session } } = await supabase.auth.getSession();
+		if (!session?.access_token) {
+			return;
+		}
+
+		const response = await fetch('/api/user/profile', {
+			headers: {
+				'Authorization': `Bearer ${session.access_token}`
+			}
+		});
+
+		if (response.ok) {
+			const { profile } = await response.json();
+			userProfile.set(profile);
+		}
+	} catch (error) {
+		console.error('Failed to load user profile:', error);
 	}
 }
 
@@ -78,6 +129,9 @@ export async function signInWithEmail(email: string, password: string) {
 	}
 
 	setUser(data.user);
+	if (data.user) {
+		await loadUserProfile();
+	}
 	return { success: true, user: data.user };
 }
 
@@ -157,6 +211,7 @@ export function setAuthError(error: string | null) {
 
 export function clearAuth() {
 	user.set(null);
+	userProfile.set(null);
 	authLoading.set(false);
 	authError.set(null);
 	userStats.set({

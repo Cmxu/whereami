@@ -448,4 +448,57 @@ export const OPTIONS = async () => {
 			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 		}
 	});
+};
+
+export const GET = async ({ params, platform }: RequestEvent) => {
+	try {
+		const { imageId } = params;
+		const env = platform?.env;
+
+		if (!imageId) {
+			return new Response('Image ID required', { status: 400 });
+		}
+
+		if (!env?.IMAGES_BUCKET) {
+			console.error('IMAGES_BUCKET R2 binding not found');
+			return new Response('Server configuration error', { status: 500 });
+		}
+
+		// Handle different types of image requests
+		let objectKey: string;
+		
+		// Check if it's a profile picture request
+		if (imageId.startsWith('profile-pictures/')) {
+			objectKey = imageId;
+		} else {
+			// Legacy handling for regular images
+			objectKey = imageId;
+		}
+
+		console.log('Fetching image with key:', objectKey);
+
+		// Get the image from R2
+		const object = await env.IMAGES_BUCKET.get(objectKey);
+
+		if (!object) {
+			console.log('Image not found:', objectKey);
+			return new Response('Image not found', { status: 404 });
+		}
+
+		const imageData = await object.arrayBuffer();
+		const contentType = object.httpMetadata?.contentType || 'image/jpeg';
+
+		console.log('Image found, size:', imageData.byteLength, 'type:', contentType);
+
+		return new Response(imageData, {
+			headers: {
+				'Content-Type': contentType,
+				'Cache-Control': 'public, max-age=31536000', // 1 year cache
+				'Access-Control-Allow-Origin': '*'
+			}
+		});
+	} catch (error) {
+		console.error('Image serving error:', error);
+		return new Response('Internal server error', { status: 500 });
+	}
 }; 

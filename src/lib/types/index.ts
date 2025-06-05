@@ -183,3 +183,11 @@ export interface GameStats {
 	roundsPlayed: number;
 	perfectGuesses: number; // Guesses within a certain threshold
 }
+
+export interface PaginatedResponse<T> {
+	games: T[];
+	total: number;
+	limit: number;
+	offset: number;
+	hasMore: boolean;
+}

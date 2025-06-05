@@ -19,6 +19,11 @@
 	let showShareModal = false;
 	let gameToShare: CustomGame | null = null;
 
+	// Delete confirmation modal
+	let showDeleteModal = false;
+	let gameToDelete: CustomGame | null = null;
+	let deletingGame = false;
+
 	// Enhanced search and filtering
 	let searchQuery = '';
 	let sortBy: 'newest' | 'oldest' | 'popular' | 'rating' = 'newest';
@@ -64,11 +69,15 @@
 				tags: tagFilter.trim() ? [tagFilter.trim()] : undefined
 			};
 
-			publicGames = await api.getPublicGames(
+			const response = await api.getPublicGames(
 				itemsPerPage,
 				(currentPage - 1) * itemsPerPage,
 				filters
 			);
+
+			// Handle the paginated response format
+			publicGames = response.games || [];
+			totalGames = response.total || 0;
 		} catch (err) {
 			gamesError = err instanceof Error ? err.message : 'Failed to load public games';
 		} finally {
@@ -139,6 +148,38 @@
 	function shareGame(game: CustomGame) {
 		gameToShare = game;
 		showShareModal = true;
+	}
+
+	function confirmDeleteGame(game: CustomGame) {
+		gameToDelete = game;
+		showDeleteModal = true;
+	}
+
+	async function deleteGame() {
+		if (!gameToDelete) return;
+
+		try {
+			deletingGame = true;
+			await api.deleteGame(gameToDelete.id);
+			
+			// Remove from local state
+			userGames = userGames.filter(game => game.id !== gameToDelete!.id);
+			
+			// Close modal and reset state
+			showDeleteModal = false;
+			gameToDelete = null;
+			
+			// Success - no popup needed, user can see the game disappeared from the list
+		} catch (err) {
+			alert(err instanceof Error ? err.message : 'Failed to delete game');
+		} finally {
+			deletingGame = false;
+		}
+	}
+
+	function cancelDeleteGame() {
+		showDeleteModal = false;
+		gameToDelete = null;
 	}
 
 	function formatDate(dateString: string): string {
@@ -408,52 +449,69 @@
 				<!-- User Games Grid -->
 				<div class="games-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					{#each userGames as game (game.id)}
-						<a
-							href="/games/{game.id}"
+						<div
 							class="game-card rounded-lg border overflow-hidden shadow-sm hover:shadow-md transition-shadow"
 							style="background-color: var(--bg-primary); border-color: var(--border-color);"
 						>
-							<div class="game-header p-4 border-b" style="border-color: var(--border-color);">
-								<h3 class="font-semibold mb-1" style="color: var(--text-primary);">{game.name}</h3>
-								{#if game.description}
-									<p class="text-sm" style="color: var(--text-secondary);">{game.description}</p>
-								{/if}
-							</div>
-
-							<div class="game-info p-4 space-y-3">
-								<div class="game-stats flex justify-between text-sm">
-									<span style="color: var(--text-secondary);">{game.imageIds.length} photos</span>
-									<span style="color: var(--text-secondary);">Created {formatDate(game.createdAt)}</span>
+							<a href="/games/{game.id}" class="game-link block">
+								<div class="game-header p-4 border-b" style="border-color: var(--border-color);">
+									<h3 class="font-semibold mb-1" style="color: var(--text-primary);">{game.name}</h3>
+									{#if game.description}
+										<p class="text-sm" style="color: var(--text-secondary);">{game.description}</p>
+									{/if}
 								</div>
 
-								<div
-									class="visibility-badge inline-block px-2 py-1 rounded text-xs font-medium
-									{game.isPublic ? 'bg-green-100 text-green-800' : 'bg-gray-100-theme text-gray-800-theme'}"
-								>
-									{game.isPublic ? '🌍 Public' : '🔒 Private'}
-								</div>
-
-								{#if game.difficulty}
-									<div
-										class="difficulty-badge inline-block px-2 py-1 rounded text-xs font-medium
-										{game.difficulty === 'easy'
-											? 'bg-green-100 text-green-800'
-											: game.difficulty === 'medium'
-												? 'bg-yellow-100 text-yellow-800'
-												: 'bg-red-100 text-red-800'}"
-									>
-										{game.difficulty.charAt(0).toUpperCase() + game.difficulty.slice(1)}
+								<div class="game-info p-4 space-y-3">
+									<div class="game-stats flex justify-between text-sm">
+										<span style="color: var(--text-secondary);">{game.imageIds.length} photos</span>
+										<span style="color: var(--text-secondary);">Created {formatDate(game.createdAt)}</span>
 									</div>
-								{/if}
 
-								<div class="game-actions flex gap-2 pt-2">
-									<button class="btn-primary flex-1" on:click={() => playUserGame(game)}>
-										🎮 Play
-									</button>
-									<button class="btn-secondary" on:click={() => shareGame(game)}> 📤 </button>
+									<div
+										class="visibility-badge inline-block px-2 py-1 rounded text-xs font-medium
+										{game.isPublic ? 'bg-green-100 text-green-800' : 'bg-gray-100-theme text-gray-800-theme'}"
+									>
+										{game.isPublic ? '🌍 Public' : '🔒 Private'}
+									</div>
+
+									{#if game.difficulty}
+										<div
+											class="difficulty-badge inline-block px-2 py-1 rounded text-xs font-medium
+											{game.difficulty === 'easy'
+												? 'bg-green-100 text-green-800'
+												: game.difficulty === 'medium'
+													? 'bg-yellow-100 text-yellow-800'
+													: 'bg-red-100 text-red-800'}"
+										>
+											{game.difficulty.charAt(0).toUpperCase() + game.difficulty.slice(1)}
+										</div>
+									{/if}
 								</div>
+							</a>
+
+							<div class="game-actions p-4 pt-0 flex gap-2">
+								<button 
+									class="btn-primary flex-1" 
+									on:click={(e) => { e.stopPropagation(); playUserGame(game); }}
+								>
+									🎮 Play
+								</button>
+								<button 
+									class="btn-secondary" 
+									on:click={(e) => { e.stopPropagation(); shareGame(game); }}
+									title="Share"
+								> 
+									📤 
+								</button>
+								<button 
+									class="btn-danger px-3" 
+									on:click={(e) => { e.stopPropagation(); confirmDeleteGame(game); }}
+									title="Delete game"
+								> 
+									🗑️ 
+								</button>
 							</div>
-						</a>
+						</div>
 					{/each}
 				</div>
 			{/if}
@@ -464,6 +522,40 @@
 <!-- Share Modal -->
 {#if showShareModal && gameToShare}
 	<ShareGame game={gameToShare} on:close={() => (showShareModal = false)} />
+{/if}
+
+<!-- Delete Confirmation Modal -->
+{#if showDeleteModal && gameToDelete}
+	<div class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4" style="background-color: rgba(0, 0, 0, 0.5);">
+		<div 
+			class="modal bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+			style="background-color: var(--bg-primary); border: 1px solid var(--border-color);"
+		>
+			<h2 class="text-xl font-semibold mb-4" style="color: var(--text-primary);">Delete Game</h2>
+			<p class="mb-2" style="color: var(--text-secondary);">
+				Are you sure you want to delete "<strong>{gameToDelete.name}</strong>"?
+			</p>
+			<p class="text-sm mb-6" style="color: var(--text-tertiary);">
+				This action cannot be undone. The game will be permanently removed.
+			</p>
+			<div class="flex gap-3 justify-end">
+				<button 
+					class="btn-secondary" 
+					on:click={cancelDeleteGame}
+					disabled={deletingGame}
+				>
+					Cancel
+				</button>
+				<button 
+					class="btn-danger" 
+					on:click={deleteGame}
+					disabled={deletingGame}
+				>
+					{deletingGame ? 'Deleting...' : 'Delete Game'}
+				</button>
+			</div>
+		</div>
+	</div>
 {/if}
 
 <style>
