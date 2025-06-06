@@ -52,7 +52,7 @@
 	}
 
 	$: currentPath = $page.url.pathname;
-	
+
 	let navElement: HTMLElement;
 
 	onMount(() => {
@@ -62,9 +62,9 @@
 				const height = navElement.offsetHeight;
 				document.documentElement.style.setProperty('--nav-height', `${height}px`);
 			};
-			
+
 			updateNavHeight();
-			
+
 			// Update on resize
 			window.addEventListener('resize', updateNavHeight);
 			return () => window.removeEventListener('resize', updateNavHeight);

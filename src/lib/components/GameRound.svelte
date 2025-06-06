@@ -15,7 +15,7 @@
 	let mapReady = false;
 	let imageLoaded = false;
 	let lastRoundId: number | null = null;
-	let mapExpanded = false;
+	let showMapFull = false; // Toggle between image-full and map-full layouts
 	let mapComponent: any;
 	let imageScale = 1;
 	let imageTranslateX = 0;
@@ -23,6 +23,13 @@
 	let isDragging = false;
 	let lastMouseX = 0;
 	let lastMouseY = 0;
+	// Small map resize functionality
+	let smallMapSize = { width: 350, height: 350 };
+	let isResizing = false;
+	let resizeStartX = 0;
+	let resizeStartY = 0;
+	let resizeStartSize = { width: 0, height: 0 };
+	let resizeCurrentSize = { width: 0, height: 0 };
 
 	function handleMapClick(event: CustomEvent<Location>) {
 		if (showResult) return; // Don't allow new guesses after submitting
@@ -58,8 +65,65 @@
 		dispatch('backToHome');
 	}
 
-	function toggleMapExpanded() {
-		mapExpanded = !mapExpanded;
+	function toggleLayout() {
+		showMapFull = !showMapFull;
+
+		// Reset any resize state when switching layouts
+		isResizing = false;
+		resizeCurrentSize = { ...smallMapSize };
+
+		// Trigger map re-rendering after transition
+		setTimeout(() => {
+			if (mapComponent && mapComponent.invalidateSize) {
+				mapComponent.invalidateSize();
+			}
+		}, 300);
+	}
+
+	// Resize functionality for small map
+	function handleResizeStart(event: MouseEvent) {
+		if (showMapFull) return; // Only allow resize when map is small
+
+		event.preventDefault();
+		event.stopPropagation();
+		isResizing = true;
+		resizeStartX = event.clientX;
+		resizeStartY = event.clientY;
+		resizeStartSize = { ...smallMapSize };
+		resizeCurrentSize = { ...smallMapSize };
+
+		document.addEventListener('mousemove', handleResizeMove);
+		document.addEventListener('mouseup', handleResizeEnd);
+	}
+
+	function handleResizeMove(event: MouseEvent) {
+		if (!isResizing) return;
+
+		const deltaX = event.clientX - resizeStartX;
+		const deltaY = event.clientY - resizeStartY;
+
+		// For bottom-right resize handle
+		resizeCurrentSize.width = Math.max(250, Math.min(600, resizeStartSize.width + deltaX));
+		resizeCurrentSize.height = Math.max(250, Math.min(450, resizeStartSize.height + deltaY));
+
+		if (mapComponent && mapComponent.invalidateSize) {
+			mapComponent.invalidateSize();
+		}
+	}
+
+	function handleResizeEnd() {
+		isResizing = false;
+
+		document.removeEventListener('mousemove', handleResizeMove);
+		document.removeEventListener('mouseup', handleResizeEnd);
+
+		smallMapSize = { ...resizeCurrentSize };
+
+		setTimeout(() => {
+			if (mapComponent && mapComponent.invalidateSize) {
+				mapComponent.invalidateSize();
+			}
+		}, 100);
 	}
 
 	function zoomIn() {
@@ -84,25 +148,25 @@
 		// Reset position to center
 		imageTranslateX = 0;
 		imageTranslateY = 0;
-		
+
 		// Use a timeout to ensure DOM is ready and image is loaded
 		setTimeout(() => {
 			const imageElement = document.querySelector('.game-image') as HTMLImageElement;
 			const container = document.querySelector('.image-viewport') as HTMLElement;
-			
+
 			if (imageElement && container && imageElement.naturalWidth > 0) {
 				const containerWidth = container.clientWidth;
 				const containerHeight = container.clientHeight;
 				const imageWidth = imageElement.naturalWidth;
 				const imageHeight = imageElement.naturalHeight;
-				
+
 				console.log('Container:', containerWidth, 'x', containerHeight);
 				console.log('Image:', imageWidth, 'x', imageHeight);
-				
+
 				// Calculate the current object-contain rendered size
 				const imageAspectRatio = imageWidth / imageHeight;
 				const containerAspectRatio = containerWidth / containerHeight;
-				
+
 				let renderedWidth, renderedHeight;
 				if (imageAspectRatio > containerAspectRatio) {
 					// Image is wider than container - it's constrained by width
@@ -113,13 +177,13 @@
 					renderedWidth = containerHeight * imageAspectRatio;
 					renderedHeight = containerHeight;
 				}
-				
+
 				console.log('Rendered size:', renderedWidth, 'x', renderedHeight);
-				
+
 				// Calculate scale to make the rendered image fill the container width
 				const targetScale = containerWidth / renderedWidth;
 				imageScale = Math.max(1, targetScale);
-				
+
 				console.log('Target scale:', targetScale, 'Final scale:', imageScale);
 			} else {
 				console.log('Elements not found or image not loaded');
@@ -174,7 +238,6 @@
 			resetZoom();
 		}
 	}
-
 
 	function getMapMarkers() {
 		if (!showResult || !guessResult) {
@@ -245,7 +308,7 @@
 		<!-- Main game content -->
 		<div class="game-content flex-1 relative overflow-hidden">
 			<!-- Game Info Bar - Centered Top -->
-			<div class="game-info-bar absolute top-6 left-1/2 transform -translate-x-1/2 z-20">
+			<div class="game-info-bar absolute top-6 left-1/2 transform -translate-x-1/2 z-50">
 				<div class="flex items-center space-x-6">
 					<!-- Round Progress -->
 					<div class="flex items-center space-x-2">
@@ -268,6 +331,35 @@
 						</span>
 					</div>
 
+					<!-- Layout Toggle Button -->
+					<button
+						class="btn-secondary text-xs px-3 py-1 flex items-center space-x-1"
+						on:click={toggleLayout}
+						aria-label={showMapFull ? 'Show large image' : 'Show large map'}
+					>
+						{#if showMapFull}
+							<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+								/>
+							</svg>
+							<span>Image</span>
+						{:else}
+							<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+								/>
+							</svg>
+							<span>Map</span>
+						{/if}
+					</button>
+
 					<!-- Exit Button -->
 					<button
 						class="btn-secondary text-xs px-3 py-1"
@@ -279,182 +371,51 @@
 				</div>
 			</div>
 
-			<!-- Image panel -->
-			<div
-				class="image-panel absolute inset-0 transition-all duration-500 ease-in-out"
-				class:image-main={!mapExpanded}
-				class:image-small={mapExpanded}
-			>
-				<div class="game-image-container h-full relative">
-					{#if !imageLoaded}
-						<div
-							class="image-loading absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg"
-						>
-							<div class="text-center">
-								<div class="loading-spinner mx-auto mb-3"></div>
-								<p class="text-gray-500 text-sm">Loading image...</p>
-							</div>
-						</div>
-					{/if}
-					<div class="game-image-viewer w-full h-full rounded-lg overflow-hidden relative">
-						<!-- Zoom controls -->
-						<div class="zoom-controls absolute top-2 right-2 flex flex-col gap-1 z-10">
-							<button
-								class="zoom-btn bg-black/50 text-white rounded p-2 hover:bg-black/70 transition-colors"
-								on:click={zoomIn}
-								aria-label="Zoom in"
-								disabled={imageScale >= 8}
-							>
-								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-									/>
-								</svg>
-							</button>
-							<button
-								class="zoom-btn bg-black/50 text-white rounded p-2 hover:bg-black/70 transition-colors"
-								on:click={zoomOut}
-								aria-label="Zoom out"
-								disabled={imageScale <= 1}
-							>
-								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M18 12H6"
-									/>
-								</svg>
-							</button>
-							<button
-								class="zoom-btn bg-black/50 text-white rounded p-2 hover:bg-black/70 transition-colors"
-								on:click={fitToWidth}
-								aria-label="Fit to width"
-							>
-								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M4 8h16M4 16h16"
-									/>
-								</svg>
-							</button>
-							{#if imageScale > 1}
-								<button
-									class="zoom-btn bg-black/50 text-white rounded p-2 hover:bg-black/70 transition-colors"
-									on:click={resetZoom}
-									aria-label="Reset zoom"
-								>
-									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-										/>
-									</svg>
-								</button>
-							{/if}
-						</div>
+			{#if showMapFull}
+				<!-- Map-focused layout: Large map with small image overlay -->
+				<div class="layout-map-full absolute inset-0 z-10">
+					<!-- Full-size map -->
+					<div class="map-container h-full relative pt-20">
+						<Map
+							bind:this={mapComponent}
+							height="calc(100vh - 10rem)"
+							forceSquare={false}
+							clickable={!showResult}
+							markers={getMapMarkers()}
+							showDistanceLine={showResult}
+							isLoading={!mapReady}
+							on:mapClick={handleMapClick}
+							on:mapReady={handleMapReady}
+						/>
 
-						<div
-							class="image-viewport w-full h-full"
-							class:cursor-zoom-in={imageScale === 1}
-							class:cursor-move={imageScale > 1}
-							role="button"
-							tabindex="0"
-							aria-label="Zoomable game image - click to zoom when zoomed out, mouse wheel to zoom, drag to pan when zoomed"
-							on:click={handleImageClick}
-							on:keydown={(e) => e.key === 'Enter' && handleImageClick()}
-							on:wheel={handleImageWheel}
-							on:mousedown={handleImageMouseDown}
-							on:mousemove={handleImageMouseMove}
-							on:mouseup={handleImageMouseUp}
-							on:mouseleave={handleImageMouseUp}
-							on:dblclick={handleImageDoubleClick}
-						>
-							<img
-								src={$currentRound.image.src}
-								alt="Location to guess - Round {$gameState.currentRound + 1}"
-								class="game-image w-full h-full object-contain transition-opacity duration-300 select-none"
-								class:opacity-0={!imageLoaded}
-								style="transform: scale({imageScale}) translate({imageTranslateX}px, {imageTranslateY}px); transform-origin: center center;"
-								loading="lazy"
-								on:load={handleImageLoad}
-								on:error={() => {
-									console.warn('Failed to load image:', $currentRound.image.src);
-									imageLoaded = true; // Show placeholder if image fails
-								}}
-								draggable="false"
-							/>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- Map panel -->
-			<div
-				class="map-panel absolute transition-all duration-500 ease-in-out"
-				class:map-small={!mapExpanded}
-				class:map-main={mapExpanded}
-			>
-				<div class="map-container h-full relative">
-					<!-- Expand/Collapse button -->
-					<button
-						class="map-toggle-btn absolute top-2 left-2 z-10 bg-white/60 hover:bg-white/80 shadow-lg rounded-lg p-2 transition-all duration-200"
-						on:click={toggleMapExpanded}
-						aria-label={mapExpanded ? 'Collapse map' : 'Expand map'}
-					>
-						{#if mapExpanded}
-							<span class="text-lg">↙️</span>
-						{:else}
-							<span class="text-lg">🔍</span>
-						{/if}
-					</button>
-
-					<Map
-						bind:this={mapComponent}
-						height={mapExpanded ? 'calc(100vh - 8rem)' : '326px'}
-						forceSquare={!mapExpanded}
-						clickable={!showResult}
-						markers={getMapMarkers()}
-						showDistanceLine={showResult}
-						isLoading={!mapReady}
-						on:mapClick={handleMapClick}
-						on:mapReady={handleMapReady}
-					/>
-
-					<!-- Action buttons -->
-					<div class="map-actions mt-2">
-						{#if !showResult}
-							<div class="flex gap-2">
-								<button
-									class="btn-primary flex-1 transition-all duration-200 text-sm"
-									class:pulse={selectedLocation}
-									disabled={!selectedLocation}
-									on:click={handleSubmitGuess}
-									aria-label="Submit your guess"
-								>
-									{selectedLocation ? 'Submit' : 'Select Location'}
-								</button>
-								{#if selectedLocation}
+						<!-- Action buttons for map view -->
+						<div class="action-buttons absolute bottom-4 right-4 z-50">
+							{#if !showResult}
+								<div class="flex gap-2">
 									<button
-										class="btn-secondary text-sm"
-										on:click={() => (selectedLocation = null)}
-										aria-label="Clear your current guess"
+										class="btn-primary px-4 py-2 transition-all duration-200"
+										class:pulse={selectedLocation}
+										disabled={!selectedLocation}
+										on:click={handleSubmitGuess}
+										aria-label="Submit your guess"
 									>
-										Clear
+										{selectedLocation ? 'Submit Guess' : 'Select Location'}
 									</button>
-								{/if}
-							</div>
-						{:else if guessResult}
-							<div class="result-panel card">
-								<div class="text-center mb-4">
-									<div class="result-score">
+									{#if selectedLocation}
+										<button
+											class="btn-secondary px-3 py-2"
+											on:click={() => (selectedLocation = null)}
+											aria-label="Clear your current guess"
+										>
+											Clear
+										</button>
+									{/if}
+								</div>
+							{:else if guessResult}
+								<div
+									class="result-panel bg-white/95 backdrop-blur-sm rounded-lg shadow-xl border border-gray-200 p-4 max-w-sm"
+								>
+									<div class="text-center mb-4">
 										<div class="score-display text-2xl font-bold mb-2 text-blue-600">
 											{guessResult.score.toLocaleString()}
 										</div>
@@ -478,30 +439,375 @@
 														: 'Keep trying!'}
 										</div>
 									</div>
-									<div class="distance-display text-sm text-gray-700">
+									<div class="distance-display text-sm text-gray-700 mb-4">
 										Distance: <strong>{guessResult.formattedDistance}</strong>
 									</div>
+									<button
+										class="btn-primary w-full text-sm py-2"
+										on:click={handleNextRound}
+										aria-label={guessResult.isLastRound
+											? 'View final results'
+											: 'Continue to next round'}
+									>
+										{guessResult.isLastRound ? '🏆 View Results' : '➡️ Next Round'}
+									</button>
 								</div>
-								<button
-									class="btn-primary w-full text-sm py-2"
-									on:click={handleNextRound}
-									aria-label={guessResult.isLastRound
-										? 'View final results'
-										: 'Continue to next round'}
+							{/if}
+						</div>
+					</div>
+
+					<!-- Small image overlay -->
+					<div
+						class="image-overlay absolute bottom-4 left-4 z-50 bg-white/10 backdrop-blur-md rounded-lg shadow-xl border border-white/20 p-3 max-w-sm"
+					>
+						<div class="image-overlay-content relative">
+							{#if !imageLoaded}
+								<div
+									class="image-loading flex items-center justify-center bg-gray-100 rounded-lg h-40"
 								>
-									{guessResult.isLastRound ? '🏆 View Results' : '➡️ Next Round'}
+									<div class="text-center">
+										<div class="loading-spinner mx-auto mb-2"></div>
+										<p class="text-gray-500 text-xs">Loading...</p>
+									</div>
+								</div>
+							{/if}
+
+							<!-- Zoom controls for small image -->
+							<div class="zoom-controls absolute top-2 right-2 flex flex-col gap-1 z-10">
+								<button
+									class="zoom-btn bg-black/50 text-white rounded p-1 hover:bg-black/70 transition-colors"
+									on:click={zoomIn}
+									aria-label="Zoom in"
+									disabled={imageScale >= 8}
+								>
+									<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+										/>
+									</svg>
 								</button>
+								<button
+									class="zoom-btn bg-black/50 text-white rounded p-1 hover:bg-black/70 transition-colors"
+									on:click={zoomOut}
+									aria-label="Zoom out"
+									disabled={imageScale <= 1}
+								>
+									<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M18 12H6"
+										/>
+									</svg>
+								</button>
+								{#if imageScale > 1}
+									<button
+										class="zoom-btn bg-black/50 text-white rounded p-1 hover:bg-black/70 transition-colors"
+										on:click={resetZoom}
+										aria-label="Reset zoom"
+									>
+										<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+											/>
+										</svg>
+									</button>
+								{/if}
 							</div>
-						{:else}
-							<!-- Loading state for results -->
-							<div class="result-loading text-center py-4">
-								<div class="loading-spinner mx-auto mb-2"></div>
-								<p class="text-gray-500 text-xs">Processing...</p>
+
+							<div
+								class="image-viewport w-full h-40 overflow-hidden rounded-md"
+								class:cursor-zoom-in={imageScale === 1}
+								class:cursor-move={imageScale > 1}
+								role="button"
+								tabindex="0"
+								aria-label="Zoomable game image"
+								on:click={handleImageClick}
+								on:keydown={(e) => e.key === 'Enter' && handleImageClick()}
+								on:wheel={handleImageWheel}
+								on:mousedown={handleImageMouseDown}
+								on:mousemove={handleImageMouseMove}
+								on:mouseup={handleImageMouseUp}
+								on:mouseleave={handleImageMouseUp}
+								on:dblclick={handleImageDoubleClick}
+							>
+								<img
+									src={$currentRound.image.src}
+									alt="Round {$gameState.currentRound + 1} photo"
+									class="w-full h-full object-cover transition-opacity duration-300 select-none"
+									class:opacity-0={!imageLoaded}
+									style="transform: scale({imageScale}) translate({imageTranslateX}px, {imageTranslateY}px); transform-origin: center center;"
+									loading="lazy"
+									on:load={handleImageLoad}
+									on:error={() => {
+										console.warn('Failed to load image:', $currentRound.image.src);
+										imageLoaded = true;
+									}}
+									draggable="false"
+								/>
 							</div>
-						{/if}
+							<div class="text-xs text-gray-700 mt-2 text-center font-medium">
+								Round {$gameState.currentRound + 1} of {$gameState.rounds.length}
+							</div>
+						</div>
 					</div>
 				</div>
-			</div>
+			{:else}
+				<!-- Image-focused layout: Large image with small map overlay -->
+				<div class="layout-image-full absolute inset-0 p-4">
+					<!-- Full-size image -->
+					<div class="image-container h-full relative">
+						{#if !imageLoaded}
+							<div
+								class="image-loading absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg"
+							>
+								<div class="text-center">
+									<div class="loading-spinner mx-auto mb-3"></div>
+									<p class="text-gray-500 text-sm">Loading image...</p>
+								</div>
+							</div>
+						{/if}
+
+						<div class="image-viewer w-full h-full rounded-lg overflow-hidden relative">
+							<!-- Zoom controls -->
+							<div class="zoom-controls absolute top-4 right-4 flex flex-col gap-2 z-10">
+								<button
+									class="zoom-btn bg-black/50 text-white rounded p-2 hover:bg-black/70 transition-colors"
+									on:click={zoomIn}
+									aria-label="Zoom in"
+									disabled={imageScale >= 8}
+								>
+									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+										/>
+									</svg>
+								</button>
+								<button
+									class="zoom-btn bg-black/50 text-white rounded p-2 hover:bg-black/70 transition-colors"
+									on:click={zoomOut}
+									aria-label="Zoom out"
+									disabled={imageScale <= 1}
+								>
+									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M18 12H6"
+										/>
+									</svg>
+								</button>
+								<button
+									class="zoom-btn bg-black/50 text-white rounded p-2 hover:bg-black/70 transition-colors"
+									on:click={fitToWidth}
+									aria-label="Fit to width"
+								>
+									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M4 8h16M4 16h16"
+										/>
+									</svg>
+								</button>
+								{#if imageScale > 1}
+									<button
+										class="zoom-btn bg-black/50 text-white rounded p-2 hover:bg-black/70 transition-colors"
+										on:click={resetZoom}
+										aria-label="Reset zoom"
+									>
+										<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+											/>
+										</svg>
+									</button>
+								{/if}
+							</div>
+
+							<div
+								class="image-viewport w-full h-full"
+								class:cursor-zoom-in={imageScale === 1}
+								class:cursor-move={imageScale > 1}
+								role="button"
+								tabindex="0"
+								aria-label="Zoomable game image - click to zoom, mouse wheel to zoom, drag to pan when zoomed"
+								on:click={handleImageClick}
+								on:keydown={(e) => e.key === 'Enter' && handleImageClick()}
+								on:wheel={handleImageWheel}
+								on:mousedown={handleImageMouseDown}
+								on:mousemove={handleImageMouseMove}
+								on:mouseup={handleImageMouseUp}
+								on:mouseleave={handleImageMouseUp}
+								on:dblclick={handleImageDoubleClick}
+							>
+								<img
+									src={$currentRound.image.src}
+									alt="Location to guess - Round {$gameState.currentRound + 1}"
+									class="game-image w-full h-full object-contain transition-opacity duration-300 select-none"
+									class:opacity-0={!imageLoaded}
+									style="transform: scale({imageScale}) translate({imageTranslateX}px, {imageTranslateY}px); transform-origin: center center;"
+									loading="lazy"
+									on:load={handleImageLoad}
+									on:error={() => {
+										console.warn('Failed to load image:', $currentRound.image.src);
+										imageLoaded = true;
+									}}
+									draggable="false"
+								/>
+							</div>
+						</div>
+					</div>
+
+					<!-- Small map overlay -->
+					<div
+						class="map-overlay absolute bottom-4 right-4 z-40 bg-white/10 backdrop-blur-md rounded-lg shadow-xl border border-white/20 p-3 transition-all duration-300"
+						class:resizing={isResizing}
+						style="width: {isResizing
+							? resizeCurrentSize.width
+							: smallMapSize.width}px; height: {isResizing
+							? resizeCurrentSize.height
+							: smallMapSize.height}px;"
+					>
+						<div class="map-container h-full relative">
+							<!-- Resize handle (bottom-right corner) -->
+							<div
+								class="resize-handle absolute bottom-0 right-0 w-4 h-4 bg-white/60 hover:bg-white/80 cursor-se-resize z-20 rounded-tl-md border border-white/40"
+								role="button"
+								tabindex="0"
+								on:mousedown={handleResizeStart}
+								on:keydown={(e) => {
+									if (e.key === 'Enter' || e.key === ' ') {
+										e.preventDefault();
+										smallMapSize.width = Math.min(600, smallMapSize.width + 50);
+										smallMapSize.height = Math.min(450, smallMapSize.height + 50);
+										setTimeout(() => {
+											if (mapComponent && mapComponent.invalidateSize) {
+												mapComponent.invalidateSize();
+											}
+										}, 100);
+									}
+								}}
+								aria-label="Drag to resize map or press Enter to increase size"
+							>
+								<svg
+									class="w-3 h-3 text-gray-600"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+									/>
+								</svg>
+							</div>
+
+							<Map
+								bind:this={mapComponent}
+								height="{(isResizing ? resizeCurrentSize.height : smallMapSize.height) - 24}px"
+								forceSquare={false}
+								clickable={!showResult}
+								markers={getMapMarkers()}
+								showDistanceLine={showResult}
+								isLoading={!mapReady}
+								on:mapClick={handleMapClick}
+								on:mapReady={handleMapReady}
+							/>
+
+							<!-- Action buttons for image view -->
+							<div class="action-buttons mt-2">
+								{#if !showResult}
+									<div class="flex gap-2">
+										<button
+											class="btn-primary flex-1 transition-all duration-200 text-sm"
+											class:pulse={selectedLocation}
+											disabled={!selectedLocation}
+											on:click={handleSubmitGuess}
+											aria-label="Submit your guess"
+										>
+											{selectedLocation ? 'Submit' : 'Select Location'}
+										</button>
+										{#if selectedLocation}
+											<button
+												class="btn-secondary text-sm"
+												on:click={() => (selectedLocation = null)}
+												aria-label="Clear your current guess"
+											>
+												Clear
+											</button>
+										{/if}
+									</div>
+								{:else if guessResult}
+									<div class="result-panel">
+										<div class="text-center mb-3">
+											<div class="score-display text-xl font-bold mb-1 text-blue-600">
+												{guessResult.score.toLocaleString()}
+											</div>
+											<div
+												class="score-badge inline-block px-2 py-1 rounded-full text-xs font-medium mb-2"
+												class:bg-green-100={guessResult.score >= 8000}
+												class:text-green-800={guessResult.score >= 8000}
+												class:bg-yellow-100={guessResult.score >= 5000 && guessResult.score < 8000}
+												class:text-yellow-800={guessResult.score >= 5000 &&
+													guessResult.score < 8000}
+												class:bg-orange-100={guessResult.score >= 2000 && guessResult.score < 5000}
+												class:text-orange-800={guessResult.score >= 2000 &&
+													guessResult.score < 5000}
+												class:bg-red-100={guessResult.score < 2000}
+												class:text-red-800={guessResult.score < 2000}
+											>
+												{guessResult.score >= 8000
+													? 'Excellent!'
+													: guessResult.score >= 5000
+														? 'Great!'
+														: guessResult.score >= 2000
+															? 'Good'
+															: 'Keep trying!'}
+											</div>
+										</div>
+										<div class="distance-display text-xs text-gray-700 mb-3 text-center">
+											Distance: <strong>{guessResult.formattedDistance}</strong>
+										</div>
+										<button
+											class="btn-primary w-full text-sm py-2"
+											on:click={handleNextRound}
+											aria-label={guessResult.isLastRound
+												? 'View final results'
+												: 'Continue to next round'}
+										>
+											{guessResult.isLastRound ? '🏆 View Results' : '➡️ Next Round'}
+										</button>
+									</div>
+								{:else}
+									<!-- Loading state for results -->
+									<div class="result-loading text-center py-2">
+										<div class="loading-spinner mx-auto mb-1"></div>
+										<p class="text-gray-500 text-xs">Processing...</p>
+									</div>
+								{/if}
+							</div>
+						</div>
+					</div>
+				</div>
+			{/if}
 		</div>
 	</div>
 {:else}
@@ -545,73 +851,37 @@
 		transition: width 0.3s ease;
 	}
 
-	/* New layout styles */
-	.image-main {
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		padding: 1rem;
-		z-index: 1;
+	/* Simple dual layout styles */
+	.layout-image-full,
+	.layout-map-full {
+		transition: opacity 0.3s ease-in-out;
 	}
 
-	.image-small {
-		bottom: 1rem;
-		left: 1rem;
-		width: 300px;
-		height: 200px;
-		padding: 0.5rem;
-		z-index: 3;
-		border-radius: 0.75rem;
-		background: rgba(255, 255, 255, 0.95);
-		backdrop-filter: blur(8px);
-		box-shadow:
-			0 10px 25px -5px rgba(0, 0, 0, 0.1),
-			0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	.image-overlay,
+	.map-overlay {
+		animation: slideInUp 0.3s ease-out;
 	}
 
-	.map-small {
-		bottom: 1rem;
-		right: 1rem;
-		width: auto; /* Let it size to content */
-		height: auto; /* Let it size to content */
-		padding: 0.75rem;
-		z-index: 2;
-		border-radius: 0.75rem;
-		background: rgba(255, 255, 255, 0.1);
-		backdrop-filter: blur(8px);
-		box-shadow:
-			0 10px 25px -5px rgba(0, 0, 0, 0.1),
-			0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	.map-overlay.resizing {
+		transition: none !important;
 	}
 
-	.map-main {
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		padding: 1rem;
-		padding-top: 5rem; /* Account for game info bar */
-		z-index: 10; /* Higher z-index to ensure it's above everything */
-		background: rgba(255, 255, 255, 0.95); /* Better background for full-screen mode */
-		backdrop-filter: blur(12px);
-	}
-
-	.image-panel,
-	.map-panel {
+	.resize-handle {
+		transition: all 0.2s ease;
+		user-select: none;
 		display: flex;
-		flex-direction: column;
+		align-items: center;
+		justify-content: center;
 	}
 
-	.map-container {
-		display: flex;
-		flex-direction: column;
-		height: 100%; /* Ensure full height utilization */
+	.resize-handle:hover {
+		background: rgba(255, 255, 255, 0.9) !important;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		transform: scale(1.1);
 	}
 
-	.map-actions {
-		flex-shrink: 0; /* Prevent action buttons from shrinking */
-		margin-top: 0.5rem; /* Further reduced spacing */
+	.resize-handle:active {
+		transform: scale(0.95);
 	}
 
 	.result-panel {
@@ -692,51 +962,22 @@
 	}
 
 	@media (max-width: 1024px) {
-		/* Mobile: revert to stacked layout */
-		.game-content {
-			flex-direction: column;
-			position: relative;
+		/* Mobile: stack image and map vertically */
+		.layout-image-full,
+		.layout-map-full {
+			flex-direction: column !important;
 		}
 
-		.image-panel,
-		.map-panel {
+		.image-overlay,
+		.map-overlay {
 			position: relative !important;
-			width: 100% !important;
-			flex: 1 !important;
-			min-height: 0 !important;
-			padding: 0.5rem !important;
-			margin: 0 !important;
-			border-radius: 0 !important;
-			background: transparent !important;
-			backdrop-filter: none !important;
-			box-shadow: none !important;
-			z-index: auto !important;
-		}
-
-		.image-main,
-		.image-small {
-			position: relative !important;
-			top: auto !important;
+			bottom: auto !important;
 			left: auto !important;
 			right: auto !important;
-			bottom: auto !important;
 			width: 100% !important;
-			height: 100% !important;
-		}
-
-		.map-small,
-		.map-main {
-			position: relative !important;
-			top: auto !important;
-			left: auto !important;
-			right: auto !important;
-			bottom: auto !important;
-			width: 100% !important;
-			height: 100% !important;
-		}
-
-		.map-toggle-btn {
-			display: none !important;
+			height: auto !important;
+			margin: 0.5rem !important;
+			max-width: none !important;
 		}
 
 		.game-info-bar {
@@ -761,16 +1002,7 @@
 	}
 
 	@media (max-width: 640px) {
-		.image-panel,
-		.map-panel {
-			padding: 0.5rem;
-		}
-
-		.game-image-container {
-			min-height: 200px;
-			/* Remove max-height constraint to allow flexibility */
-		}
-
+		.image-container,
 		.map-container {
 			min-height: 200px;
 		}
@@ -780,7 +1012,7 @@
 		}
 
 		.score-display {
-			font-size: 2rem;
+			font-size: 1.5rem;
 		}
 
 		.game-info-bar {
@@ -823,6 +1055,17 @@
 		.game-image {
 			animation: none;
 			transition: none;
+		}
+	}
+
+	@keyframes slideInUp {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
 		}
 	}
 </style>

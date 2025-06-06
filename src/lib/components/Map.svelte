@@ -63,10 +63,11 @@
 			});
 
 			// Add custom zoom control positioned at bottom right
-			L.control.zoom({
-				position: 'bottomright'
-			}).addTo(map);
-
+			L.control
+				.zoom({
+					position: 'bottomright'
+				})
+				.addTo(map);
 
 			// Add tile layer (OpenStreetMap)
 			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -109,13 +110,15 @@
 					: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>`;
 
 		// Different anchor points for different marker types
-		const iconAnchor = type === 'guess' 
-			? [12, 22] // For guess markers (teardrop), anchor at the tip (bottom point)
-			: [12, 12]; // For other markers (circles), anchor at center
+		const iconAnchor =
+			type === 'guess'
+				? [12, 22] // For guess markers (teardrop), anchor at the tip (bottom point)
+				: [12, 12]; // For other markers (circles), anchor at center
 
-		const popupAnchor = type === 'guess'
-			? [0, -22] // Position popup above the tip for guess markers
-			: [0, -12]; // Position popup above center for other markers
+		const popupAnchor =
+			type === 'guess'
+				? [0, -22] // Position popup above the tip for guess markers
+				: [0, -12]; // Position popup above center for other markers
 
 		return L.divIcon({
 			html: iconHtml,
@@ -223,10 +226,19 @@
 			map.setView([center.lat, center.lng], zoom);
 		}
 	}
+
+	// Function to invalidate map size (for dynamic resizing)
+	export function invalidateSize() {
+		if (map) {
+			setTimeout(() => {
+				map.invalidateSize();
+			}, 100);
+		}
+	}
 </script>
 
-<div 
-	class="map-wrapper" 
+<div
+	class="map-wrapper"
 	style={forceSquare ? `width: ${height}; height: ${height};` : `height: ${height};`}
 >
 	{#if isLoading}

@@ -28,6 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `npm run deploy` - Build and deploy to Cloudflare Pages
 - Manual deployment: `npm run build && npx wrangler pages deploy .svelte-kit/cloudflare --project-name whereami`
+- Deployment reminder: `Run 'npm run build && npx wrangler pages deploy .svelte-kit/cloudflare' when you are done making changes`
 
 ## Architecture Overview
 

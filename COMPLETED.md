@@ -1,15 +1,18 @@
-
 ## Completed Tasks
+
 - [x] Move the +/- on the map to the bottom right
 - [x] Add a fit to width toggle for the images during the game
-- [x] When the image is all the way zoomed out, first click should zoom in one step 
+- [x] When the image is all the way zoomed out, first click should zoom in one step
 - [x] Add ability to zoom on photos in round review
 - [x] Game progress bar should start at 0 not 1 as the current round has not yet been completed
-- [x] Pins on the map locations should be based on the tip not the center of the circle, so placing and measuring distance should be based on the tip 
+- [x] Pins on the map locations should be based on the tip not the center of the circle, so placing and measuring distance should be based on the tip
 - [x] Give the game info bar a small amount of padding at the top
 - [x] The game review screen should allow you to review the picture and the map with your guess/actual location when the round is clicked on, it can be a popup should the image and map side by side
+
 ### Map optimizations
+
 - [x] **Game Header Redesign - ENHANCED**: Successfully redesigned the game header with improved usability and readability:
+
   - 🎯 **Centered Positioning**: Moved game information from top-left corner to centered top position for better visibility over the image
   - 📊 **Horizontal Inline Layout**: Changed from stacked vertical layout to horizontal inline layout with all elements in a single row
   - ✨ **Improved Readability**: Enhanced contrast with `background: rgba(255, 255, 255, 0.15)`, stronger `backdrop-filter: blur(12px)`, and subtle border
@@ -205,3 +208,48 @@
   - 📏 **CSS Improvements**: Added explicit `.game-header` and `.game-content` styling to ensure proper flex behavior and prevent layout issues
   - ✅ **Verified Fix**: Changes deployed successfully and the layout now properly accommodates the navigation height without content cutoff
   - 🚀 **Successfully Deployed**: Game rounds now display properly with all content visible, accessible without scrolling issues, and enhanced zoom capabilities
+
+#### Map optimizations - Phase 2
+
+- [x] **Advanced Map Optimization Suite - ENHANCED**: Successfully implemented comprehensive map interaction improvements with modern UX patterns:
+
+  **🎯 Expand Button Redesign**:
+
+  - ✅ **Repositioned**: Moved expand button from bottom-right to top-left for better accessibility
+  - 🎨 **Improved Styling**: Reduced opacity to 40% (from 60%) with cleaner, more subtle appearance
+  - 🔗 **Better Icons**: Replaced emoji icons with proper Unicode arrows (↗ for expand, ↙ for contract)
+  - 🎪 **Enhanced Feedback**: Added font-bold styling and improved hover states
+
+  **🖼️ Expanded Map Experience**:
+
+  - 📺 **Full-Screen Layout**: Expanded map now properly fills entire screen with proper padding
+  - 🖼️ **Smart Image Overlay**: Added compact image preview in bottom-left corner when map is expanded
+  - 💡 **Context Information**: Image overlay shows current round number and progress
+  - 🔄 **Proper Re-rendering**: Map automatically invalidates size and re-renders when toggling modes
+  - 🎨 **Smooth Animations**: Added slideInUp animation for image overlay appearance
+
+  **📏 Dynamic Map Resizing**:
+
+  - 🎛️ **Drag Handle**: Added resize handle in bottom-right corner of small map with visual indicators
+  - 📐 **Real-time Resizing**: Drag functionality allows dynamic width/height adjustment with 300x200 minimum
+  - ♿ **Accessibility**: Added keyboard support (Enter to incrementally increase size) and proper ARIA roles
+  - 🔄 **Live Updates**: Map re-renders properly after resize with debounced invalidation
+  - 🎨 **Visual Feedback**: Resize handle with subtle lines and hover effects
+
+  **🛠️ Technical Implementation**:
+
+  - 📦 **State Management**: Added mapWidth/mapHeight reactive variables for dynamic sizing
+  - 🎭 **Event Handling**: Comprehensive mouse and keyboard event management for resize functionality
+  - 🔄 **Map Integration**: Enhanced Map component with invalidateSize() export function
+  - 🎪 **Performance**: Optimized re-rendering with proper timeouts and debouncing
+  - 📱 **Responsive**: All features work seamlessly on desktop while respecting mobile constraints
+
+  **✅ User Experience Enhancements**:
+
+  - 🎯 **Intuitive Controls**: Expand button clearly positioned and easily discoverable
+  - 🖼️ **Context Preservation**: Image remains visible in expanded mode for reference
+  - 📏 **Flexible Sizing**: Users can customize map size to their preference
+  - ♿ **Accessible**: Full keyboard navigation and screen reader support
+  - 🚀 **Smooth Interactions**: All animations and transitions provide polished feel
+
+  **🚀 Successfully Deployed**: All map optimizations tested and deployed with significantly improved user experience for both casual and power users

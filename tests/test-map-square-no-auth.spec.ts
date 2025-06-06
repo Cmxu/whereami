@@ -7,7 +7,7 @@ test.describe('Map Square Layout', () => {
 	test('should have a square map in game rounds', async ({ page }) => {
 		// Clear any existing authentication
 		await page.context().clearCookies();
-		
+
 		// Navigate to the main page
 		await page.goto('https://whereami-5kp.pages.dev/');
 
@@ -58,14 +58,14 @@ test.describe('Map Square Layout', () => {
 
 		// Get the dimensions of the map wrapper
 		const mapBox = await mapWrapper.boundingBox();
-		
+
 		if (mapBox) {
 			console.log(`Map dimensions: ${mapBox.width}px x ${mapBox.height}px`);
-			
+
 			// Check if the map is square (within a small tolerance for rounding)
 			const tolerance = 5; // 5px tolerance
 			const isSquare = Math.abs(mapBox.width - mapBox.height) <= tolerance;
-			
+
 			expect(isSquare).toBe(true);
 			console.log(`✓ Map is square: ${mapBox.width}px x ${mapBox.height}px`);
 		} else {
@@ -74,14 +74,14 @@ test.describe('Map Square Layout', () => {
 
 		// Also verify the map panel dimensions
 		const panelBox = await mapPanel.boundingBox();
-		
+
 		if (panelBox) {
 			console.log(`Panel dimensions: ${panelBox.width}px x ${panelBox.height}px`);
-			
+
 			// Panel should be wider than it is high (to accommodate the square map + buttons)
 			const panelAspectRatio = panelBox.width / panelBox.height;
 			console.log(`Panel aspect ratio: ${panelAspectRatio.toFixed(2)}`);
-			
+
 			// Panel should be closer to square but allow for button space below
 			expect(panelAspectRatio).toBeGreaterThan(0.7);
 			expect(panelAspectRatio).toBeLessThan(1.3);
@@ -90,4 +90,4 @@ test.describe('Map Square Layout', () => {
 		// Take a screenshot to verify visually
 		await page.screenshot({ path: 'test-results/square-map-layout.png', fullPage: true });
 	});
-}); 
+});

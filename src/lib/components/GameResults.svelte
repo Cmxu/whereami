@@ -81,25 +81,25 @@
 		// Reset position to center
 		imageTranslateX = 0;
 		imageTranslateY = 0;
-		
+
 		// Use a timeout to ensure DOM is ready and image is loaded
 		setTimeout(() => {
 			const imageElement = document.querySelector('.modal-content img') as HTMLImageElement;
 			const container = document.querySelector('.modal-content .image-viewport') as HTMLElement;
-			
+
 			if (imageElement && container && imageElement.naturalWidth > 0) {
 				const containerWidth = container.clientWidth;
 				const containerHeight = container.clientHeight;
 				const imageWidth = imageElement.naturalWidth;
 				const imageHeight = imageElement.naturalHeight;
-				
+
 				console.log('Modal Container:', containerWidth, 'x', containerHeight);
 				console.log('Modal Image:', imageWidth, 'x', imageHeight);
-				
+
 				// Calculate the current object-contain rendered size
 				const imageAspectRatio = imageWidth / imageHeight;
 				const containerAspectRatio = containerWidth / containerHeight;
-				
+
 				let renderedWidth, renderedHeight;
 				if (imageAspectRatio > containerAspectRatio) {
 					// Image is wider than container - it's constrained by width
@@ -110,13 +110,13 @@
 					renderedWidth = containerHeight * imageAspectRatio;
 					renderedHeight = containerHeight;
 				}
-				
+
 				console.log('Modal Rendered size:', renderedWidth, 'x', renderedHeight);
-				
+
 				// Calculate scale to make the rendered image fill the container width
 				const targetScale = containerWidth / renderedWidth;
 				imageScale = Math.max(1, targetScale);
-				
+
 				console.log('Modal Target scale:', targetScale, 'Final scale:', imageScale);
 			} else {
 				console.log('Modal elements not found or image not loaded');

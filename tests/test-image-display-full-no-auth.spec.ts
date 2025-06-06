@@ -148,7 +148,7 @@ test.describe('Game Image Display - Full Picture Visibility (No Auth)', () => {
 
 		// Start a quick game (fewer rounds)
 		const quickGameButton = page.locator('button').filter({ hasText: 'Quick Game' });
-		
+
 		const quickGameVisible = await quickGameButton.isVisible().catch(() => false);
 		if (!quickGameVisible) {
 			console.log('Quick game button not found - skipping round transition test');
@@ -175,7 +175,7 @@ test.describe('Game Image Display - Full Picture Visibility (No Auth)', () => {
 		const firstImageObjectFit = await gameImage.evaluate((img) => {
 			return window.getComputedStyle(img).objectFit;
 		});
-		
+
 		console.log(`First image object-fit: ${firstImageObjectFit}`);
 		expect(firstImageObjectFit).toBe('contain');
 
@@ -206,7 +206,7 @@ test.describe('Game Image Display - Full Picture Visibility (No Auth)', () => {
 			const secondImageObjectFit = await gameImage.evaluate((img) => {
 				return window.getComputedStyle(img).objectFit;
 			});
-			
+
 			console.log(`Second image object-fit: ${secondImageObjectFit}`);
 			expect(secondImageObjectFit).toBe('contain');
 
@@ -224,4 +224,4 @@ test.describe('Game Image Display - Full Picture Visibility (No Auth)', () => {
 			console.log('Next round button not found - may be final round or single round game');
 		}
 	});
-}); 
+});
