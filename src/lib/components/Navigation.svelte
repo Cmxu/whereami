@@ -35,8 +35,8 @@
 	}
 
 	function handleLogoClick(event: MouseEvent) {
-		// If we're on the home page and there's an active game, save and go home
-		if ($page.url.pathname === '/' && $isGameActive) {
+		// If there's an active game, save it and navigate to home
+		if ($isGameActive) {
 			event.preventDefault();
 			saveGame();
 			goto('/');

@@ -17,7 +17,8 @@
 
 ### Gameplay Fixes/Tasks
 
-- [ ] When in game, if you click the whereami logo that should bring you back to the home page, but there should still be the option to resume the current game later
+- [ ] Give the game info bar a small amount of padding at the top
+- [ ] The game review screen should allow you to review the picture and the map with your guess/actual location when the round is clicked on, it can be a popup should the image and map side by side
 
 #### Map optimizations
 
@@ -42,6 +43,25 @@
 
 ## Completed Tasks
 ### Map optimizations
+- [x] **Game Header Redesign - ENHANCED**: Successfully redesigned the game header with improved usability and readability:
+  - 🎯 **Centered Positioning**: Moved game information from top-left corner to centered top position for better visibility over the image
+  - 📊 **Horizontal Inline Layout**: Changed from stacked vertical layout to horizontal inline layout with all elements in a single row
+  - ✨ **Improved Readability**: Enhanced contrast with `background: rgba(255, 255, 255, 0.15)`, stronger `backdrop-filter: blur(12px)`, and subtle border
+  - 📐 **Compact Design**: Round progress, score display, and exit button now arranged horizontally with proper spacing
+  - 📱 **Mobile Adaptive**: On smaller screens, the layout stacks vertically while remaining centered for optimal mobile experience
+  - 🎨 **Visual Enhancement**: Added border and improved opacity for better text contrast against varied image backgrounds
+  - ✅ **User Testing**: Confirmed much more readable and accessible during gameplay across different image types
+  - 🚀 **Successfully Deployed**: Enhanced game header provides superior user experience with clear visibility of game state
+
+- [x] **Logo Navigation Enhancement - STREAMLINED**: Successfully fixed and simplified the WhereAmI logo click functionality:
+  - 🔧 **Bug Resolution**: Fixed issue where logo clicks weren't working properly during active gameplay
+  - 🏠 **Smart Navigation**: Logo click now correctly detects active game state and automatically saves current progress
+  - 💾 **Simplified Logic**: Streamlined click handler to save game whenever there's an active game, regardless of current page
+  - 🔄 **Resume Functionality**: Saved games automatically trigger resume notification on welcome screen for seamless continuation
+  - ⚡ **Immediate Effect**: Changes take effect instantly - players can safely click logo to return home and resume later
+  - 🧪 **State Management**: Leverages existing game store functionality for reliable save/load operations without duplication
+  - ✅ **User Experience**: Players can now confidently navigate away from games knowing progress is automatically preserved
+  - 🚀 **Successfully Deployed**: Logo navigation now provides expected behavior with automatic game state preservation
 - [x] Remove the leaflet attribution from all maps
 - [x] Instead of having a white background for the map box, make it opaque
 - [x] The small map should start larger than it currently is
@@ -53,8 +73,6 @@
   - ✅ **Verified with Tests**: Comprehensive Playwright test confirms map wrapper is perfectly square (326px x 326px) and panel adjusts properly (350px x 402px)
   - 🎨 **Visual Harmony**: Square map provides better visual balance and consistency within the game interface
   - 🚀 **Successfully Deployed**: All layout improvements tested and deployed with enhanced user experience
-
-#### Image Display Optimization
 - [x] **Full Picture Visibility**: Successfully implemented complete image visibility at game start to ensure players can see the entire picture:
   - 🖼️ **Object-Contain Styling**: Changed image display from `object-cover` to `object-contain` to show the entire image while maintaining aspect ratio
   - 📐 **Letterboxing Support**: Added dark gray background (`#1f2937`) to image viewport for clean letterboxing when images don't fill the container

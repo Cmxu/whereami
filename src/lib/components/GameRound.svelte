@@ -186,38 +186,43 @@
 
 {#if $currentRound}
 	<div class="game-round h-full flex flex-col overflow-hidden">
-		<!-- Header -->
-		<div class="game-header bg-white shadow-sm p-3 flex-shrink-0">
-			<div class="flex justify-between items-center max-w-6xl mx-auto">
-				<div class="game-progress">
-					<h2 class="text-base font-semibold text-gray-800">
-						Round {$gameState.currentRound + 1} of {$gameState.rounds.length}
-					</h2>
-					<div class="progress-bar bg-gray-200 rounded-full h-1.5 mt-1 w-32">
-						<div
-							class="progress-fill bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-							style="width: {(($gameState.currentRound + 1) / $gameState.rounds.length) * 100}%"
-						></div>
-					</div>
-				</div>
-				<div class="game-score">
-					<span class="text-xs text-gray-600">Score:</span>
-					<span class="score-display text-base ml-1 font-bold"
-						>{$gameState.totalScore.toLocaleString()}</span
-					>
-				</div>
-				<button
-					class="btn-secondary text-xs px-3 py-1"
-					on:click={handleBackToHome}
-					aria-label="Exit game and return to home"
-				>
-					← Exit
-				</button>
-			</div>
-		</div>
-
 		<!-- Main game content -->
 		<div class="game-content flex-1 relative overflow-hidden">
+			<!-- Game Info Bar - Centered Top -->
+			<div class="game-info-bar absolute top-4 left-1/2 transform -translate-x-1/2 z-20">
+				<div class="flex items-center space-x-6">
+					<!-- Round Progress -->
+					<div class="flex items-center space-x-2">
+						<span class="text-sm font-semibold text-gray-800">
+							Round {$gameState.currentRound + 1}/{$gameState.rounds.length}
+						</span>
+						<div class="progress-bar bg-gray-200 rounded-full h-1.5 w-16">
+							<div
+								class="progress-fill bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+								style="width: {(($gameState.currentRound + 1) / $gameState.rounds.length) * 100}%"
+							></div>
+						</div>
+					</div>
+					
+					<!-- Score -->
+					<div class="flex items-center space-x-2">
+						<span class="text-sm text-gray-600">Score:</span>
+						<span class="score-display text-lg font-bold text-gray-800">
+							{$gameState.totalScore.toLocaleString()}
+						</span>
+					</div>
+					
+					<!-- Exit Button -->
+					<button
+						class="btn-secondary text-xs px-3 py-1"
+						on:click={handleBackToHome}
+						aria-label="Exit game and return to home"
+					>
+						← Exit
+					</button>
+				</div>
+			</div>
+
 			<!-- Image panel -->
 			<div
 				class="image-panel absolute inset-0 transition-all duration-500 ease-in-out"
@@ -444,15 +449,23 @@
 		overflow: hidden;
 	}
 
-	.game-header {
-		flex-shrink: 0;
-	}
-
 	.game-content {
 		flex: 1;
 		min-height: 0; /* Important for flex child to shrink properly */
 		position: relative;
 		overflow: hidden;
+	}
+
+	.game-info-bar {
+		padding: 0.75rem 1rem;
+		border-radius: 0.75rem;
+		background: rgba(255, 255, 255, 0.15);
+		backdrop-filter: blur(12px);
+		box-shadow:
+			0 10px 25px -5px rgba(0, 0, 0, 0.1),
+			0 10px 10px -5px rgba(0, 0, 0, 0.04);
+		white-space: nowrap;
+		border: 1px solid rgba(255, 255, 255, 0.2);
 	}
 
 	.progress-fill {
@@ -650,22 +663,24 @@
 			display: none !important;
 		}
 
-		.game-header {
-			padding: 1rem 0.5rem;
+		.game-info-bar {
+			top: 1rem;
+			left: 50%;
+			transform: translateX(-50%);
+			padding: 0.5rem 0.75rem;
+			font-size: 0.875rem;
+			max-width: calc(100vw - 2rem);
+			white-space: normal;
 		}
 
-		.game-header .flex {
+		.game-info-bar .flex {
 			flex-direction: column;
-			gap: 1rem;
-			align-items: stretch;
+			gap: 0.25rem;
+			align-items: center;
 		}
 
-		.game-progress {
-			text-align: center;
-		}
-
-		.progress-bar {
-			width: 100%;
+		.game-info-bar .score-display {
+			font-size: 0.875rem;
 		}
 	}
 
@@ -690,6 +705,25 @@
 
 		.score-display {
 			font-size: 2rem;
+		}
+
+		.game-info-bar {
+			top: 1rem;
+			left: 50%;
+			transform: translateX(-50%);
+			padding: 0.5rem 0.75rem;
+			max-width: calc(100vw - 2rem);
+			white-space: normal;
+		}
+
+		.game-info-bar .flex {
+			flex-direction: column;
+			gap: 0.25rem;
+			align-items: center;
+		}
+
+		.game-info-bar .score-display {
+			font-size: 0.875rem;
 		}
 	}
 
