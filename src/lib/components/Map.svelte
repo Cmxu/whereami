@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import type { Location } from '$lib/types';
+	import { calculateGeodesicPath } from '$lib/utils/gameLogic';
 
 	export let center: Location = { lat: 20, lng: 0 };
 	export let zoom: number = 2;
@@ -150,12 +151,22 @@
 			}
 		});
 
-		// Draw distance line if both markers exist and showDistanceLine is true
+		// Draw geodesic distance line if both markers exist and showDistanceLine is true
 		if (showDistanceLine && guessMarker && actualMarker) {
 			const guessLatLng = guessMarker.getLatLng();
 			const actualLatLng = actualMarker.getLatLng();
 
-			distanceLine = L.polyline([guessLatLng, actualLatLng], {
+			// Calculate the great-circle path between the two points
+			const geodesicPath = calculateGeodesicPath(
+				{ lat: guessLatLng.lat, lng: guessLatLng.lng },
+				{ lat: actualLatLng.lat, lng: actualLatLng.lng },
+				100 // Use more points for smoother curve on longer distances
+			);
+
+			// Convert to Leaflet LatLng format
+			const pathCoords = geodesicPath.map((point) => [point.lat, point.lng]);
+
+			distanceLine = L.polyline(pathCoords, {
 				color: '#f59e0b',
 				weight: 3,
 				opacity: 0.8,

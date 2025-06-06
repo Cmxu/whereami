@@ -115,3 +115,63 @@ export const getPerformanceRating = (score: number, maxPossible: number): string
 	if (percentage >= 40) return 'Fair';
 	return 'Keep trying!';
 };
+
+/**
+ * Calculate intermediate points along the great-circle path between two locations
+ * This creates a geodesic line that matches the shortest distance calculation
+ */
+export const calculateGeodesicPath = (
+	point1: Location,
+	point2: Location,
+	numPoints: number = 50
+): Location[] => {
+	const toRad = (value: number) => (value * Math.PI) / 180;
+	const toDeg = (value: number) => (value * 180) / Math.PI;
+
+	const lat1 = toRad(point1.lat);
+	const lng1 = toRad(point1.lng);
+	const lat2 = toRad(point2.lat);
+	const lng2 = toRad(point2.lng);
+
+	const dLat = lat2 - lat1;
+	const dLng = lng2 - lng1;
+
+	// Calculate the angular distance
+	const a =
+		Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+		Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+	const d = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+	const points: Location[] = [];
+
+	for (let i = 0; i <= numPoints; i++) {
+		const f = i / numPoints;
+
+		if (f === 0) {
+			points.push(point1);
+			continue;
+		}
+		if (f === 1) {
+			points.push(point2);
+			continue;
+		}
+
+		// Interpolate along the great circle
+		const A = Math.sin((1 - f) * d) / Math.sin(d);
+		const B = Math.sin(f * d) / Math.sin(d);
+
+		const x = A * Math.cos(lat1) * Math.cos(lng1) + B * Math.cos(lat2) * Math.cos(lng2);
+		const y = A * Math.cos(lat1) * Math.sin(lng1) + B * Math.cos(lat2) * Math.sin(lng2);
+		const z = A * Math.sin(lat1) + B * Math.sin(lat2);
+
+		const lat = Math.atan2(z, Math.sqrt(x * x + y * y));
+		const lng = Math.atan2(y, x);
+
+		points.push({
+			lat: toDeg(lat),
+			lng: toDeg(lng)
+		});
+	}
+
+	return points;
+};
