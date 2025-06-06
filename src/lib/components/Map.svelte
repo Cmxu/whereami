@@ -157,9 +157,12 @@
 			const guessLatLng = guessMarker.getLatLng();
 			const actualLatLng = actualMarker.getLatLng();
 
-			console.log('Drawing line with worldCopyJump enabled:', 
-				'Guess:', { lat: guessLatLng.lat, lng: guessLatLng.lng }, 
-				'Actual:', { lat: actualLatLng.lat, lng: actualLatLng.lng }
+			console.log(
+				'Drawing line with worldCopyJump enabled:',
+				'Guess:',
+				{ lat: guessLatLng.lat, lng: guessLatLng.lng },
+				'Actual:',
+				{ lat: actualLatLng.lat, lng: actualLatLng.lng }
 			);
 
 			// With worldCopyJump enabled, Leaflet should handle antimeridian crossing automatically

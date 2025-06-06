@@ -126,7 +126,7 @@ export const calculateGeodesicPath = (
 	numPoints: number = 50
 ): Location[] => {
 	console.log('calculateGeodesicPath called with:', point1, point2, numPoints);
-	
+
 	const toRad = (value: number) => (value * Math.PI) / 180;
 	const toDeg = (value: number) => (value * 180) / Math.PI;
 
@@ -168,7 +168,7 @@ export const calculateGeodesicPath = (
 		// Use proper great circle interpolation
 		// For trans-Pacific routes, we need to handle the shorter path over the Pacific
 		let dLng2 = lng2 - lng1;
-		
+
 		// Handle crossing the antimeridian (date line)
 		if (Math.abs(dLng2) > Math.PI) {
 			if (dLng2 > 0) {
@@ -185,17 +185,19 @@ export const calculateGeodesicPath = (
 		);
 
 		const intermediateDistance = d * f;
-		
+
 		// Calculate intermediate point
 		const lat = Math.asin(
 			Math.sin(lat1) * Math.cos(intermediateDistance) +
-			Math.cos(lat1) * Math.sin(intermediateDistance) * Math.cos(bearing)
+				Math.cos(lat1) * Math.sin(intermediateDistance) * Math.cos(bearing)
 		);
 
-		let lng = lng1 + Math.atan2(
-			Math.sin(bearing) * Math.sin(intermediateDistance) * Math.cos(lat1),
-			Math.cos(intermediateDistance) - Math.sin(lat1) * Math.sin(lat)
-		);
+		let lng =
+			lng1 +
+			Math.atan2(
+				Math.sin(bearing) * Math.sin(intermediateDistance) * Math.cos(lat1),
+				Math.cos(intermediateDistance) - Math.sin(lat1) * Math.sin(lat)
+			);
 
 		// Normalize longitude
 		lng = ((lng + 3 * Math.PI) % (2 * Math.PI)) - Math.PI;
@@ -207,7 +209,10 @@ export const calculateGeodesicPath = (
 	}
 
 	console.log('Returning geodesic path with', points.length, 'points');
-	console.log('Sample points:', points.slice(0, 5).map(p => `(${p.lat.toFixed(2)}, ${p.lng.toFixed(2)})`));
+	console.log(
+		'Sample points:',
+		points.slice(0, 5).map((p) => `(${p.lat.toFixed(2)}, ${p.lng.toFixed(2)})`)
+	);
 
 	return points;
 };

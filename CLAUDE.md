@@ -38,7 +38,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Storage**: Cloudflare R2 (images) + KV (metadata/games/users)
 - **Maps**: Leaflet with OpenStreetMap
 - **Auth**: Supabase Authentication
-- **Testing**: Playwright (E2E tests against production)
+- **Testing**: Playwright (E2E tests against production) - IMPORTANT: RUN HEADLESS whenever possible
 
 ### Project Structure
 
