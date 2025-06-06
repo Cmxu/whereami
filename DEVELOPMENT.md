@@ -17,15 +17,15 @@
 
 ### Gameplay Fixes/Tasks
 
-- [ ] Always compute the shortest distance, you can do this by fixing the guess and finding the 'actual' location which is closest (either to the east or west of the guess)
 - [ ] Fix the UI for the gameplay, everything should fit onto the screen, the user should not be able to scroll on the main screen
 - [ ] Should be able to zoom in on the picture
 - [ ] Remove the tip
 - [ ] View Final Results button does not do anything, something is erroring out
+- [ ] reset map after each guess
 
 ### General
 
-- [ ] Set a max zoom for maps
+- [ ] Set a max zoom out for maps
 - [ ] Uploading pictures still is a bit buggy. For example, when I upload 4 pictures, only 3 actually get uploaded
 - [ ] If the user is already on the Gallery page and logs in, the gallery page says not authenticated until after some user action
 - [ ] Clicking on the map/placing a pin zooms out, clicking and placing a pin should not affect the zoom
@@ -36,6 +36,9 @@
 
 ## Completed Tasks
 
+- [x] Always compute the shortest distance, you can do this by fixing the guess and finding the 'actual' location which is closest (either to the east or west of the guess)
+  - ✅ **Distance Line Fix**: Implemented Leaflet's `worldCopyJump: true` option to automatically handle antimeridian crossing and ensure distance lines represent the shortest path
+  - ⚠️ **Note**: There may still be edge case bugs with distance calculation in certain longitude crossing scenarios that need further investigation
 - [x] Refreshing the page makes the game think it's logged out even though you are not
 - [x] If the user only updates their name then it should not update the profile picture
 - [x] Logging out and back in resets the user's display name and profile picture

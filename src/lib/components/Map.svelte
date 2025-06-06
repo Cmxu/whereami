@@ -56,7 +56,8 @@
 				zoom: zoom,
 				zoomControl: true,
 				attributionControl: true,
-				preferCanvas: true // Better performance on mobile
+				preferCanvas: true, // Better performance on mobile
+				worldCopyJump: true // Handle antimeridian crossing automatically
 			});
 
 			// Add tile layer (OpenStreetMap)
@@ -151,27 +152,25 @@
 			}
 		});
 
-		// Draw geodesic distance line if both markers exist and showDistanceLine is true
+		// Draw distance line if both markers exist and showDistanceLine is true
 		if (showDistanceLine && guessMarker && actualMarker) {
 			const guessLatLng = guessMarker.getLatLng();
 			const actualLatLng = actualMarker.getLatLng();
 
-			// Calculate the great-circle path between the two points
-			const geodesicPath = calculateGeodesicPath(
-				{ lat: guessLatLng.lat, lng: guessLatLng.lng },
-				{ lat: actualLatLng.lat, lng: actualLatLng.lng },
-				100 // Use more points for smoother curve on longer distances
+			console.log('Drawing line with worldCopyJump enabled:', 
+				'Guess:', { lat: guessLatLng.lat, lng: guessLatLng.lng }, 
+				'Actual:', { lat: actualLatLng.lat, lng: actualLatLng.lng }
 			);
 
-			// Convert to Leaflet LatLng format
-			const pathCoords = geodesicPath.map((point) => [point.lat, point.lng]);
-
-			distanceLine = L.polyline(pathCoords, {
+			// With worldCopyJump enabled, Leaflet should handle antimeridian crossing automatically
+			distanceLine = L.polyline([guessLatLng, actualLatLng], {
 				color: '#f59e0b',
 				weight: 3,
 				opacity: 0.8,
 				dashArray: '10, 5'
 			}).addTo(map);
+
+			console.log('Polyline created with worldCopyJump handling');
 
 			// Fit bounds to show both markers and the line
 			const group = L.featureGroup([guessMarker, actualMarker, distanceLine]);

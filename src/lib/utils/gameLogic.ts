@@ -125,6 +125,8 @@ export const calculateGeodesicPath = (
 	point2: Location,
 	numPoints: number = 50
 ): Location[] => {
+	console.log('calculateGeodesicPath called with:', point1, point2, numPoints);
+	
 	const toRad = (value: number) => (value * Math.PI) / 180;
 	const toDeg = (value: number) => (value * 180) / Math.PI;
 
@@ -133,16 +135,23 @@ export const calculateGeodesicPath = (
 	const lat2 = toRad(point2.lat);
 	const lng2 = toRad(point2.lng);
 
+	// Calculate the angular distance using the same formula as calculateDistance
 	const dLat = lat2 - lat1;
 	const dLng = lng2 - lng1;
-
-	// Calculate the angular distance
 	const a =
 		Math.sin(dLat / 2) * Math.sin(dLat / 2) +
 		Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
 	const d = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
+	console.log('Angular distance (d):', d, 'radians');
+
 	const points: Location[] = [];
+
+	// Handle edge case: if points are very close or identical
+	if (d < 0.0001) {
+		console.log('Points too close, returning simple line');
+		return [point1, point2];
+	}
 
 	for (let i = 0; i <= numPoints; i++) {
 		const f = i / numPoints;
@@ -156,22 +165,49 @@ export const calculateGeodesicPath = (
 			continue;
 		}
 
-		// Interpolate along the great circle
-		const A = Math.sin((1 - f) * d) / Math.sin(d);
-		const B = Math.sin(f * d) / Math.sin(d);
+		// Use proper great circle interpolation
+		// For trans-Pacific routes, we need to handle the shorter path over the Pacific
+		let dLng2 = lng2 - lng1;
+		
+		// Handle crossing the antimeridian (date line)
+		if (Math.abs(dLng2) > Math.PI) {
+			if (dLng2 > 0) {
+				dLng2 = dLng2 - 2 * Math.PI;
+			} else {
+				dLng2 = dLng2 + 2 * Math.PI;
+			}
+		}
 
-		const x = A * Math.cos(lat1) * Math.cos(lng1) + B * Math.cos(lat2) * Math.cos(lng2);
-		const y = A * Math.cos(lat1) * Math.sin(lng1) + B * Math.cos(lat2) * Math.sin(lng2);
-		const z = A * Math.sin(lat1) + B * Math.sin(lat2);
+		// Calculate intermediate point using bearing and distance
+		const bearing = Math.atan2(
+			Math.sin(dLng2) * Math.cos(lat2),
+			Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng2)
+		);
 
-		const lat = Math.atan2(z, Math.sqrt(x * x + y * y));
-		const lng = Math.atan2(y, x);
+		const intermediateDistance = d * f;
+		
+		// Calculate intermediate point
+		const lat = Math.asin(
+			Math.sin(lat1) * Math.cos(intermediateDistance) +
+			Math.cos(lat1) * Math.sin(intermediateDistance) * Math.cos(bearing)
+		);
+
+		let lng = lng1 + Math.atan2(
+			Math.sin(bearing) * Math.sin(intermediateDistance) * Math.cos(lat1),
+			Math.cos(intermediateDistance) - Math.sin(lat1) * Math.sin(lat)
+		);
+
+		// Normalize longitude
+		lng = ((lng + 3 * Math.PI) % (2 * Math.PI)) - Math.PI;
 
 		points.push({
 			lat: toDeg(lat),
 			lng: toDeg(lng)
 		});
 	}
+
+	console.log('Returning geodesic path with', points.length, 'points');
+	console.log('Sample points:', points.slice(0, 5).map(p => `(${p.lat.toFixed(2)}, ${p.lng.toFixed(2)})`));
 
 	return points;
 };
