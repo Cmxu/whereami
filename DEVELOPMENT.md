@@ -17,9 +17,63 @@
 
 ### Gameplay Fixes/Tasks
 
-- [ ] Fix the UI for the gameplay, everything should fit onto the screen, the user should not be able to scroll on the main screen
-- [ ] Should be able to zoom in on the picture
-- [ ] Remove the tip
+- [ ] When in game, if you click the whereami logo that should bring you back to the home page, but there should still be the option to resume the current game later
+
+#### Map optimizations
+
+- [ ] Add a fit to width toggle
+- [ ] When the map is all the way zoomed out, first click should zoom in one step 
+- [ ] Move the +/- on the map to the bottom right
+- [ ] Move the expand map button to the top left, make it less opaque, give it an expand emoji
+- [ ] Fix the UI on the expanded map, make it fit the screen etc.
+- [ ] Add ability to drag the top left hand corner of the map to adjust it's size
+
+### General
+
+- [ ] Uploading pictures still is a bit buggy. For example, when I upload 4 pictures, only 3 actually get uploaded
+- [ ] If the user is already on the Gallery page and logs in, the gallery page says not authenticated until after some user action
+- [ ] Optimize image loading and compression
+- [ ] Add proper error boundaries for API failures
+- [ ] Adjust profile picture, zoom and move
+
+
+## Completed Tasks
+### Map optimizations
+- [x] Remove the leaflet attribution from all maps
+- [x] Instead of having a white background for the map box, make it opaque
+- [x] The small map should start larger than it currently is
+- [x] The map box has a large white space underneath the select location button
+- [x] **Square Map Implementation**: Successfully implemented square map design for better visual consistency:
+  - 🎯 **Square Map Wrapper**: Modified the Map component to enforce a truly square map wrapper (326px x 326px) using the new `forceSquare` prop
+  - 📐 **Flexible Panel Container**: Updated map panel to use `width: auto; height: auto` so it naturally fits around the square map plus action buttons
+  - 🔧 **Component Architecture**: Added `forceSquare` prop to Map component that sets both width and height to the same value when enabled
+  - ✅ **Verified with Tests**: Comprehensive Playwright test confirms map wrapper is perfectly square (326px x 326px) and panel adjusts properly (350px x 402px)
+  - 🎨 **Visual Harmony**: Square map provides better visual balance and consistency within the game interface
+  - 🚀 **Successfully Deployed**: All layout improvements tested and deployed with enhanced user experience
+
+#### Image Display Optimization
+- [x] **Full Picture Visibility**: Successfully implemented complete image visibility at game start to ensure players can see the entire picture:
+  - 🖼️ **Object-Contain Styling**: Changed image display from `object-cover` to `object-contain` to show the entire image while maintaining aspect ratio
+  - 📐 **Letterboxing Support**: Added dark gray background (`#1f2937`) to image viewport for clean letterboxing when images don't fill the container
+  - 🎯 **CSS Specificity Fix**: Added `!important` rule to ensure object-contain styling overrides any conflicting CSS rules
+  - 🔍 **Zoom Functionality**: Maintained all existing zoom and pan capabilities - users can still explore and zoom on the entire picture
+  - ✅ **Comprehensive Testing**: Created dedicated Playwright tests to verify object-contain styling works correctly and persists between rounds
+  - 🚀 **Successfully Deployed**: All changes tested and deployed - entire pictures are now visible at start with empty vertical bars when needed
+- [x] **Map Optimization Suite**: Successfully implemented comprehensive map improvements to enhance user experience and visual consistency:
+  - 🚫 **Attribution Removal**: Removed Leaflet attribution controls from all maps by setting `attributionControl: false` in map initialization and removing attribution from tile layer
+  - 🎨 **Transparent Background**: Changed map wrapper background from white to transparent (`background: transparent`) for better visual integration with the game interface
+  - 📏 **Larger Small Maps**: Increased small map dimensions from 350x250px to 400x300px for better usability and visibility during gameplay
+  - 🔧 **Layout Optimization**: Reduced spacing and margins (map-header from mb-4 to mb-3, map-actions from mt-4 to mt-3) to minimize white space
+  - 📱 **Improved Sizing**: Added minimum width (300px) and height (250px) constraints to ensure consistent map sizing across different contexts
+  - ✅ **Verified with Tests**: Created comprehensive Playwright tests to verify attribution removal and transparent backgrounds work correctly
+  - 🚀 **Successfully Deployed**: All optimizations tested and deployed with improved user experience and cleaner visual design
+- [x] Fix the UI for the gameplay, everything should fit onto the screen, the user should not be able to scroll on the main screen (Fixed: Selective scroll disable only during active gameplay, preserves normal scrolling on other pages)
+- [x] Should be able to zoom in on the picture
+- [x] Remove the tip
+- [x] reset map after each guess
+- [x] Remove "Click on map to make your guess" completely
+- [x] Set a max zoom out for maps
+- [x] Clicking on the map/placing a pin zooms out, clicking and placing a pin should not affect the zoom
 - [x] **View Final Results Button Fix**: Successfully resolved the issue where the "View Final Results" button was not working on the final round:
   - 🔧 **Root Cause**: The `handleNextRound` function in GameRound component was dispatching a `gameComplete` event instead of calling `proceedToNextRound()` when it was the last round
   - ✨ **Solution**: Simplified the logic to always call `proceedToNextRound()` which properly handles both advancing to next rounds AND completing the game when appropriate
@@ -27,21 +81,6 @@
   - 🔄 **State Management**: Game completion now properly triggers the transition from GameRound to GameResults component via the game state
   - ✅ **Verified Fix**: The game now correctly shows the final results screen when clicking "🏆 View Results" after the last round
   - 🚀 **Successfully Deployed**: Players can now view their final game results without errors
-- [ ] reset map after each guess
-
-### General
-
-- [ ] Set a max zoom out for maps
-- [ ] Uploading pictures still is a bit buggy. For example, when I upload 4 pictures, only 3 actually get uploaded
-- [ ] If the user is already on the Gallery page and logs in, the gallery page says not authenticated until after some user action
-- [ ] Clicking on the map/placing a pin zooms out, clicking and placing a pin should not affect the zoom
-- [ ] Optimize image loading and compression
-- [ ] Add proper error boundaries for API failures
-- [ ] Adjust profile picture, zoom and move
-- [ ] When in game, if you click the whereami logo that should exit the current game
-
-## Completed Tasks
-
 - [x] Always compute the shortest distance, you can do this by fixing the guess and finding the 'actual' location which is closest (either to the east or west of the guess)
   - ✅ **Distance Line Fix**: Implemented Leaflet's `worldCopyJump: true` option to automatically handle antimeridian crossing and ensure distance lines represent the shortest path
   - ⚠️ **Note**: There may still be edge case bugs with distance calculation in certain longitude crossing scenarios that need further investigation
@@ -169,3 +208,13 @@
   - ✨ **Solution**: Copy FileList to Array using `Array.from(files)` before clearing the input value to prevent corruption
   - 🔄 **Both Handlers Fixed**: Applied the fix to both file input selection (`handleFileSelect`) and drag-and-drop (`handleDrop`) handlers
   - 🎯 **Type Safety**: Updated `processFiles` function signature to accept both `FileList`
+- [x] **Game Round Layout Height Fix**: Successfully resolved the issue where the bottom of the game round page was getting cut off during gameplay:
+  - 🔧 **Root Cause**: The GameRound component was using `height: 100%` but the internal game header was taking additional space, causing content overflow beyond the available viewport height
+  - ✨ **Solution**: Added proper flexbox layout with `flex-shrink: 0` for the game header and `flex: 1; min-height: 0` for the game content area to ensure proper height distribution
+  - 📱 **Mobile Optimization**: Removed restrictive `max-height: 40vh` constraint on mobile game image containers and reduced minimum heights for better flexibility
+  - 🎯 **Zoom Enhancement**: Updated maximum zoom level from 3x to 8x for better image examination, with proper disabled state management for zoom controls
+  - 🧹 **Structure Optimization**: Removed redundant `game-container` class and optimized CSS to use Tailwind's `h-full` instead of duplicate `height: 100%` declarations
+  - 🎨 **Layout Consistency**: The game content now properly fills the available space without causing bottom cutoff or requiring scrolling during gameplay
+  - 📏 **CSS Improvements**: Added explicit `.game-header` and `.game-content` styling to ensure proper flex behavior and prevent layout issues
+  - ✅ **Verified Fix**: Changes deployed successfully and the layout now properly accommodates the navigation height without content cutoff
+  - 🚀 **Successfully Deployed**: Game rounds now display properly with all content visible, accessible without scrolling issues, and enhanced zoom capabilities

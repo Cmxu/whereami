@@ -14,6 +14,7 @@
 	export let height: string = '400px';
 	export let showDistanceLine: boolean = false;
 	export let isLoading: boolean = false;
+	export let forceSquare: boolean = false;
 
 	const dispatch = createEventDispatcher<{
 		mapClick: Location;
@@ -54,15 +55,15 @@
 			map = L.map(mapContainer, {
 				center: [center.lat, center.lng],
 				zoom: zoom,
+				minZoom: 1, // Prevent excessive zoom out
 				zoomControl: true,
-				attributionControl: true,
+				attributionControl: false,
 				preferCanvas: true, // Better performance on mobile
 				worldCopyJump: true // Handle antimeridian crossing automatically
 			});
 
 			// Add tile layer (OpenStreetMap)
 			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				attribution: '© OpenStreetMap contributors',
 				maxZoom: 18,
 				tileSize: 256,
 				zoomOffset: 0
@@ -200,9 +201,19 @@
 			map.on('click', clickHandler);
 		}
 	}
+
+	// Function to reset map view to initial position
+	export function resetMapView() {
+		if (map) {
+			map.setView([center.lat, center.lng], zoom);
+		}
+	}
 </script>
 
-<div class="map-wrapper" style="height: {height};">
+<div 
+	class="map-wrapper" 
+	style={forceSquare ? `width: ${height}; height: ${height};` : `height: ${height};`}
+>
 	{#if isLoading}
 		<div class="map-loading">
 			<div class="loading-spinner"></div>
@@ -214,17 +225,20 @@
 
 <style>
 	.map-wrapper {
-		width: 100%;
 		border-radius: 8px;
 		overflow: hidden;
 		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 		position: relative;
+		background: rgba(255, 255, 255, 0.1); /* Much more transparent */
 	}
 
 	.map-container {
 		width: 100%;
 		height: 100%;
 		transition: opacity 0.3s ease;
+		min-width: 300px; /* Ensure minimum width for small maps */
+		min-height: 250px; /* Ensure minimum height for small maps */
+		background: transparent; /* Ensure container is transparent */
 	}
 
 	.map-hidden {
@@ -241,7 +255,7 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+		background: rgba(248, 250, 252, 0.3); /* Much more transparent loading background */
 		z-index: 1000;
 	}
 
@@ -310,5 +324,14 @@
 		.map-container {
 			touch-action: pan-x pan-y;
 		}
+	}
+
+	/* Ensure leaflet containers are transparent */
+	:global(.leaflet-container) {
+		background: rgba(255, 255, 255, 0.05) !important; /* Very transparent background */
+	}
+
+	:global(.leaflet-tile-pane) {
+		opacity: 0.95; /* Slightly transparent tiles */
 	}
 </style>

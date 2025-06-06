@@ -83,6 +83,23 @@
 		margin: 0;
 		padding: 0;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		--nav-height: 68px; /* Default fallback */
+	}
+
+	:global(body.game-active-no-scroll) {
+		overflow: hidden;
+		height: 100vh;
+	}
+
+	/* Game-specific layout adjustments */
+	:global(body.game-active-no-scroll) .app-layout {
+		height: 100vh;
+		overflow: hidden;
+	}
+
+	:global(body.game-active-no-scroll) .main-content {
+		height: calc(100vh - var(--nav-height, 68px));
+		overflow: hidden;
 	}
 
 	:global(*) {

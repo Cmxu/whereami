@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
 	import GameRound from '$lib/components/GameRound.svelte';
@@ -9,6 +9,7 @@
 		isGameActive,
 		initializeGame,
 		resetGame,
+		proceedToNextRound,
 		error,
 		isLoading,
 		checkForSavedGame
@@ -40,8 +41,8 @@
 	}
 
 	function handleGameComplete() {
-		// Game completion is handled by the game state
-		// The UI will automatically show results when gameComplete is true
+		// Complete the game and show results
+		proceedToNextRound();
 	}
 
 	function handlePlayAgain() {
@@ -58,6 +59,24 @@
 		// Check for saved games on app start
 		checkForSavedGame();
 	});
+
+	onDestroy(() => {
+		// Ensure no-scroll class is removed when leaving the page
+		if (typeof document !== 'undefined') {
+			document.body.classList.remove('game-active-no-scroll');
+		}
+	});
+
+	// Add/remove no-scroll class on body when game is active
+	$: {
+		if (typeof document !== 'undefined') {
+			if ($isGameActive && !showWelcome) {
+				document.body.classList.add('game-active-no-scroll');
+			} else {
+				document.body.classList.remove('game-active-no-scroll');
+			}
+		}
+	}
 </script>
 
 <svelte:head>
@@ -121,6 +140,13 @@
 	.app-container {
 		min-height: 100vh;
 		width: 100%;
+	}
+
+	/* When game is active, use exact height to prevent overflow */
+	:global(body.game-active-no-scroll) .app-container {
+		height: 100%;
+		min-height: 0;
+		overflow: hidden;
 	}
 
 	.loading-screen {

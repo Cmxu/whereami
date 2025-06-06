@@ -16,6 +16,13 @@
 	let imageLoaded = false;
 	let lastRoundId: number | null = null;
 	let mapExpanded = false;
+	let mapComponent: any;
+	let imageScale = 1;
+	let imageTranslateX = 0;
+	let imageTranslateY = 0;
+	let isDragging = false;
+	let lastMouseX = 0;
+	let lastMouseY = 0;
 
 	function handleMapClick(event: CustomEvent<Location>) {
 		if (showResult) return; // Don't allow new guesses after submitting
@@ -39,9 +46,12 @@
 	}
 
 	function handleNextRound() {
-		// Always call proceedToNextRound - it handles both advancing rounds and game completion
-		proceedToNextRound();
-		// State resets are handled by the reactive statement when the round changes
+		if (guessResult?.isLastRound) {
+			dispatch('gameComplete');
+		} else {
+			proceedToNextRound();
+			// State resets are handled by the reactive statement when the round changes
+		}
 	}
 
 	function handleBackToHome() {
@@ -50,6 +60,64 @@
 
 	function toggleMapExpanded() {
 		mapExpanded = !mapExpanded;
+	}
+
+	function zoomIn() {
+		imageScale = Math.min(imageScale * 1.3, 8);
+	}
+
+	function zoomOut() {
+		imageScale = Math.max(imageScale / 1.3, 1);
+		if (imageScale === 1) {
+			imageTranslateX = 0;
+			imageTranslateY = 0;
+		}
+	}
+
+	function resetZoom() {
+		imageScale = 1;
+		imageTranslateX = 0;
+		imageTranslateY = 0;
+	}
+
+	function handleImageWheel(event: WheelEvent) {
+		event.preventDefault();
+		if (event.deltaY < 0) {
+			zoomIn();
+		} else {
+			zoomOut();
+		}
+	}
+
+	function handleImageMouseDown(event: MouseEvent) {
+		if (imageScale > 1) {
+			isDragging = true;
+			lastMouseX = event.clientX;
+			lastMouseY = event.clientY;
+		}
+	}
+
+	function handleImageMouseMove(event: MouseEvent) {
+		if (isDragging && imageScale > 1) {
+			const deltaX = event.clientX - lastMouseX;
+			const deltaY = event.clientY - lastMouseY;
+			imageTranslateX += deltaX;
+			imageTranslateY += deltaY;
+			lastMouseX = event.clientX;
+			lastMouseY = event.clientY;
+		}
+	}
+
+	function handleImageMouseUp() {
+		isDragging = false;
+	}
+
+	function handleImageDoubleClick() {
+		if (imageScale === 1) {
+			zoomIn();
+		} else {
+			resetZoom();
+		}
 	}
 
 	function getMapMarkers() {
@@ -85,8 +153,17 @@
 		guessResult = null;
 		showResult = false;
 		imageLoaded = false;
+		// Reset image zoom
+		imageScale = 1;
+		imageTranslateX = 0;
+		imageTranslateY = 0;
+		isDragging = false;
 		// Don't reset mapReady - the map doesn't need to be reinitialized between rounds
 		lastRoundId = $currentRound.id;
+		// Reset map view to initial position
+		if (mapComponent) {
+			mapComponent.resetMapView();
+		}
 	}
 
 	// Accessibility: Add keyboard support
@@ -108,39 +185,39 @@
 </script>
 
 {#if $currentRound}
-	<div class="game-round game-container">
+	<div class="game-round h-full flex flex-col overflow-hidden">
 		<!-- Header -->
-		<div class="game-header bg-white shadow-sm p-4">
+		<div class="game-header bg-white shadow-sm p-3 flex-shrink-0">
 			<div class="flex justify-between items-center max-w-6xl mx-auto">
 				<div class="game-progress">
-					<h2 class="text-lg font-semibold text-gray-800">
+					<h2 class="text-base font-semibold text-gray-800">
 						Round {$gameState.currentRound + 1} of {$gameState.rounds.length}
 					</h2>
-					<div class="progress-bar bg-gray-200 rounded-full h-2 mt-2 w-48">
+					<div class="progress-bar bg-gray-200 rounded-full h-1.5 mt-1 w-32">
 						<div
-							class="progress-fill bg-blue-600 h-2 rounded-full transition-all duration-300"
+							class="progress-fill bg-blue-600 h-1.5 rounded-full transition-all duration-300"
 							style="width: {(($gameState.currentRound + 1) / $gameState.rounds.length) * 100}%"
 						></div>
 					</div>
 				</div>
 				<div class="game-score">
-					<span class="text-sm text-gray-600">Total Score:</span>
-					<span class="score-display text-lg ml-2 font-bold"
+					<span class="text-xs text-gray-600">Score:</span>
+					<span class="score-display text-base ml-1 font-bold"
 						>{$gameState.totalScore.toLocaleString()}</span
 					>
 				</div>
 				<button
-					class="btn-secondary text-sm"
+					class="btn-secondary text-xs px-3 py-1"
 					on:click={handleBackToHome}
 					aria-label="Exit game and return to home"
 				>
-					← Exit Game
+					← Exit
 				</button>
 			</div>
 		</div>
 
 		<!-- Main game content -->
-		<div class="game-content flex-1 relative">
+		<div class="game-content flex-1 relative overflow-hidden">
 			<!-- Image panel -->
 			<div
 				class="image-panel absolute inset-0 transition-all duration-500 ease-in-out"
@@ -158,32 +235,72 @@
 							</div>
 						</div>
 					{/if}
-					<button
-						class="game-image-button w-full h-full rounded-lg overflow-hidden"
-						on:click={() => {
-							const img = document.querySelector('.game-image');
-							if (img) {
-								(img as any).requestFullscreen?.() || 
-								(img as any).webkitRequestFullscreen?.() || 
-								(img as any).mozRequestFullScreen?.() || 
-								(img as any).msRequestFullscreen?.();
-							}
-						}}
-						aria-label="Click to zoom image fullscreen"
-					>
-						<img
-							src={$currentRound.image.src}
-							alt="Location to guess - Round {$gameState.currentRound + 1}"
-							class="game-image w-full h-full object-cover transition-opacity duration-300 pointer-events-none"
-							class:opacity-0={!imageLoaded}
-							loading="lazy"
-							on:load={handleImageLoad}
-							on:error={() => {
-								console.warn('Failed to load image:', $currentRound.image.src);
-								imageLoaded = true; // Show placeholder if image fails
-							}}
-						/>
-					</button>
+					<div class="game-image-viewer w-full h-full rounded-lg overflow-hidden relative">
+						<!-- Zoom controls -->
+						<div class="zoom-controls absolute top-2 right-2 flex flex-col gap-1 z-10">
+							<button
+								class="zoom-btn bg-black/50 text-white rounded p-2 hover:bg-black/70 transition-colors"
+								on:click={zoomIn}
+								aria-label="Zoom in"
+								disabled={imageScale >= 8}
+							>
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+								</svg>
+							</button>
+							<button
+								class="zoom-btn bg-black/50 text-white rounded p-2 hover:bg-black/70 transition-colors"
+								on:click={zoomOut}
+								aria-label="Zoom out"
+								disabled={imageScale <= 1}
+							>
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/>
+								</svg>
+							</button>
+							{#if imageScale > 1}
+								<button
+									class="zoom-btn bg-black/50 text-white rounded p-2 hover:bg-black/70 transition-colors"
+									on:click={resetZoom}
+									aria-label="Reset zoom"
+								>
+									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+									</svg>
+								</button>
+							{/if}
+						</div>
+						
+						<div 
+							class="image-viewport w-full h-full"
+							class:cursor-zoom-in={imageScale === 1}
+							class:cursor-move={imageScale > 1}
+							role="button"
+							tabindex="0"
+							aria-label="Zoomable game image - double click to zoom, mouse wheel to zoom, drag to pan when zoomed"
+							on:wheel={handleImageWheel}
+							on:mousedown={handleImageMouseDown}
+							on:mousemove={handleImageMouseMove}
+							on:mouseup={handleImageMouseUp}
+							on:mouseleave={handleImageMouseUp}
+							on:dblclick={handleImageDoubleClick}
+						>
+							<img
+								src={$currentRound.image.src}
+								alt="Location to guess - Round {$gameState.currentRound + 1}"
+								class="game-image w-full h-full object-contain transition-opacity duration-300 select-none"
+								class:opacity-0={!imageLoaded}
+								style="transform: scale({imageScale}) translate({imageTranslateX}px, {imageTranslateY}px); transform-origin: center center;"
+								loading="lazy"
+								on:load={handleImageLoad}
+								on:error={() => {
+									console.warn('Failed to load image:', $currentRound.image.src);
+									imageLoaded = true; // Show placeholder if image fails
+								}}
+								draggable="false"
+							/>
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -221,19 +338,10 @@
 						{/if}
 					</button>
 
-					<div class="map-header mb-4">
-						<h3 class="text-lg font-semibold text-gray-800">
-							{showResult ? 'Results' : 'Click on the map to make your guess'}
-						</h3>
-						{#if selectedLocation && !showResult}
-							<p class="text-sm text-gray-600 mt-1">
-								Selected: {selectedLocation.lat.toFixed(4)}°, {selectedLocation.lng.toFixed(4)}°
-							</p>
-						{/if}
-					</div>
-
 					<Map
-						height={mapExpanded ? 'calc(100% - 160px)' : 'calc(100% - 120px)'}
+						bind:this={mapComponent}
+						height={mapExpanded ? 'calc(100% - 100px)' : '326px'}
+						forceSquare={!mapExpanded}
 						clickable={!showResult}
 						markers={getMapMarkers()}
 						showDistanceLine={showResult}
@@ -243,7 +351,7 @@
 					/>
 
 					<!-- Action buttons -->
-					<div class="map-actions mt-4">
+					<div class="map-actions mt-2">
 						{#if !showResult}
 							<div class="flex gap-2">
 								<button
@@ -251,11 +359,9 @@
 									class:pulse={selectedLocation}
 									disabled={!selectedLocation}
 									on:click={handleSubmitGuess}
-									aria-label={selectedLocation
-										? 'Submit your guess'
-										: 'Click on the map to make a guess first'}
+									aria-label="Submit your guess"
 								>
-									{selectedLocation ? 'Submit' : 'Click to guess'}
+									{selectedLocation ? 'Submit' : 'Select Location'}
 								</button>
 								{#if selectedLocation}
 									<button
@@ -319,13 +425,6 @@
 				</div>
 			</div>
 		</div>
-
-		<!-- Mobile optimization notice -->
-		<div
-			class="mobile-hint lg:hidden fixed bottom-4 left-4 right-4 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800 z-10"
-		>
-			<span class="font-medium">📱 Mobile tip:</span> Pinch to zoom on the map for better precision
-		</div>
 	</div>
 {:else}
 	<div class="min-h-screen flex items-center justify-center bg-gray-50">
@@ -340,6 +439,20 @@
 <style>
 	.game-round {
 		background: #f8fafc;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.game-header {
+		flex-shrink: 0;
+	}
+
+	.game-content {
+		flex: 1;
+		min-height: 0; /* Important for flex child to shrink properly */
+		position: relative;
+		overflow: hidden;
 	}
 
 	.progress-fill {
@@ -374,12 +487,12 @@
 	.map-small {
 		bottom: 1rem;
 		right: 1rem;
-		width: 350px;
-		height: 250px;
+		width: auto; /* Let it size to content */
+		height: auto; /* Let it size to content */
 		padding: 0.75rem;
 		z-index: 2;
 		border-radius: 0.75rem;
-		background: rgba(255, 255, 255, 0.95);
+		background: rgba(255, 255, 255, 0.1);
 		backdrop-filter: blur(8px);
 		box-shadow:
 			0 10px 25px -5px rgba(0, 0, 0, 0.1),
@@ -404,6 +517,12 @@
 	.map-container {
 		display: flex;
 		flex-direction: column;
+		height: 100%; /* Ensure full height utilization */
+	}
+
+	.map-actions {
+		flex-shrink: 0; /* Prevent action buttons from shrinking */
+		margin-top: 0.5rem; /* Further reduced spacing */
 	}
 
 	.result-panel {
@@ -441,10 +560,35 @@
 
 	.game-image {
 		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+		transition: transform 0.1s ease;
+		object-fit: contain !important;
 	}
 
-	.mobile-hint {
-		animation: fadeInUp 0.5s ease-out;
+	.zoom-controls {
+		opacity: 0.8;
+		transition: opacity 0.2s ease;
+	}
+
+	.zoom-controls:hover {
+		opacity: 1;
+	}
+
+	.zoom-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.image-viewport {
+		overflow: hidden;
+		background-color: #1f2937; /* Dark gray background for letterboxing */
+	}
+
+	.cursor-zoom-in {
+		cursor: zoom-in;
+	}
+
+	.cursor-move {
+		cursor: move;
 	}
 
 	@keyframes fadeInUp {
@@ -469,8 +613,9 @@
 		.map-panel {
 			position: relative !important;
 			width: 100% !important;
-			height: auto !important;
-			padding: 1rem !important;
+			flex: 1 !important;
+			min-height: 0 !important;
+			padding: 0.5rem !important;
 			margin: 0 !important;
 			border-radius: 0 !important;
 			background: transparent !important;
@@ -487,7 +632,7 @@
 			right: auto !important;
 			bottom: auto !important;
 			width: 100% !important;
-			height: auto !important;
+			height: 100% !important;
 		}
 
 		.map-small,
@@ -498,7 +643,7 @@
 			right: auto !important;
 			bottom: auto !important;
 			width: 100% !important;
-			height: auto !important;
+			height: 100% !important;
 		}
 
 		.map-toggle-btn {
@@ -530,9 +675,13 @@
 			padding: 0.5rem;
 		}
 
-		.game-image-container,
+		.game-image-container {
+			min-height: 200px;
+			/* Remove max-height constraint to allow flexibility */
+		}
+		
 		.map-container {
-			min-height: 300px;
+			min-height: 200px;
 		}
 
 		.result-panel {
@@ -559,7 +708,6 @@
 	/* Reduced motion support */
 	@media (prefers-reduced-motion: reduce) {
 		.result-panel,
-		.mobile-hint,
 		.pulse,
 		.progress-fill,
 		.game-image {

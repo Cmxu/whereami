@@ -3,8 +3,10 @@
 	import { page } from '$app/stores';
 	import { user, isAuthenticated, signOut, userProfile, displayName } from '$lib/stores/authStore';
 	import { showSuccess, showError } from '$lib/stores/toastStore';
+	import { isGameActive, saveGame } from '$lib/stores/gameStore';
 	import AuthModal from './AuthModal.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
+	import { onMount } from 'svelte';
 
 	let showAuthModal = false;
 	let showUserMenu = false;
@@ -32,6 +34,16 @@
 		showUserMenu = false;
 	}
 
+	function handleLogoClick(event: MouseEvent) {
+		// If we're on the home page and there's an active game, save and go home
+		if ($page.url.pathname === '/' && $isGameActive) {
+			event.preventDefault();
+			saveGame();
+			goto('/');
+		}
+		// Otherwise, let the normal navigation happen
+	}
+
 	// Close user menu when clicking outside
 	function handleOutsideClick(event: MouseEvent) {
 		if (showUserMenu && !(event.target as Element).closest('.user-menu-container')) {
@@ -40,11 +52,29 @@
 	}
 
 	$: currentPath = $page.url.pathname;
+	
+	let navElement: HTMLElement;
+
+	onMount(() => {
+		// Set the actual navigation height as a CSS custom property
+		if (navElement) {
+			const updateNavHeight = () => {
+				const height = navElement.offsetHeight;
+				document.documentElement.style.setProperty('--nav-height', `${height}px`);
+			};
+			
+			updateNavHeight();
+			
+			// Update on resize
+			window.addEventListener('resize', updateNavHeight);
+			return () => window.removeEventListener('resize', updateNavHeight);
+		}
+	});
 </script>
 
 <svelte:window on:click={handleOutsideClick} />
 
-<nav class="navigation bg-white shadow-sm border-b sticky top-0 z-40">
+<nav bind:this={navElement} class="navigation bg-white shadow-sm border-b sticky top-0 z-40">
 	<div class="nav-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="nav-content flex justify-between items-center h-16">
 			<!-- Logo and primary navigation -->
@@ -52,6 +82,7 @@
 				<a
 					href="/"
 					class="nav-logo flex items-center space-x-2 text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors"
+					on:click={handleLogoClick}
 				>
 					<span class="logo-icon">🌍</span>
 					<span>WhereAmI</span>
