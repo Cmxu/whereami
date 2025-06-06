@@ -56,11 +56,17 @@
 				center: [center.lat, center.lng],
 				zoom: zoom,
 				minZoom: 1, // Prevent excessive zoom out
-				zoomControl: true,
+				zoomControl: false, // Disable default zoom control
 				attributionControl: false,
 				preferCanvas: true, // Better performance on mobile
 				worldCopyJump: true // Handle antimeridian crossing automatically
 			});
+
+			// Add custom zoom control positioned at bottom right
+			L.control.zoom({
+				position: 'bottomright'
+			}).addTo(map);
+
 
 			// Add tile layer (OpenStreetMap)
 			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -102,12 +108,21 @@
 					? `<div style="background-color: ${color}; width: 25px; height: 25px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">✓</div>`
 					: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>`;
 
+		// Different anchor points for different marker types
+		const iconAnchor = type === 'guess' 
+			? [12, 22] // For guess markers (teardrop), anchor at the tip (bottom point)
+			: [12, 12]; // For other markers (circles), anchor at center
+
+		const popupAnchor = type === 'guess'
+			? [0, -22] // Position popup above the tip for guess markers
+			: [0, -12]; // Position popup above center for other markers
+
 		return L.divIcon({
 			html: iconHtml,
 			className: 'custom-marker-icon',
 			iconSize: [25, 25],
-			iconAnchor: [12, 12],
-			popupAnchor: [0, -12]
+			iconAnchor: iconAnchor,
+			popupAnchor: popupAnchor
 		});
 	}
 
