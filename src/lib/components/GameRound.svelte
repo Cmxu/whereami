@@ -102,9 +102,9 @@
 		const deltaX = event.clientX - resizeStartX;
 		const deltaY = event.clientY - resizeStartY;
 
-		// For bottom-right resize handle
-		resizeCurrentSize.width = Math.max(250, Math.min(600, resizeStartSize.width + deltaX));
-		resizeCurrentSize.height = Math.max(250, Math.min(450, resizeStartSize.height + deltaY));
+		// For top-left resize handle (inverted deltas)
+		resizeCurrentSize.width = Math.max(250, Math.min(600, resizeStartSize.width - deltaX));
+		resizeCurrentSize.height = Math.max(250, Math.min(450, resizeStartSize.height - deltaY));
 
 		if (mapComponent && mapComponent.invalidateSize) {
 			mapComponent.invalidateSize();
@@ -373,7 +373,7 @@
 
 			{#if showMapFull}
 				<!-- Map-focused layout: Large map with small image overlay -->
-				<div class="layout-map-full absolute inset-0 z-10">
+				<div class="layout-map-full absolute inset-0">
 					<!-- Full-size map -->
 					<div class="map-container h-full relative pt-20">
 						<Map
@@ -676,7 +676,7 @@
 
 					<!-- Small map overlay -->
 					<div
-						class="map-overlay absolute bottom-4 right-4 z-40 bg-white/10 backdrop-blur-md rounded-lg shadow-xl border border-white/20 p-3 transition-all duration-300"
+						class="map-overlay absolute bottom-4 right-4 z-40 bg-white/10 backdrop-blur-md rounded-lg shadow-xl border border-white/20 p-3 transition-all duration-300 flex flex-col"
 						class:resizing={isResizing}
 						style="width: {isResizing
 							? resizeCurrentSize.width
@@ -684,45 +684,45 @@
 							? resizeCurrentSize.height
 							: smallMapSize.height}px;"
 					>
-						<div class="map-container h-full relative">
-							<!-- Resize handle (bottom-right corner) -->
-							<div
-								class="resize-handle absolute bottom-0 right-0 w-4 h-4 bg-white/60 hover:bg-white/80 cursor-se-resize z-20 rounded-tl-md border border-white/40"
-								role="button"
-								tabindex="0"
-								on:mousedown={handleResizeStart}
-								on:keydown={(e) => {
-									if (e.key === 'Enter' || e.key === ' ') {
-										e.preventDefault();
-										smallMapSize.width = Math.min(600, smallMapSize.width + 50);
-										smallMapSize.height = Math.min(450, smallMapSize.height + 50);
-										setTimeout(() => {
-											if (mapComponent && mapComponent.invalidateSize) {
-												mapComponent.invalidateSize();
-											}
-										}, 100);
-									}
-								}}
-								aria-label="Drag to resize map or press Enter to increase size"
+						<!-- Resize handle (top-left corner) -->
+						<div
+							class="resize-handle absolute top-0 left-0 w-4 h-4 bg-white/60 hover:bg-white/80 cursor-nw-resize z-20 rounded-br-md border border-white/40"
+							role="button"
+							tabindex="0"
+							on:mousedown={handleResizeStart}
+							on:keydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									smallMapSize.width = Math.min(600, smallMapSize.width + 50);
+									smallMapSize.height = Math.min(450, smallMapSize.height + 50);
+									setTimeout(() => {
+										if (mapComponent && mapComponent.invalidateSize) {
+											mapComponent.invalidateSize();
+										}
+									}, 100);
+								}
+							}}
+							aria-label="Drag to resize map or press Enter to increase size"
+						>
+							<svg
+								class="w-3 h-3 text-gray-600"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
 							>
-								<svg
-									class="w-3 h-3 text-gray-600"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-									/>
-								</svg>
-							</div>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+								/>
+							</svg>
+						</div>
 
+						<div class="map-container flex-1 relative">
 							<Map
 								bind:this={mapComponent}
-								height="{(isResizing ? resizeCurrentSize.height : smallMapSize.height) - 24}px"
+								height="{(isResizing ? resizeCurrentSize.height : smallMapSize.height) - 80}px"
 								forceSquare={false}
 								clickable={!showResult}
 								markers={getMapMarkers()}
@@ -731,79 +731,77 @@
 								on:mapClick={handleMapClick}
 								on:mapReady={handleMapReady}
 							/>
+						</div>
 
-							<!-- Action buttons for image view -->
-							<div class="action-buttons mt-2">
-								{#if !showResult}
-									<div class="flex gap-2">
+						<!-- Action buttons for image view -->
+						<div class="action-buttons mt-2 flex-shrink-0">
+							{#if !showResult}
+								<div class="flex gap-2">
+									<button
+										class="btn-primary flex-1 transition-all duration-200 text-sm"
+										class:pulse={selectedLocation}
+										disabled={!selectedLocation}
+										on:click={handleSubmitGuess}
+										aria-label="Submit your guess"
+									>
+										{selectedLocation ? 'Submit' : 'Select Location'}
+									</button>
+									{#if selectedLocation}
 										<button
-											class="btn-primary flex-1 transition-all duration-200 text-sm"
-											class:pulse={selectedLocation}
-											disabled={!selectedLocation}
-											on:click={handleSubmitGuess}
-											aria-label="Submit your guess"
+											class="btn-secondary text-sm"
+											on:click={() => (selectedLocation = null)}
+											aria-label="Clear your current guess"
 										>
-											{selectedLocation ? 'Submit' : 'Select Location'}
+											Clear
 										</button>
-										{#if selectedLocation}
-											<button
-												class="btn-secondary text-sm"
-												on:click={() => (selectedLocation = null)}
-												aria-label="Clear your current guess"
-											>
-												Clear
-											</button>
-										{/if}
-									</div>
-								{:else if guessResult}
-									<div class="result-panel">
-										<div class="text-center mb-3">
-											<div class="score-display text-xl font-bold mb-1 text-blue-600">
-												{guessResult.score.toLocaleString()}
-											</div>
-											<div
-												class="score-badge inline-block px-2 py-1 rounded-full text-xs font-medium mb-2"
-												class:bg-green-100={guessResult.score >= 8000}
-												class:text-green-800={guessResult.score >= 8000}
-												class:bg-yellow-100={guessResult.score >= 5000 && guessResult.score < 8000}
-												class:text-yellow-800={guessResult.score >= 5000 &&
-													guessResult.score < 8000}
-												class:bg-orange-100={guessResult.score >= 2000 && guessResult.score < 5000}
-												class:text-orange-800={guessResult.score >= 2000 &&
-													guessResult.score < 5000}
-												class:bg-red-100={guessResult.score < 2000}
-												class:text-red-800={guessResult.score < 2000}
-											>
-												{guessResult.score >= 8000
-													? 'Excellent!'
-													: guessResult.score >= 5000
-														? 'Great!'
-														: guessResult.score >= 2000
-															? 'Good'
-															: 'Keep trying!'}
-											</div>
+									{/if}
+								</div>
+							{:else if guessResult}
+								<div class="result-panel">
+									<div class="text-center mb-3">
+										<div class="score-display text-xl font-bold mb-1 text-blue-600">
+											{guessResult.score.toLocaleString()}
 										</div>
-										<div class="distance-display text-xs text-gray-700 mb-3 text-center">
-											Distance: <strong>{guessResult.formattedDistance}</strong>
-										</div>
-										<button
-											class="btn-primary w-full text-sm py-2"
-											on:click={handleNextRound}
-											aria-label={guessResult.isLastRound
-												? 'View final results'
-												: 'Continue to next round'}
+										<div
+											class="score-badge inline-block px-2 py-1 rounded-full text-xs font-medium mb-2"
+											class:bg-green-100={guessResult.score >= 8000}
+											class:text-green-800={guessResult.score >= 8000}
+											class:bg-yellow-100={guessResult.score >= 5000 && guessResult.score < 8000}
+											class:text-yellow-800={guessResult.score >= 5000 && guessResult.score < 8000}
+											class:bg-orange-100={guessResult.score >= 2000 && guessResult.score < 5000}
+											class:text-orange-800={guessResult.score >= 2000 && guessResult.score < 5000}
+											class:bg-red-100={guessResult.score < 2000}
+											class:text-red-800={guessResult.score < 2000}
 										>
-											{guessResult.isLastRound ? '🏆 View Results' : '➡️ Next Round'}
-										</button>
+											{guessResult.score >= 8000
+												? 'Excellent!'
+												: guessResult.score >= 5000
+													? 'Great!'
+													: guessResult.score >= 2000
+														? 'Good'
+														: 'Keep trying!'}
+										</div>
 									</div>
-								{:else}
-									<!-- Loading state for results -->
-									<div class="result-loading text-center py-2">
-										<div class="loading-spinner mx-auto mb-1"></div>
-										<p class="text-gray-500 text-xs">Processing...</p>
+									<div class="distance-display text-xs text-gray-700 mb-3 text-center">
+										Distance: <strong>{guessResult.formattedDistance}</strong>
 									</div>
-								{/if}
-							</div>
+									<button
+										class="btn-primary w-full text-sm py-2"
+										on:click={handleNextRound}
+										aria-label={guessResult.isLastRound
+											? 'View final results'
+											: 'Continue to next round'}
+									>
+										{guessResult.isLastRound ? '🏆 View Results' : '➡️ Next Round'}
+									</button>
+								</div>
+							{:else}
+								<!-- Loading state for results -->
+								<div class="result-loading text-center py-2">
+									<div class="loading-spinner mx-auto mb-1"></div>
+									<p class="text-gray-500 text-xs">Processing...</p>
+								</div>
+							{/if}
 						</div>
 					</div>
 				</div>
@@ -845,6 +843,7 @@
 			0 10px 10px -5px rgba(0, 0, 0, 0.04);
 		white-space: nowrap;
 		border: 1px solid rgba(255, 255, 255, 0.2);
+		z-index: 100; /* Ensure it's always on top */
 	}
 
 	.progress-fill {
@@ -852,8 +851,13 @@
 	}
 
 	/* Simple dual layout styles */
-	.layout-image-full,
+	.layout-image-full {
+		z-index: 1;
+		transition: opacity 0.3s ease-in-out;
+	}
+
 	.layout-map-full {
+		z-index: 1;
 		transition: opacity 0.3s ease-in-out;
 	}
 
