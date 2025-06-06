@@ -1,11 +1,5 @@
 <script lang="ts">
-	import {
-		signInWithEmail,
-		signUpWithEmail,
-		resetPassword,
-		authLoading,
-		authError
-	} from '$lib/stores/authStore';
+	import { signInWithEmail, signUpWithEmail, resetPassword } from '$lib/stores/authStore';
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher<{
@@ -33,14 +27,16 @@
 			if (mode === 'signin') {
 				const result = await signInWithEmail(email, password);
 				if (result.success) {
-					dispatch('close');
+					// Give a moment for the auth state to update before closing
+					setTimeout(() => {
+						dispatch('close');
+					}, 100);
 				} else {
 					error = result.error || 'Sign in failed';
 				}
 			} else if (mode === 'signup') {
 				if (password !== confirmPassword) {
 					error = 'Passwords do not match';
-					loading = false;
 					return;
 				}
 
@@ -60,6 +56,7 @@
 				}
 			}
 		} catch (err) {
+			console.error('Auth modal error:', err);
 			error = 'An unexpected error occurred';
 		} finally {
 			loading = false;
@@ -85,6 +82,7 @@
 		success = '';
 		password = '';
 		confirmPassword = '';
+		loading = false; // Reset loading state when switching modes
 	}
 </script>
 

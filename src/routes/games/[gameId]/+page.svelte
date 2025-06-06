@@ -81,16 +81,11 @@
 
 	function handleRated(event: any) {
 		if (event.detail.success && game) {
-			// Optionally update the local game rating
-			// In a real app, you'd refetch the game data
-			console.log('Game rated:', event.detail.rating);
 		}
 	}
 
 	function handleShared(event: any) {
-		console.log('Game shared:', event.detail.platform);
 		if (event.detail.success) {
-			// Show success message or update UI
 		}
 	}
 

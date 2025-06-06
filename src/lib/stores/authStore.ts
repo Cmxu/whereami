@@ -56,40 +56,68 @@ export const userStats = writable({
 
 // Initialize auth state
 let initialized = false;
+let authInitPromise: Promise<void> | null = null;
 
 export async function initAuth() {
-	if (initialized) return;
-	initialized = true;
+	if (initialized) return authInitPromise;
+	if (authInitPromise) return authInitPromise;
 
-	try {
-		// Get initial session
-		const {
-			data: { session },
-			error
-		} = await supabase.auth.getSession();
-		if (error) {
-			console.error('Error getting session:', error);
-			setAuthError(error.message);
-		} else {
-			setUser(session?.user || null);
-			if (session?.user) {
-				await loadUserProfile();
+	authInitPromise = (async () => {
+		try {
+			setAuthLoading(true);
+
+			// Get initial session
+			const {
+				data: { session },
+				error
+			} = await supabase.auth.getSession();
+
+			if (error) {
+				console.error('Error getting session:', error);
+				setAuthError(error.message);
+			} else {
+				setUser(session?.user || null);
+				if (session?.user) {
+					try {
+						await loadUserProfile();
+					} catch (profileError) {
+						console.warn('Failed to load user profile:', profileError);
+						// Don't fail auth if profile loading fails
+					}
+				} else {
+					// No session, ensure we're not loading
+					setAuthLoading(false);
+				}
 			}
+
+			// Listen for auth changes
+			supabase.auth.onAuthStateChange(async (event, session) => {
+				console.log('Auth state change:', event, !!session?.user);
+
+				setUser(session?.user || null);
+
+				if (event === 'SIGNED_OUT') {
+					clearAuth();
+				} else if (event === 'SIGNED_IN' && session?.user) {
+					try {
+						await loadUserProfile();
+					} catch (profileError) {
+						console.warn('Failed to load user profile on sign in:', profileError);
+					}
+				} else if (event === 'TOKEN_REFRESHED' && session?.user) {
+					// Token was refreshed, ensure we have the latest user data
+					setUser(session.user);
+				}
+			});
+
+			initialized = true;
+		} catch (error) {
+			console.error('Auth initialization error:', error);
+			setAuthError('Failed to initialize authentication');
 		}
+	})();
 
-		// Listen for auth changes
-		supabase.auth.onAuthStateChange(async (event, session) => {
-			setUser(session?.user || null);
-			if (event === 'SIGNED_OUT') {
-				clearAuth();
-			} else if (session?.user) {
-				await loadUserProfile();
-			}
-		});
-	} catch (error) {
-		console.error('Auth initialization error:', error);
-		setAuthError('Failed to initialize authentication');
-	}
+	return authInitPromise;
 }
 
 // Load user profile data
@@ -111,7 +139,7 @@ export async function loadUserProfile() {
 		if (response.ok) {
 			const { profile } = await response.json();
 			userProfile.set(profile);
-			
+
 			// Also update user stats from the profile data
 			if (profile) {
 				userStats.set({
@@ -163,22 +191,35 @@ export async function loadUserStats() {
 
 // Authentication functions
 export async function signInWithEmail(email: string, password: string) {
-	setAuthLoading(true);
-	const { data, error } = await supabase.auth.signInWithPassword({
-		email,
-		password
-	});
+	try {
+		setAuthLoading(true);
+		setAuthError(null);
 
-	if (error) {
-		setAuthError(error.message);
-		return { success: false, error: error.message };
-	}
+		const { data, error } = await supabase.auth.signInWithPassword({
+			email,
+			password
+		});
 
-	setUser(data.user);
-	if (data.user) {
-		await loadUserProfile();
+		if (error) {
+			setAuthError(error.message);
+			return { success: false, error: error.message };
+		}
+
+		setUser(data.user);
+		if (data.user) {
+			try {
+				await loadUserProfile();
+			} catch (profileError) {
+				console.warn('Failed to load user profile after sign in:', profileError);
+				// Don't fail sign in if profile loading fails
+			}
+		}
+		return { success: true, user: data.user };
+	} catch (error) {
+		console.error('Sign in error:', error);
+		setAuthError('An unexpected error occurred during sign in');
+		return { success: false, error: 'An unexpected error occurred' };
 	}
-	return { success: true, user: data.user };
 }
 
 export async function signUpWithEmail(
@@ -189,54 +230,80 @@ export async function signUpWithEmail(
 		lastName?: string;
 	}
 ) {
-	setAuthLoading(true);
-	const { data, error } = await supabase.auth.signUp({
-		email,
-		password,
-		options: {
-			data: {
-				full_name:
-					options?.firstName && options?.lastName
-						? `${options.firstName} ${options.lastName}`
-						: undefined,
-				first_name: options?.firstName,
-				last_name: options?.lastName
+	try {
+		setAuthLoading(true);
+		setAuthError(null);
+
+		const { data, error } = await supabase.auth.signUp({
+			email,
+			password,
+			options: {
+				data: {
+					full_name:
+						options?.firstName && options?.lastName
+							? `${options.firstName} ${options.lastName}`
+							: undefined,
+					first_name: options?.firstName,
+					last_name: options?.lastName
+				}
 			}
+		});
+
+		if (error) {
+			setAuthError(error.message);
+			return { success: false, error: error.message };
 		}
-	});
 
-	if (error) {
-		setAuthError(error.message);
-		return { success: false, error: error.message };
+		// Clear loading state for sign up (don't wait for email confirmation)
+		setAuthLoading(false);
+		return { success: true, user: data.user };
+	} catch (error) {
+		console.error('Sign up error:', error);
+		setAuthError('An unexpected error occurred during sign up');
+		return { success: false, error: 'An unexpected error occurred' };
 	}
-
-	return { success: true, user: data.user };
 }
 
 export async function signOut() {
-	setAuthLoading(true);
-	const { error } = await supabase.auth.signOut();
+	try {
+		setAuthLoading(true);
+		setAuthError(null);
 
-	if (error) {
-		setAuthError(error.message);
-		return { success: false, error: error.message };
+		const { error } = await supabase.auth.signOut();
+
+		if (error) {
+			setAuthError(error.message);
+			return { success: false, error: error.message };
+		}
+
+		clearAuth();
+		return { success: true };
+	} catch (error) {
+		console.error('Sign out error:', error);
+		setAuthError('An unexpected error occurred during sign out');
+		return { success: false, error: 'An unexpected error occurred' };
 	}
-
-	clearAuth();
-	return { success: true };
 }
 
 export async function resetPassword(email: string) {
-	setAuthLoading(true);
-	const { error } = await supabase.auth.resetPasswordForEmail(email);
+	try {
+		setAuthLoading(true);
+		setAuthError(null);
 
-	if (error) {
-		setAuthError(error.message);
-		return { success: false, error: error.message };
+		const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+		if (error) {
+			setAuthError(error.message);
+			return { success: false, error: error.message };
+		}
+
+		setAuthLoading(false);
+		return { success: true };
+	} catch (error) {
+		console.error('Password reset error:', error);
+		setAuthError('An unexpected error occurred during password reset');
+		return { success: false, error: 'An unexpected error occurred' };
 	}
-
-	setAuthLoading(false);
-	return { success: true };
 }
 
 // Functions to update user data
@@ -267,4 +334,39 @@ export function clearAuth() {
 		totalScore: 0,
 		averageScore: 0
 	});
+}
+
+// Utility function to check current authentication status
+export async function checkAuthStatus(): Promise<boolean> {
+	try {
+		const {
+			data: { session }
+		} = await supabase.auth.getSession();
+		return !!session?.user;
+	} catch (error) {
+		console.error('Error checking auth status:', error);
+		return false;
+	}
+}
+
+// Force refresh authentication state
+export async function refreshAuth(): Promise<void> {
+	try {
+		const {
+			data: { session },
+			error
+		} = await supabase.auth.refreshSession();
+		if (error) {
+			console.error('Error refreshing session:', error);
+			clearAuth();
+		} else {
+			setUser(session?.user || null);
+			if (session?.user) {
+				await loadUserProfile();
+			}
+		}
+	} catch (error) {
+		console.error('Error refreshing auth:', error);
+		clearAuth();
+	}
 }

@@ -156,8 +156,8 @@ export const GET = async ({ url, platform }: RequestEvent) => {
 		const paginatedGames = validGames.slice(offset, offset + limit);
 
 		// Get display names for all creators
-		const creatorIds = [...new Set(paginatedGames.map(game => game.createdBy))];
-		const displayNamePromises = creatorIds.map(id => getUserDisplayName(id, env));
+		const creatorIds = [...new Set(paginatedGames.map((game) => game.createdBy))];
+		const displayNamePromises = creatorIds.map((id) => getUserDisplayName(id, env));
 		const displayNames = await Promise.all(displayNamePromises);
 		const creatorDisplayNames = Object.fromEntries(
 			creatorIds.map((id, index) => [id, displayNames[index]])

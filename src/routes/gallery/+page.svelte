@@ -68,7 +68,7 @@
 		} else {
 			activeTab = 'gallery';
 		}
-		
+
 		// Show sign in prompt for unauthenticated users (only once on initial load)
 		if (!$isAuthenticated) {
 			showInfo('Sign in to view and upload your photos');
@@ -962,9 +962,7 @@
 																		🔄 Retry ({file.retryCount + 1}/{MAX_RETRY_ATTEMPTS})
 																	</button>
 																{:else}
-																	<div class="text-xs text-gray-500">
-																		Max retries reached
-																	</div>
+																	<div class="text-xs text-gray-500">Max retries reached</div>
 																{/if}
 															</div>
 														{:else}

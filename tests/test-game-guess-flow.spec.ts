@@ -4,7 +4,7 @@ test.describe('Game Guess Flow', () => {
 	test('should display results after making a guess', async ({ page }) => {
 		// Navigate to the main page
 		await page.goto('https://whereami-5kp.pages.dev/');
-		
+
 		// Wait for the page to load
 		await page.waitForLoadState('networkidle');
 
@@ -72,7 +72,7 @@ test.describe('Game Guess Flow', () => {
 				// Try to access the component's state (this might not work due to Svelte's encapsulation)
 				return (window as any).debugShowResult || 'unknown';
 			});
-			
+
 			const guessResultState = await page.evaluate(() => {
 				return (window as any).debugGuessResult || 'unknown';
 			});
@@ -84,14 +84,18 @@ test.describe('Game Guess Flow', () => {
 			const resultPanel = page.locator('.result-panel');
 			const scoreDisplay = page.locator('.score-display');
 			const distanceDisplay = page.locator('.distance-display');
-			const nextRoundButton = page.locator('button').filter({ hasText: /Next Round|View Final Results/ });
-			
+			const nextRoundButton = page
+				.locator('button')
+				.filter({ hasText: /Next Round|View Final Results/ });
+
 			// Check for loading indicators
 			const loadingSpinner = page.locator('.loading-spinner');
 			const loadingText = page.locator('text=Loading');
 
 			// Check for the submit button (should not be visible if results are shown)
-			const submitButtonAfter = page.locator('button').filter({ hasText: /Submit Guess|Click on map/ });
+			const submitButtonAfter = page
+				.locator('button')
+				.filter({ hasText: /Submit Guess|Click on map/ });
 
 			// Wait up to 10 seconds for either results or loading to appear
 			await page.waitForTimeout(3000);
@@ -116,7 +120,7 @@ test.describe('Game Guess Flow', () => {
 			// Count all score displays to see which one is visible
 			const allScoreDisplays = await page.locator('.score-display').count();
 			console.log(`Total score display elements found: ${allScoreDisplays}`);
-			
+
 			for (let i = 0; i < allScoreDisplays; i++) {
 				const scoreElement = page.locator('.score-display').nth(i);
 				const isVisible = await scoreElement.isVisible().catch(() => false);
@@ -136,14 +140,14 @@ test.describe('Game Guess Flow', () => {
 			if (loadingVisible || loadingTextVisible) {
 				if (!resultPanelVisible && !scoreVisible && !nextButtonVisible) {
 					console.log('BUG DETECTED: Loading screen shown but no results displayed');
-					
+
 					// Let's wait longer to see if results eventually appear
 					await page.waitForTimeout(10000);
 					await page.screenshot({ path: 'test-results/guess-flow-after-wait.png', fullPage: true });
-					
+
 					const resultPanelVisibleAfterWait = await resultPanel.isVisible().catch(() => false);
 					const scoreVisibleAfterWait = await scoreDisplay.isVisible().catch(() => false);
-					
+
 					console.log(`Result panel visible after wait: ${resultPanelVisibleAfterWait}`);
 					console.log(`Score visible after wait: ${scoreVisibleAfterWait}`);
 				}
@@ -151,7 +155,9 @@ test.describe('Game Guess Flow', () => {
 
 			// Check for the bug: if showResult is true but no results are shown and submit button is gone
 			if (!submitButtonVisible && !resultPanelVisible && !nextButtonVisible) {
-				console.log('BUG DETECTED: Submit button hidden but no results panel shown - this is the loading screen bug!');
+				console.log(
+					'BUG DETECTED: Submit button hidden but no results panel shown - this is the loading screen bug!'
+				);
 			}
 
 			// The test should pass if results are displayed
@@ -167,4 +173,4 @@ test.describe('Game Guess Flow', () => {
 			console.log('Submit button not ready - map click may not have registered');
 		}
 	});
-}); 
+});

@@ -181,7 +181,7 @@
 	$: if (map && clickHandler && isMapReady) {
 		// Remove existing click handler
 		map.off('click', clickHandler);
-		
+
 		// Add click handler if clickable
 		if (clickable) {
 			map.on('click', clickHandler);

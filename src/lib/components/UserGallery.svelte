@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
-	import { goto } from '$app/navigation';
 	import Map from './Map.svelte';
 	import type { Location, ImageMetadata } from '$lib/types';
 	import { api } from '$lib/utils/api';
@@ -301,7 +300,10 @@
 			<!-- Batch Actions -->
 			<div class="batch-actions">
 				{#if selectable && multiSelect}
-					<button class="btn-secondary w-full h-11 flex items-center justify-center" on:click={selectAll}>
+					<button
+						class="btn-secondary w-full h-11 flex items-center justify-center"
+						on:click={selectAll}
+					>
 						Select Page
 					</button>
 				{:else}
@@ -631,17 +633,6 @@
 
 	.selected-indicator {
 		animation: pulse 2s infinite;
-	}
-
-	.disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.disabled:hover {
-		background: transparent !important;
-		color: var(--text-secondary) !important;
-		transform: none !important;
 	}
 
 	@keyframes pulse {

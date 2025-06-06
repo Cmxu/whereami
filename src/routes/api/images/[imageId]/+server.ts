@@ -475,20 +475,15 @@ export const GET = async ({ params, platform }: RequestEvent) => {
 			objectKey = imageId;
 		}
 
-		console.log('Fetching image with key:', objectKey);
-
 		// Get the image from R2
 		const object = await env.IMAGES_BUCKET.get(objectKey);
 
 		if (!object) {
-			console.log('Image not found:', objectKey);
 			return new Response('Image not found', { status: 404 });
 		}
 
 		const imageData = await object.arrayBuffer();
 		const contentType = object.httpMetadata?.contentType || 'image/jpeg';
-
-		console.log('Image found, size:', imageData.byteLength, 'type:', contentType);
 
 		return new Response(imageData, {
 			headers: {

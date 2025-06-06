@@ -161,7 +161,9 @@
 			style="background-color: var(--bg-primary); border-color: var(--border-color);"
 		>
 			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div class="header-content py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+				<div
+					class="header-content py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between"
+				>
 					<div class="flex items-center justify-between w-full">
 						<div class="header-text">
 							<h1 class="text-3xl font-bold" style="color: var(--text-primary);">Create Game</h1>
@@ -183,7 +185,7 @@
 								{/if}
 							</div>
 							<div class="action-buttons flex gap-2">
-								<button 
+								<button
 									class="btn-secondary px-4 py-2"
 									class:disabled={selectedCount === 0}
 									disabled={selectedCount === 0}
@@ -191,7 +193,7 @@
 								>
 									Clear
 								</button>
-								<button 
+								<button
 									class="btn-primary px-4 py-2"
 									class:disabled={!canCreateGame}
 									disabled={!canCreateGame}
@@ -476,35 +478,6 @@
 		.image-preview-grid {
 			grid-template-columns: repeat(4, 1fr);
 		}
-	}
-
-	.tab-button {
-		padding: 0.5rem 1rem;
-		font-size: 0.875rem;
-		font-weight: 500;
-		border-radius: 0.375rem;
-		transition: all 0.2s;
-		color: var(--text-secondary);
-		background: transparent;
-		border: none;
-		cursor: pointer;
-		position: relative;
-	}
-
-	.tab-button:hover:not(:disabled) {
-		color: var(--text-primary);
-		background: var(--bg-secondary);
-	}
-
-	.tab-button.active {
-		color: var(--text-primary);
-		background: var(--bg-primary);
-		box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-	}
-
-	.tab-button:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
 	}
 
 	.disabled {

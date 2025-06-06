@@ -8,7 +8,9 @@ test.use({
 test.setTimeout(60000);
 
 test.describe('Multiple Image Upload KV Count Test', () => {
-	test('should correctly increment user KV count when uploading multiple images', async ({ page }) => {
+	test('should correctly increment user KV count when uploading multiple images', async ({
+		page
+	}) => {
 		// Navigate to the gallery upload page
 		await page.goto('https://whereami-5kp.pages.dev/gallery?tab=upload');
 		await page.waitForLoadState('networkidle');
@@ -109,7 +111,7 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 		// Upload all images at once
 		const uploadAllButton = page.locator('button').filter({ hasText: /Upload \d+ Photo/ });
 		let uploadCompleted = false;
-		
+
 		if (await uploadAllButton.isVisible()) {
 			console.log('🚀 Starting batch upload...');
 			await uploadAllButton.click();
@@ -117,7 +119,7 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 			// Wait for uploads to complete with success detection
 			for (let attempt = 0; attempt < 30; attempt++) {
 				await page.waitForTimeout(1000);
-				
+
 				// Check for success message
 				const successMessage = page.locator('text=Successfully uploaded');
 				if (await successMessage.isVisible()) {
@@ -125,7 +127,7 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 					uploadCompleted = true;
 					break;
 				}
-				
+
 				// Check for any upload error
 				const errorMessage = page.locator('text=failed');
 				if (await errorMessage.isVisible()) {
@@ -133,18 +135,18 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 					break;
 				}
 			}
-			
+
 			if (!uploadCompleted) {
 				console.log('⚠️ Upload took longer than expected or no success message found');
 				await page.screenshot({ path: 'test-results/multiple-upload-timeout.png', fullPage: true });
 			}
 		} else {
 			console.log('❌ Upload button not found or not ready');
-			
+
 			// Check if files have individual upload buttons instead
 			const individualUploadButtons = page.locator('button').filter({ hasText: '🚀 Upload' });
 			const individualCount = await individualUploadButtons.count();
-			
+
 			if (individualCount > 0) {
 				console.log(`Found ${individualCount} individual upload buttons, uploading one by one...`);
 				for (let i = 0; i < individualCount; i++) {
@@ -156,7 +158,10 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 				}
 				uploadCompleted = true;
 			} else {
-				await page.screenshot({ path: 'test-results/multiple-upload-no-button.png', fullPage: true });
+				await page.screenshot({
+					path: 'test-results/multiple-upload-no-button.png',
+					fullPage: true
+				});
 			}
 		}
 
@@ -167,10 +172,10 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 		let finalCount = initialCount;
 		let attempts = 0;
 		const maxAttempts = 5;
-		
+
 		while (attempts < maxAttempts) {
 			console.log(`Attempt ${attempts + 1}: Checking profile stats...`);
-			
+
 			await page.goto('https://whereami-5kp.pages.dev/profile');
 			await page.waitForLoadState('networkidle');
 			await page.waitForTimeout(3000);
@@ -179,12 +184,12 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 			const finalImagesUploadedText = await page.locator('text=/Images Uploaded/i').textContent();
 			finalCount = parseInt(finalImagesUploadedText?.match(/(\d+)/)?.[1] || '0');
 			console.log(`Profile shows images uploaded count: ${finalCount}`);
-			
+
 			// If count increased, break out of loop
 			if (finalCount > initialCount) {
 				break;
 			}
-			
+
 			attempts++;
 			if (attempts < maxAttempts) {
 				console.log(`Count hasn't updated yet, waiting 5 more seconds...`);
@@ -194,7 +199,9 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 
 		// Also check user images API directly
 		try {
-			const userImagesResponse = await page.request.get('https://whereami-5kp.pages.dev/api/images/user');
+			const userImagesResponse = await page.request.get(
+				'https://whereami-5kp.pages.dev/api/images/user'
+			);
 			if (userImagesResponse.ok()) {
 				const userImagesData = await userImagesResponse.json();
 				console.log(`API shows ${userImagesData.images?.length || 0} images`);
@@ -221,12 +228,17 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 			console.log('✅ SUCCESS: KV count correctly incremented by 3 for multiple upload!');
 			expect(countDifference).toBe(3);
 		} else {
-			console.log(`❌ FAILURE: Expected count to increase by 3, but it increased by ${countDifference}`);
-			await page.screenshot({ path: 'test-results/multiple-upload-count-mismatch.png', fullPage: true });
-			
+			console.log(
+				`❌ FAILURE: Expected count to increase by 3, but it increased by ${countDifference}`
+			);
+			await page.screenshot({
+				path: 'test-results/multiple-upload-count-mismatch.png',
+				fullPage: true
+			});
+
 			// This was the original bug - count only goes up by 1 instead of the actual number of uploads
 			// The test should now pass with our fix
 			expect(countDifference).toBe(3);
 		}
 	});
-}); 
+});

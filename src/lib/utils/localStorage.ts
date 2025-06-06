@@ -262,54 +262,9 @@ export function getUserPreferences(): UserPreferences {
 }
 
 /**
- * Reset user preferences to defaults
- */
-export function resetUserPreferences(): boolean {
-	return safeSetItem(STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(DEFAULT_PREFERENCES));
-}
-
-/**
  * Check if there's a saved game in progress
  */
 export function hasSavedGame(): boolean {
 	const saved = loadCurrentGame();
 	return saved !== null && !saved.gameState.gameComplete;
-}
-
-/**
- * Get storage usage information
- */
-export function getStorageInfo(): { used: number; available: boolean } {
-	if (!isLocalStorageAvailable()) {
-		return { used: 0, available: false };
-	}
-
-	try {
-		let used = 0;
-		for (const key in localStorage) {
-			if (localStorage.hasOwnProperty(key)) {
-				used += localStorage[key].length + key.length;
-			}
-		}
-
-		return { used, available: true };
-	} catch (error) {
-		return { used: 0, available: false };
-	}
-}
-
-/**
- * Clear all app data from localStorage
- */
-export function clearAllAppData(): boolean {
-	const keys = Object.values(STORAGE_KEYS);
-	let success = true;
-
-	keys.forEach((key) => {
-		if (!safeRemoveItem(key)) {
-			success = false;
-		}
-	});
-
-	return success;
 }

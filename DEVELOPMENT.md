@@ -15,25 +15,31 @@
 
 ## 🚀 Development Tasks & Features
 
-### Game Fixes/Optimizations
+### Gameplay Fixes/Tasks
 
-- [x] When moving onto the next round, the map loads forever
+- [ ] Always compute the shortest distance, you can do this by fixing the guess and finding the 'actual' location which is closest (either to the east or west of the guess)
+- [ ] Fix the UI for the gameplay, everything should fit onto the screen, the user should not be able to scroll on the main screen
+- [ ] Should be able to zoom in on the picture
+- [ ] Remove the tip
+- [ ] View Final Results button does not do anything, something is erroring out
 
 ### General
 
-- [x] When in game, if you click the whereami logo that should exit the current game
-- [ ] Logging out and back in resets the user's display name and profile picture
+- [ ] Set a max zoom for maps
 - [ ] Uploading pictures still is a bit buggy. For example, when I upload 4 pictures, only 3 actually get uploaded
-- [ ] If the user only updates their name then it should not update the profile picture
 - [ ] If the user is already on the Gallery page and logs in, the gallery page says not authenticated until after some user action
 - [ ] Clicking on the map/placing a pin zooms out, clicking and placing a pin should not affect the zoom
-- [ ] Refreshing the page makes the game think it's logged out even though you are not
 - [ ] Optimize image loading and compression
 - [ ] Add proper error boundaries for API failures
 - [ ] Adjust profile picture, zoom and move
+- [ ] When in game, if you click the whereami logo that should exit the current game
 
 ## Completed Tasks
 
+- [x] Refreshing the page makes the game think it's logged out even though you are not
+- [x] If the user only updates their name then it should not update the profile picture
+- [x] Logging out and back in resets the user's display name and profile picture
+- [x] When moving onto the next round, the map loads forever
 - [x] **Map Loading Fix for Next Round Transitions**: Successfully resolved the issue where the map would load forever when transitioning to the next round in the game:
   - 🔧 **Root Cause**: The reactive statement in GameRound component was resetting `mapReady = false` when transitioning to the next round, causing the map to show loading state indefinitely
   - ✨ **Solution**: Removed the unnecessary `mapReady = false` reset from the reactive statement since the map doesn't need to be reinitialized between rounds

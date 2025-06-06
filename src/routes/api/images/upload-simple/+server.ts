@@ -114,23 +114,26 @@ async function atomicIncrementUserImages(userId: string, env: any): Promise<void
 			const currentCount = userData.imagesUploaded || 0;
 			userData.imagesUploaded = currentCount + 1;
 			userData.updatedAt = new Date().toISOString();
-			
+
 			await saveUserData(userId, userData, env);
-			
+
 			// If we get here without error, the update succeeded
 			return;
 		} catch (error) {
 			console.warn(`Attempt ${attempt + 1} failed to update user image count:`, error);
-			
+
 			if (attempt === MAX_RETRY_ATTEMPTS - 1) {
 				// Final attempt failed, log error but don't fail the entire upload
-				console.error(`Failed to update user image count after ${MAX_RETRY_ATTEMPTS} attempts:`, error);
+				console.error(
+					`Failed to update user image count after ${MAX_RETRY_ATTEMPTS} attempts:`,
+					error
+				);
 				return;
 			}
-			
+
 			// Wait with exponential backoff before retrying
 			const delay = BASE_DELAY * Math.pow(2, attempt) + Math.random() * 10;
-			await new Promise(resolve => setTimeout(resolve, delay));
+			await new Promise((resolve) => setTimeout(resolve, delay));
 		}
 	}
 }

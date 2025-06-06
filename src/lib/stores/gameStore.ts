@@ -288,22 +288,6 @@ export function resetGame(newSettings?: Partial<GameSettings>) {
 }
 
 /**
- * Skip to a specific round (for development/testing)
- */
-export function skipToRound(roundIndex: number) {
-	gameState.update((state) => {
-		if (roundIndex >= 0 && roundIndex < state.rounds.length) {
-			return {
-				...state,
-				currentRound: roundIndex,
-				gameComplete: false
-			};
-		}
-		return state;
-	});
-}
-
-/**
  * Get game summary for sharing
  */
 export function getGameSummary() {

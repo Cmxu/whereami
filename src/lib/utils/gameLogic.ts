@@ -62,18 +62,6 @@ export const formatDistance = (distance: number): string => {
 };
 
 /**
- * Fisher-Yates shuffle algorithm
- */
-export const shuffleArray = <T>(array: T[]): T[] => {
-	const shuffled = [...array];
-	for (let i = shuffled.length - 1; i > 0; i--) {
-		const j = Math.floor(Math.random() * (i + 1));
-		[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-	}
-	return shuffled;
-};
-
-/**
  * Process a user's guess and return the result
  */
 export const processGuess = (
@@ -113,20 +101,6 @@ export const generateSessionId = (): string => {
  */
 export const calculateTotalScore = (rounds: { score: number }[]): number => {
 	return rounds.reduce((sum, round) => sum + round.score, 0);
-};
-
-/**
- * Check if a location is valid
- */
-export const isValidLocation = (location: Location): boolean => {
-	return (
-		typeof location.lat === 'number' &&
-		typeof location.lng === 'number' &&
-		location.lat >= -90 &&
-		location.lat <= 90 &&
-		location.lng >= -180 &&
-		location.lng <= 180
-	);
 };
 
 /**

@@ -2,19 +2,28 @@
 	import '../app.css';
 	import Navigation from '$lib/components/Navigation.svelte';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
-	import { initAuth } from '$lib/stores/authStore';
+	import { initAuth, authLoading } from '$lib/stores/authStore';
 	import { api } from '$lib/utils/api';
 	import { user } from '$lib/stores/authStore';
 	import { supabase } from '$lib/supabase';
 	import { theme } from '$lib/stores/themeStore';
 	import { onMount } from 'svelte';
 
-	// Initialize Supabase auth when the app loads
-	onMount(() => {
-		initAuth();
+	let authInitialized = false;
 
-		// Initialize theme
-		theme.init();
+	// Initialize Supabase auth when the app loads
+	onMount(async () => {
+		try {
+			// Initialize auth first and wait for it to complete
+			await initAuth();
+			authInitialized = true;
+
+			// Initialize theme
+			theme.init();
+		} catch (error) {
+			console.error('Failed to initialize app:', error);
+			authInitialized = true; // Still show the app even if auth fails
+		}
 	});
 
 	// Set up automatic auth token management
@@ -27,9 +36,17 @@
 				} = await supabase.auth.getSession();
 				if (session?.access_token) {
 					api.setAuthToken(session.access_token);
+				} else {
+					// Try to refresh the session if no token
+					const { data: refreshData } = await supabase.auth.refreshSession();
+					if (refreshData.session?.access_token) {
+						api.setAuthToken(refreshData.session.access_token);
+					}
 				}
 			} catch (error) {
 				console.error('Error setting auth token:', error);
+				// Clear the token on error
+				api.setAuthToken(null);
 			}
 		} else {
 			api.setAuthToken(null);
@@ -37,18 +54,28 @@
 	});
 </script>
 
-<div class="app-layout">
-	<!-- Global Navigation -->
-	<Navigation />
+{#if authInitialized}
+	<div class="app-layout">
+		<!-- Global Navigation -->
+		<Navigation />
 
-	<!-- Main content -->
-	<main class="main-content">
-		<slot />
-	</main>
-</div>
+		<!-- Main content -->
+		<main class="main-content">
+			<slot />
+		</main>
+	</div>
 
-<!-- Global Toast Container -->
-<ToastContainer />
+	<!-- Global Toast Container -->
+	<ToastContainer />
+{:else}
+	<!-- Loading screen while auth initializes -->
+	<div class="app-loading">
+		<div class="loading-content">
+			<div class="loading-spinner"></div>
+			<p>Loading WhereAmI...</p>
+		</div>
+	</div>
+{/if}
 
 <style>
 	:global(html, body) {
@@ -106,6 +133,38 @@
 		}
 		to {
 			opacity: 1;
+		}
+	}
+
+	.app-loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 100vh;
+		background-color: var(--bg-primary, #ffffff);
+	}
+
+	.loading-content {
+		text-align: center;
+		color: var(--text-primary, #1f2937);
+	}
+
+	.loading-spinner {
+		width: 2rem;
+		height: 2rem;
+		border: 3px solid var(--border-color, #e5e7eb);
+		border-top: 3px solid var(--btn-primary-bg, #3b82f6);
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+		margin: 0 auto 1rem;
+	}
+
+	@keyframes spin {
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
 		}
 	}
 

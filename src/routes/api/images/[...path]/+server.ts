@@ -37,7 +37,6 @@ export const GET = async ({ params, url, request, platform }: RequestEvent) => {
 			const object = await env.IMAGES_BUCKET.get(r2Key);
 
 			if (!object) {
-				console.log('Image not found at key:', r2Key);
 				return new Response('Image not found', { status: 404 });
 			}
 
@@ -52,11 +51,6 @@ export const GET = async ({ params, url, request, platform }: RequestEvent) => {
 			const isTransformation = width || height || format;
 
 			if (isTransformation) {
-				// Log transformation request for debugging
-				console.log(`Transformation requested: w=${width}, h=${height}, format=${format}`);
-				console.log(
-					'Note: SvelteKit endpoint returns original image. Use Cloudflare Functions for transformations.'
-				);
 			}
 
 			// Return the original image

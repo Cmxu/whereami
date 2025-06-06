@@ -219,55 +219,53 @@
 							<div class="help-text text-xs text-gray-500 mt-2 text-center">
 								💡 Tip: Look for landmarks, architecture, and landscape clues
 							</div>
-						{:else}
-							{#if guessResult}
-								<div class="result-panel card">
-									<div class="text-center mb-4">
-										<div class="result-score">
-											<div class="score-display text-3xl font-bold mb-2 text-blue-600">
-												{guessResult.score.toLocaleString()}
-											</div>
-											<div
-												class="score-badge inline-block px-3 py-1 rounded-full text-sm font-medium mb-3"
-												class:bg-green-100={guessResult.score >= 8000}
-												class:text-green-800={guessResult.score >= 8000}
-												class:bg-yellow-100={guessResult.score >= 5000 && guessResult.score < 8000}
-												class:text-yellow-800={guessResult.score >= 5000 && guessResult.score < 8000}
-												class:bg-orange-100={guessResult.score >= 2000 && guessResult.score < 5000}
-												class:text-orange-800={guessResult.score >= 2000 && guessResult.score < 5000}
-												class:bg-red-100={guessResult.score < 2000}
-												class:text-red-800={guessResult.score < 2000}
-											>
-												{guessResult.score >= 8000
-													? 'Excellent!'
-													: guessResult.score >= 5000
-														? 'Great!'
-														: guessResult.score >= 2000
-															? 'Good'
-															: 'Keep trying!'}
-											</div>
+						{:else if guessResult}
+							<div class="result-panel card">
+								<div class="text-center mb-4">
+									<div class="result-score">
+										<div class="score-display text-3xl font-bold mb-2 text-blue-600">
+											{guessResult.score.toLocaleString()}
 										</div>
-										<div class="distance-display text-lg text-gray-700">
-											Distance: <strong>{guessResult.formattedDistance}</strong>
+										<div
+											class="score-badge inline-block px-3 py-1 rounded-full text-sm font-medium mb-3"
+											class:bg-green-100={guessResult.score >= 8000}
+											class:text-green-800={guessResult.score >= 8000}
+											class:bg-yellow-100={guessResult.score >= 5000 && guessResult.score < 8000}
+											class:text-yellow-800={guessResult.score >= 5000 && guessResult.score < 8000}
+											class:bg-orange-100={guessResult.score >= 2000 && guessResult.score < 5000}
+											class:text-orange-800={guessResult.score >= 2000 && guessResult.score < 5000}
+											class:bg-red-100={guessResult.score < 2000}
+											class:text-red-800={guessResult.score < 2000}
+										>
+											{guessResult.score >= 8000
+												? 'Excellent!'
+												: guessResult.score >= 5000
+													? 'Great!'
+													: guessResult.score >= 2000
+														? 'Good'
+														: 'Keep trying!'}
 										</div>
 									</div>
-									<button
-										class="btn-primary w-full text-lg py-3"
-										on:click={handleNextRound}
-										aria-label={guessResult.isLastRound
-											? 'View final results'
-											: 'Continue to next round'}
-									>
-										{guessResult.isLastRound ? '🏆 View Final Results' : '➡️ Next Round'}
-									</button>
+									<div class="distance-display text-lg text-gray-700">
+										Distance: <strong>{guessResult.formattedDistance}</strong>
+									</div>
 								</div>
-							{:else}
-								<!-- Loading state for results -->
-								<div class="result-loading text-center py-8">
-									<div class="loading-spinner mx-auto mb-3"></div>
-									<p class="text-gray-500 text-sm">Processing your guess...</p>
-								</div>
-							{/if}
+								<button
+									class="btn-primary w-full text-lg py-3"
+									on:click={handleNextRound}
+									aria-label={guessResult.isLastRound
+										? 'View final results'
+										: 'Continue to next round'}
+								>
+									{guessResult.isLastRound ? '🏆 View Final Results' : '➡️ Next Round'}
+								</button>
+							</div>
+						{:else}
+							<!-- Loading state for results -->
+							<div class="result-loading text-center py-8">
+								<div class="loading-spinner mx-auto mb-3"></div>
+								<p class="text-gray-500 text-sm">Processing your guess...</p>
+							</div>
 						{/if}
 					</div>
 				</div>

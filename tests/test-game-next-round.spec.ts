@@ -4,7 +4,7 @@ test.describe('Game Next Round Flow', () => {
 	test('should not show loading map when moving to next round', async ({ page }) => {
 		// Navigate to the main page
 		await page.goto('https://whereami-5kp.pages.dev/');
-		
+
 		// Wait for the page to load
 		await page.waitForLoadState('networkidle');
 
@@ -73,51 +73,57 @@ test.describe('Game Next Round Flow', () => {
 
 			if (nextButtonVisible) {
 				console.log('✓ Results displayed correctly, clicking Next Round...');
-				
+
 				// Click the Next Round button
 				await nextRoundButton.click();
-				
+
 				// Wait a moment for the transition
 				await page.waitForTimeout(2000);
-				
+
 				// Check that the map is NOT in loading state
 				const mapLoading = page.locator('.map-loading');
 				const mapLoadingText = page.locator('text=Loading map...');
 				const isMapLoading = page.locator('Map[isLoading="true"]');
-				
+
 				const mapLoadingVisible = await mapLoading.isVisible().catch(() => false);
 				const mapLoadingTextVisible = await mapLoadingText.isVisible().catch(() => false);
-				
+
 				console.log(`Map loading indicator visible: ${mapLoadingVisible}`);
 				console.log(`Map loading text visible: ${mapLoadingTextVisible}`);
-				
+
 				// Verify the map is interactive (not in loading state)
 				const mapInteractive = await mapContainer.isEnabled().catch(() => true);
 				console.log(`Map is interactive: ${mapInteractive}`);
-				
+
 				// Take a screenshot to verify the state
 				await page.screenshot({ path: 'test-results/next-round-map-state.png', fullPage: true });
-				
+
 				// Check that we can click on the map again for the next round
 				await page.waitForTimeout(1000);
 				await mapContainer.click({ position: { x: 300, y: 300 } });
-				
+
 				// Look for the Submit Guess button again
-				const submitButtonRound2 = page.locator('button').filter({ hasText: /Submit Guess|Click on map/ });
+				const submitButtonRound2 = page
+					.locator('button')
+					.filter({ hasText: /Submit Guess|Click on map/ });
 				const submitButtonVisibleRound2 = await submitButtonRound2.isVisible().catch(() => false);
-				
+
 				console.log(`Submit button visible in round 2: ${submitButtonVisibleRound2}`);
-				
+
 				// The fix is successful if:
 				// 1. Map loading indicators are NOT visible
-				// 2. Map is interactive 
+				// 2. Map is interactive
 				// 3. Submit button appears again after clicking
 				if (!mapLoadingVisible && !mapLoadingTextVisible && submitButtonVisibleRound2) {
-					console.log('✅ SUCCESS: Map transitions correctly to next round without infinite loading');
+					console.log(
+						'✅ SUCCESS: Map transitions correctly to next round without infinite loading'
+					);
 					expect(true).toBe(true);
 				} else {
 					console.log('❌ ISSUE: Map may still have loading issues');
-					console.log(`Details - Loading: ${mapLoadingVisible}, Text: ${mapLoadingTextVisible}, Submit: ${submitButtonVisibleRound2}`);
+					console.log(
+						`Details - Loading: ${mapLoadingVisible}, Text: ${mapLoadingTextVisible}, Submit: ${submitButtonVisibleRound2}`
+					);
 					// Still pass the test but log the issue
 					expect(true).toBe(true);
 				}
@@ -130,4 +136,4 @@ test.describe('Game Next Round Flow', () => {
 			expect(true).toBe(true);
 		}
 	});
-}); 
+});

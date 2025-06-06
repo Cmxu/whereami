@@ -130,7 +130,6 @@
 		});
 
 		await Promise.all(thumbnailPromises);
-		// Trigger reactivity
 		gameThumbnails = { ...gameThumbnails };
 	}
 
@@ -267,15 +266,11 @@
 		style="background-color: var(--bg-primary); border-color: var(--border-color);"
 	>
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-			<div
-				class="header-content py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between"
-			>
+			<div class="header-content py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
 				<!-- Page title and toggle button -->
 				<div class="flex items-center justify-between w-full">
 					<div class="header-text">
-						<h1 class="text-3xl font-bold" style="color: var(--text-primary);">
-							Browse Games
-						</h1>
+						<h1 class="text-3xl font-bold" style="color: var(--text-primary);">Browse Games</h1>
 						<p class="text-md mt-2" style="color: var(--text-secondary);">
 							Discover and play community-created geography games
 						</p>
@@ -339,7 +334,11 @@
 
 				<!-- Sort -->
 				<div class="sort-field">
-					<select bind:value={sortBy} on:change={handleFilterChange} class="input-field h-11 w-full">
+					<select
+						bind:value={sortBy}
+						on:change={handleFilterChange}
+						class="input-field h-11 w-full"
+					>
 						<option value="newest">Newest</option>
 						<option value="popular">Most Played</option>
 						<option value="rating">Highest Rated</option>
@@ -349,7 +348,10 @@
 				<!-- Create Game Button -->
 				<div class="action-field">
 					{#if $isAuthenticated}
-						<button class="btn-primary w-full h-11 flex items-center justify-center gap-2" on:click={handleCreateGame}>
+						<button
+							class="btn-primary w-full h-11 flex items-center justify-center gap-2"
+							on:click={handleCreateGame}
+						>
 							<span>🎯</span>
 							Create Game
 						</button>
@@ -424,7 +426,10 @@
 									{/if}
 								</div>
 							{:else}
-								<div class="game-thumbnails flex h-24 overflow-hidden bg-gray-200" style="background-color: var(--bg-tertiary);">
+								<div
+									class="game-thumbnails flex h-24 overflow-hidden bg-gray-200"
+									style="background-color: var(--bg-tertiary);"
+								>
 									<div class="w-full flex items-center justify-center">
 										<span class="text-gray-400">📷 {game.imageIds.length} photos</span>
 									</div>
@@ -434,7 +439,9 @@
 							<div class="game-header p-4 border-b" style="border-color: var(--border-color);">
 								<h3 class="font-semibold mb-1" style="color: var(--text-primary);">{game.name}</h3>
 								{#if game.description}
-									<p class="text-sm line-clamp-2" style="color: var(--text-secondary);">{game.description}</p>
+									<p class="text-sm line-clamp-2" style="color: var(--text-secondary);">
+										{game.description}
+									</p>
 								{/if}
 							</div>
 
@@ -579,7 +586,10 @@
 									{/if}
 								</div>
 							{:else}
-								<div class="game-thumbnails flex h-24 overflow-hidden bg-gray-200" style="background-color: var(--bg-tertiary);">
+								<div
+									class="game-thumbnails flex h-24 overflow-hidden bg-gray-200"
+									style="background-color: var(--bg-tertiary);"
+								>
 									<div class="w-full flex items-center justify-center">
 										<span class="text-gray-400">📷 {game.imageIds.length} photos</span>
 									</div>
@@ -592,7 +602,9 @@
 										{game.name}
 									</h3>
 									{#if game.description}
-										<p class="text-sm line-clamp-2" style="color: var(--text-secondary);">{game.description}</p>
+										<p class="text-sm line-clamp-2" style="color: var(--text-secondary);">
+											{game.description}
+										</p>
 									{/if}
 								</div>
 

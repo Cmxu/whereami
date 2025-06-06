@@ -174,16 +174,6 @@ export interface GameShareData {
 	expiresAt?: string; // Optional expiration
 }
 
-export interface GameStats {
-	totalGamesPlayed: number;
-	averageScore: number;
-	bestScore: number;
-	totalDistance: number;
-	averageDistance: number;
-	roundsPlayed: number;
-	perfectGuesses: number; // Guesses within a certain threshold
-}
-
 export interface PaginatedResponse<T> {
 	games: T[];
 	total: number;

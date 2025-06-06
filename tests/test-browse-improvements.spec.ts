@@ -85,7 +85,9 @@ test.describe('Browse Screen Improvements', () => {
 		await page.waitForLoadState('networkidle');
 
 		// Check Public Games tab is active by default (now in header)
-		const publicGamesTab = page.locator('.page-header button').filter({ hasText: '🌍 Public Games' });
+		const publicGamesTab = page
+			.locator('.page-header button')
+			.filter({ hasText: '🌍 Public Games' });
 		await expect(publicGamesTab).toHaveClass(/active/);
 
 		// My Games tab should be present but might be disabled if not authenticated (now in header)
@@ -159,16 +161,20 @@ test.describe('Browse Screen Improvements', () => {
 		await sortSelect.selectOption('newest');
 	});
 
-	test('should have Public/My Games toggle in header and Create Game button in filter bar', async ({ page }) => {
+	test('should have Public/My Games toggle in header and Create Game button in filter bar', async ({
+		page
+	}) => {
 		// Wait for page to load
 		await page.waitForLoadState('networkidle');
 
 		// Check that Public/My Games toggle is in the header (page-header)
 		const headerToggle = page.locator('.page-header .filter-tab');
 		await expect(headerToggle.first()).toBeVisible();
-		
+
 		// Verify both tabs are in the header
-		const publicGamesTab = page.locator('.page-header button').filter({ hasText: '🌍 Public Games' });
+		const publicGamesTab = page
+			.locator('.page-header button')
+			.filter({ hasText: '🌍 Public Games' });
 		const myGamesTab = page.locator('.page-header button').filter({ hasText: '🎮 My Games' });
 		await expect(publicGamesTab).toBeVisible();
 		await expect(myGamesTab).toBeVisible();
@@ -178,9 +184,11 @@ test.describe('Browse Screen Improvements', () => {
 
 		// Check that Create Game button is in the filter section (if authenticated)
 		// We'll check if the button exists in filters-section
-		const createButtonInFilters = page.locator('.filters-section button').filter({ hasText: 'Create Game' });
-		const createButtonExists = await createButtonInFilters.count() > 0;
-		
+		const createButtonInFilters = page
+			.locator('.filters-section button')
+			.filter({ hasText: 'Create Game' });
+		const createButtonExists = (await createButtonInFilters.count()) > 0;
+
 		// The button should exist if authenticated, or not exist if not authenticated
 		// Both are valid states, so we just verify it's in the right place if it exists
 		if (createButtonExists) {
@@ -195,7 +203,7 @@ test.describe('Browse Screen Improvements', () => {
 		// Check that search input has proper flex styling
 		const searchInput = page.locator('input[placeholder="Search games..."]');
 		await expect(searchInput).toBeVisible();
-		
+
 		// Verify the search input is in a container with flex-1 sm:flex-[2] (takes up more space)
 		const searchContainer = searchInput.locator('..');
 		await expect(searchContainer).toBeVisible();
@@ -203,7 +211,7 @@ test.describe('Browse Screen Improvements', () => {
 		// Check that the select elements have shrink-0 classes for better sizing
 		const difficultySelect = page.locator('select').filter({ hasText: 'All Difficulties' });
 		const sortSelect = page.locator('select').filter({ hasText: 'Newest' });
-		
+
 		await expect(difficultySelect).toBeVisible();
 		await expect(sortSelect).toBeVisible();
 	});
@@ -229,9 +237,9 @@ test.describe('Browse Screen Improvements', () => {
 		// Check tab buttons use same styling as gallery
 		const tabButtons = page.locator('.tab-button');
 		await expect(tabButtons.first()).toBeVisible();
-		
+
 		// Verify tab buttons have proper layout structure
 		const toggleContainer = page.locator('.flex.bg-gray-100');
 		await expect(toggleContainer).toBeVisible();
 	});
-}); 
+});
