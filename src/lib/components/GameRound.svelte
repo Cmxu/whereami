@@ -103,8 +103,8 @@
 		const deltaY = event.clientY - resizeStartY;
 
 		// For top-left resize handle (inverted deltas)
-		resizeCurrentSize.width = Math.max(250, Math.min(600, resizeStartSize.width - deltaX));
-		resizeCurrentSize.height = Math.max(250, Math.min(450, resizeStartSize.height - deltaY));
+		resizeCurrentSize.width = Math.max(250, Math.min(1200, resizeStartSize.width - deltaX));
+		resizeCurrentSize.height = Math.max(250, Math.min(600, resizeStartSize.height - deltaY));
 
 		if (mapComponent && mapComponent.invalidateSize) {
 			mapComponent.invalidateSize();
@@ -693,8 +693,8 @@
 							on:keydown={(e) => {
 								if (e.key === 'Enter' || e.key === ' ') {
 									e.preventDefault();
-									smallMapSize.width = Math.min(600, smallMapSize.width + 50);
-									smallMapSize.height = Math.min(450, smallMapSize.height + 50);
+									smallMapSize.width = Math.min(1200, smallMapSize.width + 50);
+									smallMapSize.height = Math.min(600, smallMapSize.height + 50);
 									setTimeout(() => {
 										if (mapComponent && mapComponent.invalidateSize) {
 											mapComponent.invalidateSize();

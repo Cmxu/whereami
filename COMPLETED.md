@@ -1,5 +1,8 @@
 ## Completed Tasks
 
+- [x] Move the expand map button to the top left, make it less opaque, give it an expand ("↘" - contract, "↖" - expand).
+- [x] Fix the UI on the expanded map, make it fit the screen, show the image in a smaller box on the bottom left, make sure the map rerenders
+- [x] Add ability to drag the top left hand corner of the small map to adjust it's size
 - [x] Move the +/- on the map to the bottom right
 - [x] Add a fit to width toggle for the images during the game
 - [x] When the image is all the way zoomed out, first click should zoom in one step
