@@ -239,7 +239,7 @@ body {
 }
 
 .distance-display {
-	@apply text-lg text-gray-600;
+	@apply text-2xl font-bold text-green-600;
 }
 
 /* Enhanced loading states */
@@ -436,11 +436,6 @@ body {
 .transform-gpu {
 	transform: translateZ(0);
 	will-change: transform;
-}
-
-/* Utility classes */
-.text-shadow {
-	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .backdrop-blur {

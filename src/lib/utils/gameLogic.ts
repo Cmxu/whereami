@@ -49,15 +49,15 @@ export const calculateScore = (distance: number): number => {
 /**
  * Format distance for display (meters if < 500m, km otherwise)
  */
-export const formatDistance = (distance: number): string => {
+export const formatDistance = (distance: number): [number, string] => {
 	if (distance < 0.5) {
 		// Less than 500 meters (0.5 km)
 		// Convert to meters and round to nearest meter
 		const meters = Math.round(distance * 1000);
-		return `${meters} m`;
+		return [meters, 'm'];
 	} else {
 		// Keep in kilometers with 2 decimal precision
-		return `${distance.toFixed(2)} km`;
+		return [distance, 'km'];
 	}
 };
 
@@ -71,13 +71,16 @@ export const processGuess = (
 ): GuessResult => {
 	const distance = calculateDistance(userGuess, actualLocation);
 	const score = calculateScore(distance);
-	const formattedDistance = formatDistance(distance);
+	const formattedDistanceResult = formatDistance(distance);
+	const formattedDistance = formattedDistanceResult[0];
+	const formattedDistanceUnit = formattedDistanceResult[1];
 
 	return {
 		userGuess,
 		score,
 		distance,
 		formattedDistance,
+		formattedDistanceUnit,
 		isLastRound
 	};
 };

@@ -53,6 +53,7 @@ export async function onRequestPost(context) {
 				score: round.score,
 				distance: round.distance,
 				formattedDistance: round.formattedDistance,
+				formattedDistanceUnit: round.formattedDistanceUnit,
 				timeTaken: round.timeTaken
 			})),
 			playerScore: gameData.totalScore || gameData.playerScore,

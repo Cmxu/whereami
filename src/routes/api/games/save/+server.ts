@@ -55,6 +55,7 @@ export const POST = async ({ request, platform, url }: RequestEvent) => {
 				score: round.score,
 				distance: round.distance,
 				formattedDistance: round.formattedDistance,
+				formattedDistanceUnit: round.formattedDistanceUnit,
 				timeTaken: round.timeTaken
 			})),
 			playerScore: gameData.totalScore || gameData.playerScore,

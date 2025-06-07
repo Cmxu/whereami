@@ -171,7 +171,7 @@
 		return [
 			{
 				location: selectedRound.userGuess,
-				popup: `Your guess<br/><strong>${selectedRound.formattedDistance} away</strong><br/>Score: ${selectedRound.score}`,
+				popup: `Your guess<br/><strong>${selectedRound.formattedDistance}${selectedRound.formattedDistanceUnit} away</strong><br/>Score: ${selectedRound.score}`,
 				type: 'guess' as const
 			},
 			{
@@ -243,7 +243,7 @@
 							<div class="round-details">
 								<div class="font-medium text-gray-800">Round {index + 1}</div>
 								{#if round.formattedDistance}
-									<div class="text-sm text-gray-600">Distance: {round.formattedDistance}</div>
+									<div class="text-sm text-gray-600">Distance: {round.formattedDistance}{round.formattedDistanceUnit}</div>
 								{/if}
 							</div>
 						</div>
@@ -450,7 +450,7 @@
 						</div>
 						<div class="stat">
 							<div class="text-2xl font-bold text-orange-600">
-								{selectedRound.formattedDistance || 'N/A'}
+								{selectedRound.formattedDistance || 'N/A'}{selectedRound.formattedDistanceUnit || ''}
 							</div>
 							<div class="text-sm text-gray-600">Distance Off</div>
 						</div>

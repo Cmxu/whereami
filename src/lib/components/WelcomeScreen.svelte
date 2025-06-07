@@ -275,12 +275,10 @@
 	}
 
 	.game-logo {
-		text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 		color: white;
 	}
 
 	:global(.dark) .game-logo {
-		text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 		color: #f1f5f9;
 	}
 

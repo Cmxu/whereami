@@ -211,7 +211,8 @@ export function submitGuess(location: Location): GuessResult | null {
 				userGuess: result.userGuess,
 				score: result.score,
 				distance: result.distance,
-				formattedDistance: result.formattedDistance
+				formattedDistance: result.formattedDistance,
+				formattedDistanceUnit: result.formattedDistanceUnit
 			};
 		}
 		return round;
@@ -304,7 +305,8 @@ export function getGameSummary() {
 			id: round.id,
 			score: round.score,
 			distance: round.distance,
-			formattedDistance: round.formattedDistance
+			formattedDistance: round.formattedDistance,
+			formattedDistanceUnit: round.formattedDistanceUnit
 		})),
 		completedAt: new Date().toISOString()
 	};

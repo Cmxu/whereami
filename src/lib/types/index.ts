@@ -15,7 +15,8 @@ export interface Round {
 	userGuess?: Location;
 	score: number;
 	distance?: number;
-	formattedDistance?: string;
+	formattedDistance?: number;
+	formattedDistanceUnit?: string;
 }
 
 export interface GameState {
@@ -116,7 +117,8 @@ export interface GuessResult {
 	userGuess: Location;
 	score: number;
 	distance: number;
-	formattedDistance: string;
+	formattedDistance: number;
+	formattedDistanceUnit: string;
 	isLastRound: boolean;
 }
 
@@ -160,7 +162,8 @@ export interface CompletedRound {
 	userGuess: Location;
 	score: number;
 	distance: number;
-	formattedDistance: string;
+	formattedDistance: number;
+	formattedDistanceUnit: string;
 	timeTaken?: number; // Time in seconds to make the guess
 }
 
