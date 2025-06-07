@@ -17,13 +17,11 @@
 
 ### Gameplay Fixes/Tasks
 
-#### Map optimizations
-
-
 ### General
 
 - [ ] Seperate the home and game play pages
 - [ ] Also remove scrolling on the home page
+- [ ] Fix game sharing link
 - [ ] Move the stats from the main page to your profile
 - [ ] Uploading pictures still is a bit buggy. For example, when I upload 4 pictures, only 3 actually get uploaded
 - [ ] If the user is already on the Gallery page and logs in, the gallery page says not authenticated until after some user action

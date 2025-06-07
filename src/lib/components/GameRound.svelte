@@ -24,12 +24,22 @@
 	let lastMouseX = 0;
 	let lastMouseY = 0;
 	// Small map resize functionality
-	let smallMapSize = { width: 350, height: 350 };
+	let smallMapSize = { width: 450, height: 400 };
 	let isResizing = false;
 	let resizeStartX = 0;
 	let resizeStartY = 0;
 	let resizeStartSize = { width: 0, height: 0 };
 	let resizeCurrentSize = { width: 0, height: 0 };
+	// Small image resize functionality
+	let smallImageSize = { width: 400, height: 300 }; // Will be updated based on actual image dimensions
+	let isResizingImage = false;
+	let imageResizeStartX = 0;
+	let imageResizeStartY = 0;
+	let imageResizeStartSize = { width: 0, height: 0 };
+	let imageResizeCurrentSize = { width: 0, height: 0 };
+	// Map state preservation
+	let savedMapCenter: Location | null = null;
+	let savedMapZoom: number | null = null;
 
 	function handleMapClick(event: CustomEvent<Location>) {
 		if (showResult) return; // Don't allow new guesses after submitting
@@ -43,6 +53,25 @@
 
 	function handleImageLoad() {
 		imageLoaded = true;
+		updateImageOverlaySize();
+	}
+
+	function updateImageOverlaySize() {
+		// Update small image overlay size based on actual image dimensions
+		setTimeout(() => {
+			const imageElement = document.querySelector('.small-overlay-image') as HTMLImageElement;
+			if (imageElement && imageElement.naturalWidth > 0) {
+				const aspectRatio = imageElement.naturalHeight / imageElement.naturalWidth;
+				const targetWidth = 400; // Base width
+				const targetHeight = targetWidth * aspectRatio;
+				
+				// Constrain to reasonable bounds
+				const finalWidth = Math.min(600, Math.max(300, targetWidth));
+				const finalHeight = Math.min(450, Math.max(200, targetHeight));
+				
+				smallImageSize = { width: finalWidth, height: finalHeight };
+			}
+		}, 100);
 	}
 
 	function handleSubmitGuess() {
@@ -66,17 +95,37 @@
 	}
 
 	function toggleLayout() {
+		// Save current map state before switching
+		if (mapComponent && mapComponent.getCurrentView) {
+			const currentView = mapComponent.getCurrentView();
+			if (currentView) {
+				savedMapCenter = currentView.center;
+				savedMapZoom = currentView.zoom;
+			}
+		}
+
 		showMapFull = !showMapFull;
 
 		// Reset any resize state when switching layouts
 		isResizing = false;
 		resizeCurrentSize = { ...smallMapSize };
+		isResizingImage = false;
+		imageResizeCurrentSize = { ...smallImageSize };
 
-		// Trigger map re-rendering after transition
+		// Trigger map re-rendering and restore state after transition
 		setTimeout(() => {
 			if (mapComponent && mapComponent.invalidateSize) {
 				mapComponent.invalidateSize();
 			}
+			
+			// Restore saved map state after a brief delay to ensure map is ready
+			setTimeout(() => {
+				if (mapComponent && savedMapCenter && savedMapZoom !== null) {
+					if (mapComponent.setView) {
+						mapComponent.setView(savedMapCenter, savedMapZoom);
+					}
+				}
+			}, 100);
 		}, 300);
 	}
 
@@ -126,12 +175,54 @@
 		}, 100);
 	}
 
+	// Resize functionality for small image
+	function handleImageResizeStart(event: MouseEvent) {
+		if (!showMapFull) return; // Only allow resize when image is small (map is full)
+
+		event.preventDefault();
+		event.stopPropagation();
+		isResizingImage = true;
+		imageResizeStartX = event.clientX;
+		imageResizeStartY = event.clientY;
+		imageResizeStartSize = { ...smallImageSize };
+		imageResizeCurrentSize = { ...smallImageSize };
+
+		document.addEventListener('mousemove', handleImageResizeMove);
+		document.addEventListener('mouseup', handleImageResizeEnd);
+	}
+
+	function handleImageResizeMove(event: MouseEvent) {
+		if (!isResizingImage) return;
+
+		const deltaX = event.clientX - imageResizeStartX;
+		const deltaY = event.clientY - imageResizeStartY;
+
+		// For top-right resize handle (normal deltaX, inverted deltaY)
+		const newWidth = Math.max(250, Math.min(800, imageResizeStartSize.width + deltaX));
+		
+		// Maintain aspect ratio based on actual image
+		let aspectRatio = imageResizeStartSize.height / imageResizeStartSize.width;
+		const newHeight = newWidth * aspectRatio;
+
+		imageResizeCurrentSize.width = newWidth;
+		imageResizeCurrentSize.height = Math.max(150, Math.min(600, newHeight));
+	}
+
+	function handleImageResizeEnd() {
+		isResizingImage = false;
+
+		document.removeEventListener('mousemove', handleImageResizeMove);
+		document.removeEventListener('mouseup', handleImageResizeEnd);
+
+		smallImageSize = { ...imageResizeCurrentSize };
+	}
+
 	function zoomIn() {
-		imageScale = Math.min(imageScale * 1.3, 8);
+		imageScale = Math.min(imageScale * 1.2, 8);
 	}
 
 	function zoomOut() {
-		imageScale = Math.max(imageScale / 1.3, 1);
+		imageScale = Math.max(imageScale / 1.2, 1);
 		if (imageScale === 1) {
 			imageTranslateX = 0;
 			imageTranslateY = 0;
@@ -277,6 +368,9 @@
 		imageTranslateX = 0;
 		imageTranslateY = 0;
 		isDragging = false;
+		// Reset saved map state for new round
+		savedMapCenter = null;
+		savedMapZoom = null;
 		// Don't reset mapReady - the map doesn't need to be reinitialized between rounds
 		lastRoundId = $currentRound.id;
 		// Reset map view to initial position
@@ -325,7 +419,7 @@
 
 					<!-- Score -->
 					<div class="flex items-center space-x-2">
-						<span class="text-sm text-gray-600">Score:</span>
+						<span class="text-sm text-gray-800">Score:</span>
 						<span class="score-display text-lg font-bold text-gray-800">
 							{$gameState.totalScore.toLocaleString()}
 						</span>
@@ -375,10 +469,10 @@
 				<!-- Map-focused layout: Large map with small image overlay -->
 				<div class="layout-map-full absolute inset-0">
 					<!-- Full-size map -->
-					<div class="map-container h-full relative pt-20">
+					<div class="map-container h-full relative z-10">
 						<Map
 							bind:this={mapComponent}
-							height="calc(100vh - 10rem)"
+							height="calc(100vh)"
 							forceSquare={false}
 							clickable={!showResult}
 							markers={getMapMarkers()}
@@ -458,12 +552,54 @@
 
 					<!-- Small image overlay -->
 					<div
-						class="image-overlay absolute bottom-4 left-4 z-50 bg-white/10 backdrop-blur-md rounded-lg shadow-xl border border-white/20 p-3 max-w-sm"
+						class="image-overlay absolute bottom-4 left-4 z-50 bg-white/10 backdrop-blur-md rounded-lg shadow-xl border border-white/20 p-3 transition-all duration-300"
+						class:resizing={isResizingImage}
+						style="width: {isResizingImage
+							? imageResizeCurrentSize.width
+							: smallImageSize.width}px; height: {isResizingImage
+							? imageResizeCurrentSize.height
+							: smallImageSize.height}px;"
 					>
+						<!-- Resize handle (top-right corner) -->
+						<div
+							class="resize-handle absolute top-0 right-0 w-4 h-4 bg-white/60 hover:bg-white/80 cursor-ne-resize z-20 rounded-bl-md border border-white/40"
+							role="button"
+							tabindex="0"
+							on:mousedown={handleImageResizeStart}
+							on:keydown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									const aspectRatio = smallImageSize.height / smallImageSize.width;
+									const newWidth = Math.min(800, smallImageSize.width + 50);
+									const newHeight = newWidth * aspectRatio;
+									smallImageSize.width = newWidth;
+									smallImageSize.height = Math.min(600, newHeight);
+								}
+							}}
+							aria-label="Drag to resize image or press Enter to increase size"
+						>
+							<svg
+								class="w-3 h-3 text-gray-600"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+								/>
+							</svg>
+						</div>
+
 						<div class="image-overlay-content relative">
 							{#if !imageLoaded}
 								<div
-									class="image-loading flex items-center justify-center bg-gray-100 rounded-lg h-40"
+									class="image-loading flex items-center justify-center bg-gray-100 rounded-lg"
+									style="height: {(isResizingImage
+										? imageResizeCurrentSize.height
+										: smallImageSize.height) - 24}px;"
 								>
 									<div class="text-center">
 										<div class="loading-spinner mx-auto mb-2"></div>
@@ -523,7 +659,10 @@
 							</div>
 
 							<div
-								class="image-viewport w-full h-40 overflow-hidden rounded-md"
+								class="image-viewport w-full overflow-hidden rounded-md"
+								style="height: {(isResizingImage
+									? imageResizeCurrentSize.height
+									: smallImageSize.height) - 24}px;"
 								class:cursor-zoom-in={imageScale === 1}
 								class:cursor-move={imageScale > 1}
 								role="button"
@@ -541,7 +680,7 @@
 								<img
 									src={$currentRound.image.src}
 									alt="Round {$gameState.currentRound + 1} photo"
-									class="w-full h-full object-cover transition-opacity duration-300 select-none"
+									class="small-overlay-image w-full h-full object-cover transition-opacity duration-300 select-none"
 									class:opacity-0={!imageLoaded}
 									style="transform: scale({imageScale}) translate({imageTranslateX}px, {imageTranslateY}px); transform-origin: center center;"
 									loading="lazy"
@@ -552,9 +691,6 @@
 									}}
 									draggable="false"
 								/>
-							</div>
-							<div class="text-xs text-gray-700 mt-2 text-center font-medium">
-								Round {$gameState.currentRound + 1} of {$gameState.rounds.length}
 							</div>
 						</div>
 					</div>
@@ -868,6 +1004,19 @@
 
 	.map-overlay.resizing {
 		transition: none !important;
+	}
+
+	.image-overlay.resizing {
+		transition: none !important;
+		will-change: width, height;
+		transform: translateZ(0);
+		backface-visibility: hidden;
+	}
+
+	.image-overlay {
+		will-change: auto;
+		transform: translateZ(0);
+		backface-visibility: hidden;
 	}
 
 	.resize-handle {

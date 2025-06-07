@@ -3,7 +3,7 @@
 	import type { Location } from '$lib/types';
 	import { calculateGeodesicPath } from '$lib/utils/gameLogic';
 
-	export let center: Location = { lat: 20, lng: 0 };
+	export let center: Location = { lat: 10, lng: 0 };
 	export let zoom: number = 2;
 	export let clickable: boolean = true;
 	export let markers: Array<{
@@ -62,10 +62,10 @@
 				worldCopyJump: true // Handle antimeridian crossing automatically
 			});
 
-			// Add custom zoom control positioned at bottom right
+			// Add custom zoom control positioned at top right
 			L.control
 				.zoom({
-					position: 'bottomright'
+					position: 'topright'
 				})
 				.addTo(map);
 
@@ -233,6 +233,26 @@
 			setTimeout(() => {
 				map.invalidateSize();
 			}, 100);
+		}
+	}
+
+	// Function to get current map view state
+	export function getCurrentView() {
+		if (map) {
+			const center = map.getCenter();
+			const zoom = map.getZoom();
+			return {
+				center: { lat: center.lat, lng: center.lng },
+				zoom: zoom
+			};
+		}
+		return null;
+	}
+
+	// Function to set map view state
+	export function setView(center: Location, zoom: number) {
+		if (map) {
+			map.setView([center.lat, center.lng], zoom);
 		}
 	}
 </script>

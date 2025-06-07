@@ -60,11 +60,11 @@
 	}
 
 	function zoomIn() {
-		imageScale = Math.min(imageScale * 1.3, 8);
+		imageScale = Math.min(imageScale * 1.2, 8);
 	}
 
 	function zoomOut() {
-		imageScale = Math.max(imageScale / 1.3, 1);
+		imageScale = Math.max(imageScale / 1.2, 1);
 		if (imageScale === 1) {
 			imageTranslateX = 0;
 			imageTranslateY = 0;
