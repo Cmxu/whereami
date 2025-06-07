@@ -3,7 +3,6 @@
 	import type { GameSettings } from '$lib/types';
 	import { hasSavedGameInProgress, resumeSavedGame } from '$lib/stores/gameStore';
 	import {
-		getGameStatistics,
 		getUserPreferences,
 		type UserPreferences
 	} from '$lib/utils/localStorage';
@@ -13,8 +12,6 @@
 		resumeGame: void;
 	}>();
 
-	let showStatistics = false;
-	let statistics = getGameStatistics();
 	let preferences: UserPreferences = getUserPreferences();
 
 	function startQuickGame() {
@@ -45,16 +42,8 @@
 		}
 	}
 
-	function toggleStatistics() {
-		showStatistics = !showStatistics;
-		if (showStatistics) {
-			statistics = getGameStatistics();
-		}
-	}
-
 	onMount(() => {
-		// Refresh statistics and preferences on mount
-		statistics = getGameStatistics();
+		// Refresh preferences on mount
 		preferences = getUserPreferences();
 	});
 </script>
@@ -135,49 +124,7 @@
 			</div>
 		</div>
 
-		<!-- Statistics panel -->
-		{#if statistics.totalGames > 0}
-			<div class="statistics-section mb-6">
-				<button
-					class="stats-toggle bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-all duration-200 text-sm"
-					on:click={toggleStatistics}
-				>
-					📊 {showStatistics ? 'Hide' : 'Show'} Your Stats
-				</button>
 
-				{#if showStatistics}
-					<div class="stats-panel bg-white/95 backdrop-blur rounded-lg p-4 mt-4 max-w-md mx-auto">
-						<h3 class="font-bold text-gray-800 mb-3">Your Performance</h3>
-						<div class="grid grid-cols-2 gap-4 text-sm">
-							<div class="stat-item text-center">
-								<div class="stat-value text-lg font-bold text-blue-600">
-									{statistics.totalGames}
-								</div>
-								<div class="stat-label text-gray-600">Games Played</div>
-							</div>
-							<div class="stat-item text-center">
-								<div class="stat-value text-lg font-bold text-green-600">
-									{statistics.averageScore.toLocaleString()}
-								</div>
-								<div class="stat-label text-gray-600">Avg Score</div>
-							</div>
-							<div class="stat-item text-center">
-								<div class="stat-value text-lg font-bold text-purple-600">
-									{statistics.bestScore.toLocaleString()}
-								</div>
-								<div class="stat-label text-gray-600">Best Score</div>
-							</div>
-							<div class="stat-item text-center">
-								<div class="stat-value text-lg font-bold text-orange-600">
-									{statistics.averageAccuracy}%
-								</div>
-								<div class="stat-label text-gray-600">Accuracy</div>
-							</div>
-						</div>
-					</div>
-				{/if}
-			</div>
-		{/if}
 
 		<!-- Additional options -->
 		<div class="additional-options mb-6 md:mb-8">
@@ -358,7 +305,6 @@
 		background: rgba(148, 163, 184, 0.3);
 	}
 
-	.stats-toggle,
 	.option-link {
 		background: rgba(255, 255, 255, 0.2);
 		color: white;
@@ -367,32 +313,18 @@
 		transition: all 0.2s ease;
 	}
 
-	.stats-toggle:hover,
 	.option-link:hover {
 		background: rgba(255, 255, 255, 0.3);
 		transform: translateY(-2px);
 	}
 
-	:global(.dark) .stats-toggle,
 	:global(.dark) .option-link {
 		background: rgba(148, 163, 184, 0.2);
 		color: #f1f5f9;
 	}
 
-	:global(.dark) .stats-toggle:hover,
 	:global(.dark) .option-link:hover {
 		background: rgba(148, 163, 184, 0.3);
-	}
-
-	.stats-panel {
-		background: rgba(255, 255, 255, 0.95);
-		backdrop-filter: blur(10px);
-		animation: slideInUp 0.3s ease-out;
-	}
-
-	:global(.dark) .stats-panel {
-		background: rgba(30, 41, 59, 0.95);
-		backdrop-filter: blur(10px);
 	}
 
 	.resume-notification {
@@ -458,17 +390,13 @@
 			padding: 1.5rem;
 		}
 
-		.stats-panel {
-			margin-left: 1rem;
-			margin-right: 1rem;
-		}
+
 	}
 
 	/* Reduced motion support */
 	@media (prefers-reduced-motion: reduce) {
 		.welcome-screen::before,
 		.resume-notification,
-		.stats-panel,
 		.fade-in,
 		.option-button,
 		.option-link,

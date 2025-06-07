@@ -37,7 +37,7 @@
 				gameMode: 'custom',
 				gameId: game.id
 			});
-			goto('/');
+			goto('/play');
 		} catch (err) {
 			alert(err instanceof Error ? err.message : 'Failed to start game');
 		}
@@ -99,7 +99,7 @@
 				<p class="text-gray-600 mb-6">{error}</p>
 				<div class="flex gap-3 justify-center">
 					<button class="btn-secondary" on:click={() => goto('/browse')}> 🌍 Browse Games </button>
-					<button class="btn-primary" on:click={() => goto('/')}> 🎮 Play Random Game </button>
+					<button class="btn-primary" on:click={() => goto('/play')}> 🎮 Play Random Game </button>
 				</div>
 			</div>
 		</div>
@@ -221,7 +221,7 @@
 						<button class="btn-secondary text-sm" on:click={() => goto('/browse')}>
 							🌍 More Games
 						</button>
-						<button class="btn-secondary text-sm" on:click={() => goto('/')}>
+						<button class="btn-secondary text-sm" on:click={() => goto('/play')}>
 							🎮 Random Game
 						</button>
 					</div>

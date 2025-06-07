@@ -30,6 +30,9 @@ test.describe('Map Square Layout', () => {
 			return;
 		}
 
+		// Wait for navigation to play page
+		await page.waitForURL('**/play', { timeout: 10000 });
+
 		// Wait for game to initialize
 		await page.waitForTimeout(5000);
 

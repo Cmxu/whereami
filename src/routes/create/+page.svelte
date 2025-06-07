@@ -76,7 +76,7 @@
 				gameMode: 'custom',
 				gameId
 			});
-			goto('/');
+			goto('/play');
 		} catch (err) {
 			showError(err instanceof Error ? err.message : 'Failed to create game');
 		} finally {

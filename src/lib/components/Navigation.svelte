@@ -90,7 +90,13 @@
 
 				<!-- Main navigation links -->
 				<div class="nav-links hidden md:flex items-center space-x-6">
-					<a href="/" class="nav-link {currentPath === '/' ? 'active' : ''}"> 🎮 Play </a>
+					{#if $isGameActive}
+						<a href="/play" class="nav-link {currentPath === '/play' ? 'active' : ''}"> 🎮 Play </a>
+					{:else}
+						<div class="nav-link-wrapper" title="Pick a game type to start playing!">
+							<span class="nav-link nav-link-disabled"> 🎮 Play </span>
+						</div>
+					{/if}
 					<a href="/gallery" class="nav-link {currentPath === '/gallery' ? 'active' : ''}">
 						📸 Gallery
 					</a>
@@ -270,6 +276,17 @@
 	.nav-link.active {
 		color: var(--btn-primary-bg);
 		background-color: var(--blue-50);
+	}
+
+	.nav-link-disabled {
+		color: var(--text-tertiary);
+		opacity: 0.5;
+		cursor: not-allowed;
+		pointer-events: none;
+	}
+
+	.nav-link-wrapper {
+		position: relative;
 	}
 
 	:global(.dark) .nav-link.active {

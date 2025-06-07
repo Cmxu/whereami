@@ -69,7 +69,12 @@ test.describe('Map Optimizations - Standalone', () => {
 			// Click the first available game
 			await gameCards.first().click();
 
-			// Wait for game to load
+			// Wait for game details page to load, then click Play Game button
+			await page.waitForSelector('button:has-text("🎮 Play Game"), button:has-text("🌍 Start Playing Now")', { timeout: 10000 });
+			const playButton = page.locator('button:has-text("🎮 Play Game"), button:has-text("🌍 Start Playing Now")').first();
+			await playButton.click();
+
+			// Wait for game to load on play page
 			await page.waitForSelector('.map-container, .leaflet-container', { timeout: 15000 });
 
 			// Check for attribution controls in the game
@@ -126,6 +131,12 @@ test.describe('Map Optimizations - Standalone', () => {
 
 		if (cardCount > 0) {
 			await gameCards.first().click();
+			
+			// Wait for game details page to load, then click Play Game button
+			await page.waitForSelector('button:has-text("🎮 Play Game"), button:has-text("🌍 Start Playing Now")', { timeout: 10000 });
+			const playButton = page.locator('button:has-text("🎮 Play Game"), button:has-text("🌍 Start Playing Now")').first();
+			await playButton.click();
+			
 			await page.waitForSelector('.map-container', { timeout: 15000 });
 
 			// Test 1: Check expand button position and styling

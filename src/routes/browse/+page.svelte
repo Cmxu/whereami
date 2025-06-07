@@ -157,7 +157,7 @@
 				gameMode: 'custom',
 				gameId: game.id
 			});
-			goto('/');
+			goto('/play');
 		} catch (err) {
 			alert(err instanceof Error ? err.message : 'Failed to start game');
 		}
@@ -170,7 +170,7 @@
 				gameMode: 'custom',
 				gameId: game.id
 			});
-			goto('/');
+			goto('/play');
 		} catch (err) {
 			alert(err instanceof Error ? err.message : 'Failed to start game');
 		}

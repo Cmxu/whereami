@@ -15,10 +15,12 @@
 	import AuthButton from '$lib/components/AuthButton.svelte';
 	import AuthModal from '$lib/components/AuthModal.svelte';
 	import ProfileEdit from '$lib/components/ProfileEdit.svelte';
+	import { getGameStatistics } from '$lib/utils/localStorage';
 
 	let showAuthModal = false;
 	let showProfileEdit = false;
 	let loading = false;
+	let localStats = getGameStatistics();
 
 	onMount(() => {
 		// Redirect to home if not authenticated
@@ -28,6 +30,8 @@
 			// Load fresh user stats when profile page loads
 			loadUserStats();
 		}
+		// Refresh statistics on mount
+		localStats = getGameStatistics();
 	});
 
 	async function handleLogout() {
@@ -126,35 +130,81 @@
 				</div>
 			</div>
 
-			<!-- Statistics Grid -->
-			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-				<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
-					<div class="text-center">
-						<div class="text-3xl font-bold text-blue-600 mb-2">{$userStats.imagesUploaded}</div>
-						<div class="text-sm" style="color: var(--text-secondary);">Images Uploaded</div>
-					</div>
-				</div>
-				<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
-					<div class="text-center">
-						<div class="text-3xl font-bold text-green-600 mb-2">{$userStats.gamesCreated}</div>
-						<div class="text-sm" style="color: var(--text-secondary);">Games Created</div>
-					</div>
-				</div>
-				<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
-					<div class="text-center">
-						<div class="text-3xl font-bold text-purple-600 mb-2">{$userStats.gamesPlayed}</div>
-						<div class="text-sm" style="color: var(--text-secondary);">Games Played</div>
-					</div>
-				</div>
-				<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
-					<div class="text-center">
-						<div class="text-3xl font-bold text-orange-600 mb-2">
-							{$userStats.averageScore > 0 ? $userStats.averageScore.toFixed(0) : '0'}
+			<!-- Account Statistics Grid -->
+			<div class="mb-8">
+				<h3 class="text-xl font-semibold mb-4" style="color: var(--text-primary);">
+					Account Statistics
+				</h3>
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+					<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
+						<div class="text-center">
+							<div class="text-3xl font-bold text-blue-600 mb-2">{$userStats.imagesUploaded}</div>
+							<div class="text-sm" style="color: var(--text-secondary);">Images Uploaded</div>
 						</div>
-						<div class="text-sm" style="color: var(--text-secondary);">Average Score</div>
+					</div>
+					<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
+						<div class="text-center">
+							<div class="text-3xl font-bold text-green-600 mb-2">{$userStats.gamesCreated}</div>
+							<div class="text-sm" style="color: var(--text-secondary);">Games Created</div>
+						</div>
+					</div>
+					<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
+						<div class="text-center">
+							<div class="text-3xl font-bold text-purple-600 mb-2">{$userStats.gamesPlayed}</div>
+							<div class="text-sm" style="color: var(--text-secondary);">Games Played</div>
+						</div>
+					</div>
+					<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
+						<div class="text-center">
+							<div class="text-3xl font-bold text-orange-600 mb-2">
+								{$userStats.averageScore > 0 ? $userStats.averageScore.toFixed(0) : '0'}
+							</div>
+							<div class="text-sm" style="color: var(--text-secondary);">Average Score</div>
+						</div>
 					</div>
 				</div>
 			</div>
+
+			<!-- Game Statistics -->
+			{#if localStats.totalGames > 0}
+				<div class="mb-8">
+					<h3 class="text-xl font-semibold mb-4" style="color: var(--text-primary);">
+						Game Performance
+					</h3>
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+						<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
+							<div class="text-center">
+								<div class="text-3xl font-bold text-blue-600 mb-2">{localStats.totalGames}</div>
+								<div class="text-sm" style="color: var(--text-secondary);">Games Played</div>
+							</div>
+						</div>
+						<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
+							<div class="text-center">
+								<div class="text-3xl font-bold text-green-600 mb-2">
+									{localStats.averageScore.toLocaleString()}
+								</div>
+								<div class="text-sm" style="color: var(--text-secondary);">Avg Score</div>
+							</div>
+						</div>
+						<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
+							<div class="text-center">
+								<div class="text-3xl font-bold text-purple-600 mb-2">
+									{localStats.bestScore.toLocaleString()}
+								</div>
+								<div class="text-sm" style="color: var(--text-secondary);">Best Score</div>
+							</div>
+						</div>
+						<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
+							<div class="text-center">
+								<div class="text-3xl font-bold text-orange-600 mb-2">
+									{localStats.averageAccuracy}%
+								</div>
+								<div class="text-sm" style="color: var(--text-secondary);">Accuracy</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			{/if}
 
 			<!-- Quick Actions -->
 			<div class="rounded-xl shadow-sm p-6" style="background-color: var(--bg-primary);">
