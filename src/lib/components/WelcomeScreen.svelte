@@ -52,8 +52,8 @@
 	<div class="welcome-content max-w-4xl w-full text-center fade-in">
 		<!-- Logo and title -->
 		<div class="logo-container mb-8 md:mb-12">
-			<h1 class="game-logo text-5xl md:text-8xl font-bold text-white mb-4">WhereAmI</h1>
-			<p class="tagline text-lg md:text-2xl text-white/90 max-w-2xl mx-auto">
+			<h1 class="game-logo text-5xl md:text-8xl font-bold mb-4">WhereAmI</h1>
+			<p class="tagline text-lg md:text-2xl max-w-2xl mx-auto">
 				Test your skills by locating where photos were taken. Can you guess where in the world these
 				images are from?
 			</p>
@@ -110,11 +110,11 @@
 
 			<!-- Custom round options -->
 			<div class="custom-options mt-6">
-				<p class="text-white/80 text-sm mb-3">Or choose your rounds:</p>
+				<p class="custom-options-text text-sm mb-3">Or choose your rounds:</p>
 				<div class="flex justify-center gap-2 flex-wrap">
 					{#each [5, 15, 20] as roundCount}
 						<button
-							class="custom-round-btn bg-white/20 hover:bg-white/30 text-white text-sm px-3 py-1 rounded-full transition-all duration-200"
+							class="custom-round-btn text-sm px-3 py-1 rounded-full transition-all duration-200"
 							on:click={() => startCustomGame(roundCount)}
 						>
 							{roundCount} rounds
@@ -126,33 +126,10 @@
 
 
 
-		<!-- Additional options -->
-		<div class="additional-options mb-6 md:mb-8">
-			<p class="text-white/70 mb-4 text-sm md:text-base">More ways to play:</p>
-			<div class="flex flex-wrap justify-center gap-3 md:gap-4">
-				<a
-					href="/upload"
-					class="option-link bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm"
-				>
-					📸 Upload Photos
-				</a>
-				<a
-					href="/create"
-					class="option-link bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm"
-				>
-					🎯 Create Game
-				</a>
-				<a
-					href="/browse"
-					class="option-link bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm"
-				>
-					🔍 Browse Games
-				</a>
-			</div>
-		</div>
+
 
 		<!-- Footer -->
-		<div class="welcome-footer text-white/60 text-xs md:text-sm">
+		<div class="welcome-footer text-xs md:text-sm">
 			<p>WhereAmI v2.0 - created by calvin</p>
 		</div>
 	</div>
@@ -160,61 +137,13 @@
 
 <style>
 	.welcome-screen {
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		background-color: var(--bg-secondary);
 		position: relative;
 		overflow: hidden;
-		transition: background 0.3s ease;
+		transition: background-color 0.3s ease;
 	}
 
-	:global(.dark) .welcome-screen {
-		background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-	}
 
-	.welcome-screen::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background:
-			linear-gradient(45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
-			linear-gradient(-45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
-			linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.1) 75%),
-			linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.1) 75%);
-		background-size: 60px 60px;
-		background-position:
-			0 0,
-			0 30px,
-			30px -30px,
-			-30px 0px;
-		opacity: 0.3;
-		animation: slidePattern 20s linear infinite;
-	}
-
-	:global(.dark) .welcome-screen::before {
-		background:
-			linear-gradient(45deg, rgba(148, 163, 184, 0.1) 25%, transparent 25%),
-			linear-gradient(-45deg, rgba(148, 163, 184, 0.1) 25%, transparent 25%),
-			linear-gradient(45deg, transparent 75%, rgba(148, 163, 184, 0.1) 75%),
-			linear-gradient(-45deg, transparent 75%, rgba(148, 163, 184, 0.1) 75%);
-		background-size: 60px 60px;
-		background-position:
-			0 0,
-			0 30px,
-			30px -30px,
-			-30px 0px;
-		opacity: 0.2;
-	}
-
-	@keyframes slidePattern {
-		0% {
-			transform: translateX(0);
-		}
-		100% {
-			transform: translateX(60px);
-		}
-	}
 
 	.welcome-content {
 		position: relative;
@@ -222,19 +151,15 @@
 	}
 
 	.game-logo {
-		color: white;
+		color: var(--blue-600);
 	}
 
 	:global(.dark) .game-logo {
-		color: #f1f5f9;
+		color: var(--blue-600);
 	}
 
 	.tagline {
-		color: rgba(255, 255, 255, 0.9);
-	}
-
-	:global(.dark) .tagline {
-		color: rgba(241, 245, 249, 0.8);
+		color: var(--text-secondary);
 	}
 
 	.option-button {
@@ -285,58 +210,31 @@
 		transform: scale(1.1);
 	}
 
+	.custom-options-text {
+		color: var(--text-secondary);
+	}
+
 	.custom-round-btn {
-		background: rgba(255, 255, 255, 0.2);
-		color: white;
+		background-color: var(--bg-tertiary);
+		color: var(--text-primary);
+		border: 1px solid var(--border-color);
 		transition: all 0.2s ease;
 	}
 
 	.custom-round-btn:hover {
-		background: rgba(255, 255, 255, 0.3);
+		background-color: var(--btn-primary-bg);
+		color: var(--btn-primary-text);
 		transform: scale(1.05);
 	}
 
-	:global(.dark) .custom-round-btn {
-		background: rgba(148, 163, 184, 0.2);
-		color: #f1f5f9;
-	}
 
-	:global(.dark) .custom-round-btn:hover {
-		background: rgba(148, 163, 184, 0.3);
-	}
-
-	.option-link {
-		background: rgba(255, 255, 255, 0.2);
-		color: white;
-		text-decoration: none;
-		backdrop-filter: blur(10px);
-		transition: all 0.2s ease;
-	}
-
-	.option-link:hover {
-		background: rgba(255, 255, 255, 0.3);
-		transform: translateY(-2px);
-	}
-
-	:global(.dark) .option-link {
-		background: rgba(148, 163, 184, 0.2);
-		color: #f1f5f9;
-	}
-
-	:global(.dark) .option-link:hover {
-		background: rgba(148, 163, 184, 0.3);
-	}
 
 	.resume-notification {
 		animation: slideInDown 0.5s ease-out;
 	}
 
 	.welcome-footer {
-		color: rgba(255, 255, 255, 0.6);
-	}
-
-	:global(.dark) .welcome-footer {
-		color: rgba(241, 245, 249, 0.5);
+		color: var(--text-tertiary);
 	}
 
 	@keyframes slideInDown {
@@ -399,14 +297,12 @@
 		.resume-notification,
 		.fade-in,
 		.option-button,
-		.option-link,
 		.custom-round-btn {
 			animation: none;
 			transition: none;
 		}
 
 		.option-button:hover .option-icon,
-		.option-link:hover,
 		.custom-round-btn:hover {
 			transform: none;
 		}

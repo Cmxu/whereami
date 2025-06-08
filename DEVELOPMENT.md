@@ -27,6 +27,24 @@
 
 ### Completed
 
+- [x] **Home Screen Visual Improvements** - Updated home screen design and improved consistency
+  - Removed the animated checkboard pattern overlay from the welcome screen background
+  - Changed main logo text color from white to blue (`var(--blue-600)`) to match the navigation logo
+  - **Consistent Background**: Replaced gradient backgrounds with the same light gray background (`var(--bg-secondary)`) used throughout the application
+  - **Fixed Text Visibility**: Updated all text elements to use theme-aware CSS variables for proper visibility
+    - Tagline text now uses `var(--text-secondary)` instead of white
+    - Custom round options text uses `var(--text-secondary)`
+    - Custom round buttons use theme-aware background and text colors with hover effects
+    - Footer text uses `var(--text-tertiary)` for proper contrast
+  - Now uses the same background and text color system as all other screens (automatic light/dark mode support)
+  - Clean, consistent design that integrates seamlessly with the rest of the application
+  - All text elements have excellent readability and contrast in both light and dark modes
+  - Successfully deployed to production at https://472fc71a.whereami-5kp.pages.dev
+- [x] **Home Screen "More Ways to Play" Section Removal** - Removed the "more ways to play" section from the home screen
+  - Removed the entire additional options section containing links to "Upload Photos", "Create Game", and "Browse Games"
+  - Cleaned up all associated unused CSS selectors (.option-link and related styles)
+  - Maintained clean layout with only the core game options (Quick Game and Full Game buttons)
+  - Successfully deployed to production at https://ed456014.whereami-5kp.pages.dev
 - [x] **My Games User Profile Display Fix** - Fixed user name/profile picture display on the "my games" tab
   - Fixed issue where "my games" tab was showing user IDs instead of display names and no profile pictures
   - The problem was that the user games API didn't enrich games with creator profile data like the public games API
@@ -168,6 +186,40 @@
   - Modified `handleBackToHome()` in play page to explicitly save game state before navigating
   - Verified both logo click and exit button now properly save game state and show continue popup
   - Added comprehensive Playwright tests to ensure functionality works across all navigation methods
+- [x] **Tips Area Removal from Results Screen** - Removed performance tips section from final game results screen
+  - Removed the entire "💡 Tips for Better Scores" section from `GameResults.svelte`
+  - Eliminated all gameplay tips including architectural style recognition, vegetation analysis, etc.
+  - Simplified results screen to focus on score summary, round breakdown, and action buttons only
+  - Cleaner, more focused final results experience without the instructional content
+  - Successfully deployed to production at https://dc8e9949.whereami-5kp.pages.dev
+- [x] **Share Results Button Removal for Random Games** - Hidden share button specifically for random (non-custom) games
+  - Added conditional logic to `GameResults.svelte` to check `$gameSettings.gameMode !== 'random'`
+  - Share results button now only appears for custom games where sharing makes sense
+  - Random games show only "Play Again" and "Back to Home" buttons in results screen
+  - Maintains sharing functionality for custom games while removing it for random games
+  - Successfully deployed to production at https://f9fb809f.whereami-5kp.pages.dev
+- [x] **Custom Game Share Message Improvements** - Enhanced share functionality for user-made games
+  - Removed generic "WhereAmI Game Results" title from share messages
+  - Updated share text to include actual game URL instead of just home page
+  - Share message now reads: "I just scored X out of Y points! Can you beat my score? [game-url]"
+  - Simplified to always copy to clipboard instead of using navigator.share API
+  - More direct and focused sharing experience for custom games
+  - Successfully deployed to production at https://6f17bf27.whereami-5kp.pages.dev
+- [x] **Results Screen Action Buttons Update** - Replaced play again button with leaderboard navigation for custom games
+  - Removed "🎮 Play Again" button from all game results screens
+  - Added "📊 View Leaderboard" button for custom games that navigates to the game info page
+  - Custom games now show: "View Leaderboard", "Share Results", and "Back to Home" buttons
+  - Random games now show only: "Back to Home" button (no leaderboard or share options)
+  - Improved focus on post-game actions that provide value (stats/sharing) rather than immediate replay
+  - Successfully deployed to production at https://6fa3c3ec.whereami-5kp.pages.dev
+- [x] **Resume Game Bug Fix** - Fixed issue where resuming after making a guess would replay the same round
+  - Added logic in `GameRound.svelte` to detect when a resumed round already has a guess
+  - When resuming a round with existing guess data, automatically restore the results view
+  - Reconstructs `guessResult` object from saved round data including score, distance, and format info
+  - Shows "Next Round" or "View Results" button appropriately based on whether it's the last round
+  - Eliminates need to replay completed rounds when resuming from home page
+  - Provides seamless continuation of interrupted gameplay sessions
+  - Successfully deployed to production at https://f9194953.whereami-5kp.pages.dev
 - [x] Seperate the home and game play pages - Created new `/play` endpoint for game functionality
 - [x] Move the stats from the home page to your profile
 - [x] Gray out play tab when no game is active with tooltip "Pick a game type to start playing!"

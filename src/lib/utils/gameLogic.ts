@@ -2,7 +2,7 @@ import type { Location, GuessResult } from '$lib/types';
 
 // Game constants
 const MAX_SCORE = 10000; // Maximum score per round
-const MIN_DISTANCE = 0.01; // 10 meters (in km) - full points threshold
+const MIN_DISTANCE = 0.025; // 10 meters (in km) - full points threshold
 const MAX_DISTANCE = 5000; // 5000 km - zero points threshold
 
 /**
@@ -38,12 +38,14 @@ export const calculateDistance = (point1: Location, point2: Location): number =>
  * Optimized score calculation with steep drop-off curve
  */
 export const calculateScore = (distance: number): number => {
-	if (distance <= MIN_DISTANCE) return MAX_SCORE;
-	if (distance >= MAX_DISTANCE) return 0;
-
-	// Simplified exponential decay for better performance
-	const normalizedDistance = distance / MAX_DISTANCE;
-	return Math.round(MAX_SCORE * Math.exp(-5 * normalizedDistance));
+    if (distance <= MIN_DISTANCE) return MAX_SCORE;
+    if (distance >= MAX_DISTANCE) return 0;
+    
+    // Composite exponential decay
+    const fast = Math.exp(-distance / 40);
+    const slow = Math.exp(-distance / 600);
+    const blend = 0.80 * fast + 0.20 * slow;
+    return Math.round(MAX_SCORE * blend);
 };
 
 /**

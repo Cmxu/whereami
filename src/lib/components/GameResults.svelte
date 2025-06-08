@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { gameState, getGameSummary } from '$lib/stores/gameStore';
+	import { goto } from '$app/navigation';
+	import { gameState, gameSettings, getGameSummary } from '$lib/stores/gameStore';
 	import { getPerformanceRating } from '$lib/utils/gameLogic';
 	import Map from './Map.svelte';
 	import type { Location } from '$lib/types';
 
 	const dispatch = createEventDispatcher<{
-		playAgain: void;
 		backToHome: void;
 	}>();
 
@@ -19,29 +19,25 @@
 	let lastMouseX = 0;
 	let lastMouseY = 0;
 
-	function handlePlayAgain() {
-		dispatch('playAgain');
-	}
-
 	function handleBackToHome() {
 		dispatch('backToHome');
 	}
 
+	function handleViewLeaderboard() {
+		const summary = getGameSummary();
+		if (summary.gameId) {
+			goto(`/games/${summary.gameId}`);
+		}
+	}
+
 	function handleShare() {
 		const summary = getGameSummary();
-		const shareText = `I just scored ${summary.totalScore} out of ${summary.maxPossible} points in WhereAmI! Can you beat my score?`;
+		const gameUrl = `${window.location.origin}/games/${summary.gameId}`;
+		const shareText = `I just scored ${summary.totalScore} out of ${summary.maxPossible} points! Can you beat my score? ${gameUrl}`;
 
-		if (navigator.share) {
-			navigator.share({
-				title: 'WhereAmI Game Results',
-				text: shareText,
-				url: window.location.origin
-			});
-		} else {
-			// Fallback: copy to clipboard
-			navigator.clipboard.writeText(`${shareText} ${window.location.origin}`);
-			alert('Results copied to clipboard!');
-		}
+		// Always copy to clipboard for custom games
+		navigator.clipboard.writeText(shareText);
+		alert('Results copied to clipboard!');
 	}
 
 	function openReviewModal(round: any, index: number) {
@@ -273,21 +269,11 @@
 
 		<!-- Actions -->
 		<div class="results-actions flex flex-col sm:flex-row gap-4 justify-center">
-			<button class="btn-primary" on:click={handlePlayAgain}> 🎮 Play Again </button>
-			<button class="btn-secondary" on:click={handleShare}> 📤 Share Results </button>
+			{#if $gameSettings.gameMode !== 'random'}
+				<button class="btn-primary" on:click={handleViewLeaderboard}> 📊 View Leaderboard </button>
+				<button class="btn-secondary" on:click={handleShare}> 📤 Share Results </button>
+			{/if}
 			<button class="btn-secondary" on:click={handleBackToHome}> 🏠 Back to Home </button>
-		</div>
-
-		<!-- Performance tips -->
-		<div class="performance-tips card mt-8">
-			<h3 class="text-lg font-semibold text-gray-800 mb-4">💡 Tips for Better Scores</h3>
-			<ul class="text-gray-600 space-y-2">
-				<li>• Look for architectural styles and building designs</li>
-				<li>• Pay attention to vegetation and landscape features</li>
-				<li>• Notice road signs, license plates, and text in images</li>
-				<li>• Consider the lighting and shadows for time of day clues</li>
-				<li>• Look for distinctive landmarks or geographical features</li>
-			</ul>
 		</div>
 	</div>
 </div>

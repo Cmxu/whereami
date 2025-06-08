@@ -405,6 +405,21 @@
 		if (mapComponent) {
 			mapComponent.resetMapView();
 		}
+
+		// Check if this round already has a guess (from resumed game)
+		if ($currentRound.userGuess && $currentRound.score !== undefined) {
+			const isLastRound = $gameState.currentRound === $gameState.rounds.length - 1;
+			guessResult = {
+				userGuess: $currentRound.userGuess,
+				score: $currentRound.score,
+				distance: $currentRound.distance || 0,
+				formattedDistance: $currentRound.formattedDistance || 0,
+				formattedDistanceUnit: $currentRound.formattedDistanceUnit || 'km',
+				isLastRound
+			};
+			showResult = true;
+			selectedLocation = $currentRound.userGuess;
+		}
 	}
 
 	// Accessibility: Add keyboard support
