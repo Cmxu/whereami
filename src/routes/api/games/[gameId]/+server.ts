@@ -94,6 +94,37 @@ async function saveUserData(userId: string, userData: any, env: any): Promise<bo
 	}
 }
 
+// Helper function to get user profile data including display name and profile picture
+async function getUserProfile(userId: string, env: any): Promise<{
+	displayName: string;
+	profilePicture: string | null;
+	createdAt: string | null;
+}> {
+	try {
+		const userData = await env.USER_DATA.get(`user:${userId}`);
+		if (userData) {
+			const profile = JSON.parse(userData);
+			return {
+				displayName: profile.displayName || profile.username || profile.email || 'Anonymous',
+				profilePicture: profile.profilePicture || null,
+				createdAt: profile.createdAt || null
+			};
+		}
+		return {
+			displayName: 'Anonymous',
+			profilePicture: null,
+			createdAt: null
+		};
+	} catch (error) {
+		console.error('Error getting user profile:', error);
+		return {
+			displayName: 'Anonymous',
+			profilePicture: null,
+			createdAt: null
+		};
+	}
+}
+
 export const GET = async ({ params, url, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
@@ -192,8 +223,19 @@ export const GET = async ({ params, url, platform }: RequestEvent) => {
 			});
 		}
 
-		// Return game metadata
-		return json(game, {
+		// Get creator profile data and enrich game metadata
+		const creatorUserId = game.createdBy; // Store original user ID
+		const creatorProfile = await getUserProfile(game.createdBy, env);
+		const enrichedGame = {
+			...game,
+			createdBy: creatorProfile.displayName,
+			createdByUserId: creatorUserId, // Keep the original user ID
+			creatorProfilePicture: creatorProfile.profilePicture,
+			creatorJoinedAt: creatorProfile.createdAt
+		};
+
+		// Return enriched game metadata
+		return json(enrichedGame, {
 			headers: { 'Access-Control-Allow-Origin': '*' }
 		});
 	} catch (error) {

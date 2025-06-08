@@ -112,25 +112,9 @@
 	}
 
 	async function loadGameThumbnails(games: CustomGame[]) {
-		// Load thumbnails for the first 3 images of each game
-		const thumbnailPromises = games.map(async (game) => {
-			try {
-				const response = await fetch(`/api/games/${game.id}/images`);
-				if (response.ok) {
-					const images = await response.json();
-					const thumbnails = images
-						.slice(0, 3)
-						.map((img: any) => `/api/images/${img.id}/${img.filename}?w=150&h=100&fit=cover&q=80`);
-					gameThumbnails[game.id] = thumbnails;
-				}
-			} catch (error) {
-				console.error(`Failed to load thumbnails for game ${game.id}:`, error);
-				gameThumbnails[game.id] = [];
-			}
-		});
-
-		await Promise.all(thumbnailPromises);
-		gameThumbnails = { ...gameThumbnails };
+		// This function is kept for backward compatibility but thumbnails are no longer displayed
+		// Games now use creator profile pictures instead
+		gameThumbnails = {};
 	}
 
 	function switchGameFilter(filter: GameFilter) {
@@ -401,40 +385,43 @@
 							class="game-card rounded-lg border overflow-hidden shadow-sm hover:shadow-md transition-shadow"
 							style="background-color: var(--bg-primary); border-color: var(--border-color);"
 						>
-							<!-- Game Thumbnails -->
-							{#if gameThumbnails[game.id] && gameThumbnails[game.id].length > 0}
-								<div class="game-thumbnails flex h-24 overflow-hidden">
-									{#each gameThumbnails[game.id] as thumbnail, index}
-										<div class="flex-1 relative">
+							<!-- Creator Profile Header -->
+							<div class="creator-profile-header p-4 border-b" style="border-color: var(--border-color);">
+								<div class="flex items-center space-x-3">
+									<!-- Creator Avatar -->
+									<div class="creator-avatar w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+										{#if game.creatorProfilePicture}
 											<img
-												src={thumbnail}
-												alt="Game preview {index + 1}"
+												src={`/api/images/${game.creatorProfilePicture}`}
+												alt="{game.createdBy}'s profile"
 												class="w-full h-full object-cover"
 												loading="lazy"
 											/>
-										</div>
-									{/each}
-									{#if gameThumbnails[game.id].length < 3}
-										{#each Array(3 - gameThumbnails[game.id].length) as _, index}
+										{:else}
 											<div
-												class="flex-1 bg-gray-200 flex items-center justify-center"
-												style="background-color: var(--bg-tertiary);"
+												class="w-full h-full bg-blue-500 flex items-center justify-center text-white font-semibold"
 											>
-												<span class="text-xs text-gray-400">📷</span>
+												{game.createdBy.charAt(0).toUpperCase()}
 											</div>
-										{/each}
-									{/if}
-								</div>
-							{:else}
-								<div
-									class="game-thumbnails flex h-24 overflow-hidden bg-gray-200"
-									style="background-color: var(--bg-tertiary);"
-								>
-									<div class="w-full flex items-center justify-center">
-										<span class="text-gray-400">📷 {game.imageIds.length} photos</span>
+										{/if}
+									</div>
+									
+									<!-- Creator Info -->
+									<div class="flex-1 min-w-0">
+										<p class="text-sm font-medium truncate" style="color: var(--text-primary);">
+											{game.createdBy}
+										</p>
+										<p class="text-xs" style="color: var(--text-secondary);">
+											{formatDate(game.createdAt)}
+										</p>
+									</div>
+									
+									<!-- Game Stats Badge -->
+									<div class="game-stats-badge bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
+										📷 {game.imageIds.length} photos
 									</div>
 								</div>
-							{/if}
+							</div>
 
 							<div class="game-header p-4 border-b" style="border-color: var(--border-color);">
 								<h3 class="font-semibold mb-1" style="color: var(--text-primary);">{game.name}</h3>
@@ -446,10 +433,7 @@
 							</div>
 
 							<div class="game-info p-4 space-y-3">
-								<div class="game-stats flex justify-between text-sm">
-									<span style="color: var(--text-secondary);">{game.imageIds.length} photos</span>
-									<span style="color: var(--text-secondary);">By {game.createdBy}</span>
-								</div>
+								<!-- Creator and photo count now shown in header -->
 
 								{#if game.difficulty}
 									<div
@@ -561,40 +545,44 @@
 							class="game-card rounded-lg border overflow-hidden shadow-sm hover:shadow-md transition-shadow"
 							style="background-color: var(--bg-primary); border-color: var(--border-color);"
 						>
-							<!-- Game Thumbnails -->
-							{#if gameThumbnails[game.id] && gameThumbnails[game.id].length > 0}
-								<div class="game-thumbnails flex h-24 overflow-hidden">
-									{#each gameThumbnails[game.id] as thumbnail, index}
-										<div class="flex-1 relative">
+							<!-- Creator Profile Header -->
+							<div class="creator-profile-header p-4 border-b" style="border-color: var(--border-color);">
+								<div class="flex items-center space-x-3">
+									<!-- Creator Avatar -->
+									<div class="creator-avatar w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+										{#if game.creatorProfilePicture}
 											<img
-												src={thumbnail}
-												alt="Game preview {index + 1}"
+												src={`/api/images/${game.creatorProfilePicture}`}
+												alt="{game.createdBy}'s profile"
 												class="w-full h-full object-cover"
 												loading="lazy"
 											/>
-										</div>
-									{/each}
-									{#if gameThumbnails[game.id].length < 3}
-										{#each Array(3 - gameThumbnails[game.id].length) as _, index}
+										{:else}
 											<div
-												class="flex-1 bg-gray-200 flex items-center justify-center"
-												style="background-color: var(--bg-tertiary);"
+												class="w-full h-full bg-blue-500 flex items-center justify-center text-white font-semibold"
 											>
-												<span class="text-xs text-gray-400">📷</span>
+												{game.createdBy.charAt(0).toUpperCase()}
 											</div>
-										{/each}
-									{/if}
-								</div>
-							{:else}
-								<div
-									class="game-thumbnails flex h-24 overflow-hidden bg-gray-200"
-									style="background-color: var(--bg-tertiary);"
-								>
-									<div class="w-full flex items-center justify-center">
-										<span class="text-gray-400">📷 {game.imageIds.length} photos</span>
+										{/if}
+									</div>
+									
+									<!-- Creator Info -->
+									<div class="flex-1 min-w-0">
+										<p class="text-sm font-medium truncate" style="color: var(--text-primary);">
+											{game.createdBy}
+										</p>
+										<p class="text-xs" style="color: var(--text-secondary);">
+											{formatDate(game.createdAt)}
+										</p>
+									</div>
+									
+									<!-- Visibility Badge -->
+									<div class="visibility-badge inline-block px-2 py-1 rounded text-xs font-medium
+										{game.isPublic ? 'bg-green-100 text-green-800' : 'bg-gray-100-theme text-gray-800-theme'}">
+										{game.isPublic ? '🌍 Public' : '🔒 Private'}
 									</div>
 								</div>
-							{/if}
+							</div>
 
 							<a href="/games/{game.id}" class="game-link block">
 								<div class="game-header p-4 border-b" style="border-color: var(--border-color);">
@@ -609,18 +597,9 @@
 								</div>
 
 								<div class="game-info p-4 space-y-3">
-									<div class="game-stats flex justify-between text-sm">
+									<!-- Photo count shown in header -->
+									<div class="game-meta-info flex justify-between text-sm">
 										<span style="color: var(--text-secondary);">{game.imageIds.length} photos</span>
-										<span style="color: var(--text-secondary);"
-											>Created {formatDate(game.createdAt)}</span
-										>
-									</div>
-
-									<div
-										class="visibility-badge inline-block px-2 py-1 rounded text-xs font-medium
-										{game.isPublic ? 'bg-green-100 text-green-800' : 'bg-gray-100-theme text-gray-800-theme'}"
-									>
-										{game.isPublic ? '🌍 Public' : '🔒 Private'}
 									</div>
 
 									{#if game.difficulty}
@@ -745,12 +724,24 @@
 		transform: translateY(-2px);
 	}
 
-	.game-thumbnails img {
+
+
+	.creator-profile-header {
+		background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+	}
+
+	.creator-avatar {
+		border: 2px solid #e2e8f0;
 		transition: transform 0.2s ease;
 	}
 
-	.game-card:hover .game-thumbnails img {
+	.game-card:hover .creator-avatar {
 		transform: scale(1.05);
+	}
+
+	.game-stats-badge {
+		background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+		border: 1px solid #93c5fd;
 	}
 
 	.line-clamp-2 {

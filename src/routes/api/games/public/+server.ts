@@ -13,18 +13,34 @@ async function getGameMetadata(gameId: string, env: any): Promise<CustomGame | n
 	}
 }
 
-// Helper function to get user display name
-async function getUserDisplayName(userId: string, env: any): Promise<string> {
+// Helper function to get user profile data including display name and profile picture
+async function getUserProfile(userId: string, env: any): Promise<{
+	displayName: string;
+	profilePicture: string | null;
+	createdAt: string | null;
+}> {
 	try {
 		const userData = await env.USER_DATA.get(`user:${userId}`);
 		if (userData) {
 			const profile = JSON.parse(userData);
-			return profile.displayName || profile.username || profile.email || 'Anonymous';
+			return {
+				displayName: profile.displayName || profile.username || profile.email || 'Anonymous',
+				profilePicture: profile.profilePicture || null,
+				createdAt: profile.createdAt || null
+			};
 		}
-		return 'Anonymous';
+		return {
+			displayName: 'Anonymous',
+			profilePicture: null,
+			createdAt: null
+		};
 	} catch (error) {
-		console.error('Error getting user display name:', error);
-		return 'Anonymous';
+		console.error('Error getting user profile:', error);
+		return {
+			displayName: 'Anonymous',
+			profilePicture: null,
+			createdAt: null
+		};
 	}
 }
 
@@ -155,18 +171,20 @@ export const GET = async ({ url, platform }: RequestEvent) => {
 		// Apply pagination
 		const paginatedGames = validGames.slice(offset, offset + limit);
 
-		// Get display names for all creators
+		// Get profile data for all creators
 		const creatorIds = [...new Set(paginatedGames.map((game) => game.createdBy))];
-		const displayNamePromises = creatorIds.map((id) => getUserDisplayName(id, env));
-		const displayNames = await Promise.all(displayNamePromises);
-		const creatorDisplayNames = Object.fromEntries(
-			creatorIds.map((id, index) => [id, displayNames[index]])
+		const profilePromises = creatorIds.map((id) => getUserProfile(id, env));
+		const profiles = await Promise.all(profilePromises);
+		const creatorProfiles = Object.fromEntries(
+			creatorIds.map((id, index) => [id, profiles[index]])
 		);
 
-		// Add computed fields and replace createdBy with display name
+		// Add computed fields and creator profile data
 		const enrichedGames = paginatedGames.map((game) => ({
 			...game,
-			createdBy: creatorDisplayNames[game.createdBy] || 'Anonymous',
+			createdBy: creatorProfiles[game.createdBy]?.displayName || 'Anonymous',
+			creatorProfilePicture: creatorProfiles[game.createdBy]?.profilePicture || null,
+			creatorJoinedAt: creatorProfiles[game.createdBy]?.createdAt || null,
 			averageRating: (game.ratingCount || 0) > 0 ? (game.rating || 0) / (game.ratingCount || 1) : 0,
 			imageCount: game.imageIds.length
 		}));

@@ -2,27 +2,23 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import type { CustomGame, GameComment } from '$lib/types';
+	import type { CustomGame } from '$lib/types';
 	import { api } from '$lib/utils/api';
 	import { initializeGame } from '$lib/stores/gameStore';
 	import ShareGame from '$lib/components/ShareGame.svelte';
-	import GameRating from '$lib/components/GameRating.svelte';
+	import GameLeaderboard from '$lib/components/GameLeaderboard.svelte';
 
 	let game: CustomGame | null = null;
 	let loading = true;
 	let error = '';
-	let comments: GameComment[] = [];
-	let loadingComments = false;
-	let commentsError = '';
-	let newComment = '';
-	let submittingComment = false;
+	let creatorGameCount: number | null = null;
+
 	let showShareModal = false;
 
 	$: gameId = $page.params.gameId;
 
 	onMount(() => {
 		loadGameDetails();
-		loadComments();
 	});
 
 	async function loadGameDetails() {
@@ -30,6 +26,11 @@
 			loading = true;
 			error = '';
 			game = await api.getCustomGame(gameId);
+			
+			// Load creator's game count
+			if (game?.createdByUserId) {
+				loadCreatorGameCount(game.createdByUserId);
+			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to load game';
 		} finally {
@@ -37,32 +38,18 @@
 		}
 	}
 
-	async function loadComments() {
+	async function loadCreatorGameCount(creatorId: string) {
 		try {
-			loadingComments = true;
-			commentsError = '';
-			comments = await api.getGameComments(gameId);
+			// Use the existing API to get user games
+			const creatorGames = await api.getUserGames(creatorId);
+			creatorGameCount = creatorGames.length;
 		} catch (err) {
-			commentsError = err instanceof Error ? err.message : 'Failed to load comments';
-		} finally {
-			loadingComments = false;
+			console.warn('Failed to load creator game count:', err);
+			creatorGameCount = null;
 		}
 	}
 
-	async function submitComment() {
-		if (!newComment.trim() || submittingComment) return;
 
-		try {
-			submittingComment = true;
-			const comment = await api.addComment(gameId, newComment.trim());
-			comments = [comment, ...comments];
-			newComment = '';
-		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Failed to submit comment');
-		} finally {
-			submittingComment = false;
-		}
-	}
 
 	async function playGame() {
 		if (!game) return;
@@ -79,10 +66,7 @@
 		}
 	}
 
-	function handleRated(event: any) {
-		if (event.detail.success && game) {
-		}
-	}
+
 
 	function handleShared(event: any) {
 		if (event.detail.success) {
@@ -119,13 +103,13 @@
 	<meta property="og:type" content="website" />
 </svelte:head>
 
-<div class="game-detail-page min-h-screen bg-gray-50">
+<div class="game-detail-page min-h-screen" style="background-color: var(--bg-secondary);">
 	<!-- Loading State -->
 	{#if loading}
 		<div class="loading-container flex items-center justify-center min-h-screen">
 			<div class="text-center">
 				<div class="loading-spinner mx-auto mb-4"></div>
-				<p class="text-gray-600">Loading game details...</p>
+				<p style="color: var(--text-secondary);">Loading game details...</p>
 			</div>
 		</div>
 	{/if}
@@ -135,8 +119,8 @@
 		<div class="error-container flex items-center justify-center min-h-screen">
 			<div class="text-center">
 				<div class="text-red-500 text-6xl mb-4">⚠️</div>
-				<h1 class="text-2xl font-bold text-gray-800 mb-2">Game Not Found</h1>
-				<p class="text-gray-600 mb-6">{error}</p>
+				<h1 class="text-2xl font-bold mb-2" style="color: var(--text-primary);">Game Not Found</h1>
+				<p class="mb-6" style="color: var(--text-secondary);">{error}</p>
 				<div class="flex gap-3 justify-center">
 					<button class="btn-secondary" on:click={() => goto('/browse')}> ← Browse Games </button>
 					<button class="btn-primary" on:click={() => goto('/play')}> Play Random Game </button>
@@ -149,17 +133,17 @@
 	{#if game && !loading}
 		<div class="game-content">
 			<!-- Header -->
-			<div class="game-header bg-white shadow-sm">
+			<div class="game-header shadow-sm" style="background-color: var(--bg-primary);">
 				<div class="max-w-4xl mx-auto p-6">
 					<div class="flex justify-between items-start mb-4">
 						<div class="flex-1">
-							<h1 class="text-3xl font-bold text-gray-800 mb-2">{game.name}</h1>
-							<p class="text-gray-600 text-lg mb-4">
+							<h1 class="text-3xl font-bold mb-2" style="color: var(--text-primary);">{game.name}</h1>
+							<p class="text-lg mb-4" style="color: var(--text-secondary);">
 								{game.description || 'A custom geography game'}
 							</p>
 
 							<!-- Game Meta -->
-							<div class="game-meta flex flex-wrap items-center gap-4 text-sm text-gray-500">
+							<div class="game-meta flex flex-wrap items-center gap-4 text-sm" style="color: var(--text-tertiary);">
 								<div class="flex items-center gap-1">
 									<span>📸</span>
 									<span>{game.imageIds.length} photos</span>
@@ -188,7 +172,7 @@
 							{#if game.tags && game.tags.length > 0}
 								<div class="game-tags mt-3 flex flex-wrap gap-2">
 									{#each game.tags as tag}
-										<span class="tag px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+										<span class="tag px-2 py-1 text-xs rounded-full bg-blue-100-theme text-blue-700-theme">
 											{tag}
 										</span>
 									{/each}
@@ -205,180 +189,133 @@
 						</div>
 					</div>
 
-					<!-- Rating -->
-					<div class="rating-section">
-						<GameRating {game} readonly={false} size="md" on:rated={handleRated} />
-					</div>
+
 				</div>
 			</div>
 
 			<!-- Main Content -->
-			<div class="main-content max-w-4xl mx-auto p-6">
-				<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-					<!-- Game Info -->
-					<div class="game-info lg:col-span-2">
-						<div class="card p-6">
-							<h2 class="text-xl font-semibold text-gray-800 mb-4">About This Game</h2>
+			<div class="main-content max-w-6xl mx-auto p-6">
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+					<!-- Left Column: Game Info -->
+					<div class="game-info-column">
+						<!-- About This Game -->
+						<div class="card p-6 mb-6">
+							<h2 class="text-xl font-semibold mb-4" style="color: var(--text-primary);">About This Game</h2>
 
 							{#if game.description}
-								<p class="text-gray-700 mb-6">{game.description}</p>
+								<p class="mb-6" style="color: var(--text-secondary);">{game.description}</p>
 							{/if}
 
 							<div class="game-stats grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-								<div class="stat-item text-center p-3 bg-gray-50 rounded-lg">
+								<div class="stat-item text-center p-3 rounded-lg" style="background-color: var(--bg-tertiary);">
 									<div class="stat-value text-2xl font-bold text-blue-600">
 										{game.imageIds.length}
 									</div>
-									<div class="stat-label text-sm text-gray-600">Locations</div>
+									<div class="stat-label text-sm" style="color: var(--text-secondary);">Locations</div>
 								</div>
-								<div class="stat-item text-center p-3 bg-gray-50 rounded-lg">
+								<div class="stat-item text-center p-3 rounded-lg" style="background-color: var(--bg-tertiary);">
 									<div class="stat-value text-2xl font-bold text-green-600">
 										{formatPlayCount(game.playCount)}
 									</div>
-									<div class="stat-label text-sm text-gray-600">Plays</div>
+									<div class="stat-label text-sm" style="color: var(--text-secondary);">Plays</div>
 								</div>
-								<div class="stat-item text-center p-3 bg-gray-50 rounded-lg">
+								<div class="stat-item text-center p-3 rounded-lg" style="background-color: var(--bg-tertiary);">
 									<div class="stat-value text-2xl font-bold text-yellow-500">
 										{game.rating ? game.rating.toFixed(1) : '—'}
 									</div>
-									<div class="stat-label text-sm text-gray-600">Rating</div>
+									<div class="stat-label text-sm" style="color: var(--text-secondary);">Rating</div>
 								</div>
-								<div class="stat-item text-center p-3 bg-gray-50 rounded-lg">
+								<div class="stat-item text-center p-3 rounded-lg" style="background-color: var(--bg-tertiary);">
 									<div class="stat-value text-2xl font-bold text-purple-600">
 										{game.ratingCount || 0}
 									</div>
-									<div class="stat-label text-sm text-gray-600">Reviews</div>
+									<div class="stat-label text-sm" style="color: var(--text-secondary);">Reviews</div>
 								</div>
 							</div>
-
-							<div class="play-section">
-								<h3 class="text-lg font-semibold text-gray-800 mb-3">Ready to Play?</h3>
-								<p class="text-gray-600 mb-4">
-									Test your geography knowledge with {game.imageIds.length} carefully selected locations.
-									Can you guess where each photo was taken?
-								</p>
-								<button class="btn-primary w-full text-lg py-3" on:click={playGame}>
-									🌍 Start Playing Now
-								</button>
-							</div>
 						</div>
-					</div>
 
-					<!-- Sidebar -->
-					<div class="sidebar">
-						<!-- Creator Info -->
+						<!-- Game Creator -->
 						<div class="card p-6 mb-6">
-							<h3 class="text-lg font-semibold text-gray-800 mb-3">Created by</h3>
-							<div class="creator-info flex items-center gap-3">
+							<h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Game Creator</h3>
+							<div class="creator-info flex items-center gap-4 mb-4">
 								<div
-									class="creator-avatar w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold"
+									class="creator-avatar w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg"
 								>
 									{game.createdBy.charAt(0).toUpperCase()}
 								</div>
-								<div>
-									<div class="creator-name font-medium text-gray-800">{game.createdBy}</div>
-									<div class="creator-date text-sm text-gray-500">{formatDate(game.createdAt)}</div>
+								<div class="flex-1">
+									<div class="creator-name font-semibold text-lg" style="color: var(--text-primary);">{game.createdBy}</div>
+									<div class="creator-date text-sm" style="color: var(--text-tertiary);">Created {formatDate(game.createdAt)}</div>
+								</div>
+							</div>
+							
+							<!-- Creator Stats -->
+							<div class="creator-stats grid grid-cols-2 gap-3 pt-3 border-t" style="border-color: var(--border-color);">
+								<div class="stat text-center">
+									<div class="stat-value text-xl font-bold text-blue-600">{creatorGameCount || '...'}</div>
+									<div class="stat-label text-xs" style="color: var(--text-tertiary);">Games</div>
+								</div>
+								<div class="stat text-center">
+									<div class="stat-value text-xl font-bold text-green-600">{formatPlayCount(game.playCount)}</div>
+									<div class="stat-label text-xs" style="color: var(--text-tertiary);">Plays</div>
 								</div>
 							</div>
 						</div>
 
-						<!-- Quick Actions -->
+						<!-- Game Details -->
 						<div class="card p-6">
-							<h3 class="text-lg font-semibold text-gray-800 mb-3">Quick Actions</h3>
-							<div class="actions-list space-y-3">
-								<button class="btn-secondary w-full justify-center" on:click={playGame}>
-									🎮 Play Game
-								</button>
-								<button
-									class="btn-secondary w-full justify-center"
-									on:click={() => (showShareModal = true)}
-								>
-									🔗 Share with Friends
-								</button>
-								<button
-									class="btn-secondary w-full justify-center"
-									on:click={() => goto('/browse')}
-								>
-									🌍 Browse More Games
-								</button>
+							<h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">Game Details</h3>
+							
+							<!-- Game Info Grid -->
+							<div class="game-details-grid space-y-3">
+								<div class="detail-row flex justify-between items-center py-2 border-b" style="border-color: var(--border-color);">
+									<span class="detail-label text-sm" style="color: var(--text-secondary);">Difficulty</span>
+									<span class="detail-value font-medium capitalize" style="color: var(--text-primary);">
+										{game.difficulty || 'Not specified'}
+									</span>
+								</div>
+								
+								<div class="detail-row flex justify-between items-center py-2 border-b" style="border-color: var(--border-color);">
+									<span class="detail-label text-sm" style="color: var(--text-secondary);">Locations</span>
+									<span class="detail-value font-medium" style="color: var(--text-primary);">
+										{game.imageIds.length} photos
+									</span>
+								</div>
+								
+								<div class="detail-row flex justify-between items-center py-2 border-b" style="border-color: var(--border-color);">
+									<span class="detail-label text-sm" style="color: var(--text-secondary);">Rating</span>
+									<span class="detail-value font-medium" style="color: var(--text-primary);">
+										{game.rating ? `${game.rating.toFixed(1)} ⭐` : 'No ratings yet'}
+									</span>
+								</div>
+								
+								<div class="detail-row flex justify-between items-center py-2">
+									<span class="detail-label text-sm" style="color: var(--text-secondary);">Total Plays</span>
+									<span class="detail-value font-medium" style="color: var(--text-primary);">
+										{formatPlayCount(game.playCount)}
+									</span>
+								</div>
 							</div>
+
+							<!-- Tags Section -->
+							{#if game.tags && game.tags.length > 0}
+								<div class="tags-section mt-4 pt-4 border-t" style="border-color: var(--border-color);">
+									<div class="text-sm font-medium mb-2" style="color: var(--text-secondary);">Tags</div>
+									<div class="flex flex-wrap gap-2">
+										{#each game.tags as tag}
+											<span class="tag px-2 py-1 text-xs rounded-full bg-blue-100-theme text-blue-700-theme">
+												{tag}
+											</span>
+										{/each}
+									</div>
+								</div>
+							{/if}
 						</div>
 					</div>
-				</div>
 
-				<!-- Comments Section -->
-				<div class="comments-section mt-12">
-					<div class="card p-6">
-						<h2 class="text-xl font-semibold text-gray-800 mb-6">Comments</h2>
-
-						<!-- Add Comment Form -->
-						<div class="add-comment mb-8">
-							<div class="flex gap-3">
-								<textarea
-									class="input-field flex-1"
-									rows="3"
-									placeholder="Share your thoughts about this game..."
-									bind:value={newComment}
-									maxlength="500"
-								></textarea>
-								<button
-									class="btn-primary self-start"
-									disabled={!newComment.trim() || submittingComment}
-									on:click={submitComment}
-								>
-									{submittingComment ? '...' : 'Post'}
-								</button>
-							</div>
-							<div class="character-count text-xs text-gray-500 mt-1 text-right">
-								{newComment.length}/500
-							</div>
-						</div>
-
-						<!-- Comments List -->
-						{#if loadingComments}
-							<div class="loading-state text-center py-8">
-								<div class="loading-spinner mx-auto mb-4"></div>
-								<p class="text-gray-600">Loading comments...</p>
-							</div>
-						{:else if commentsError}
-							<div class="error-state text-center py-8">
-								<p class="text-red-600">{commentsError}</p>
-								<button class="btn-secondary text-sm mt-2" on:click={loadComments}>
-									Try Again
-								</button>
-							</div>
-						{:else if comments.length === 0}
-							<div class="empty-comments text-center py-8">
-								<div class="text-4xl mb-4">💬</div>
-								<h3 class="text-lg font-semibold text-gray-800 mb-2">No comments yet</h3>
-								<p class="text-gray-600">Be the first to share your thoughts!</p>
-							</div>
-						{:else}
-							<div class="comments-list space-y-4">
-								{#each comments as comment}
-									<div class="comment bg-gray-50 rounded-lg p-4">
-										<div class="comment-header flex items-center gap-3 mb-2">
-											<div
-												class="commenter-avatar w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold"
-											>
-												{comment.username.charAt(0).toUpperCase()}
-											</div>
-											<div class="flex-1">
-												<div class="commenter-name font-medium text-gray-800">
-													{comment.username}
-												</div>
-												<div class="comment-date text-xs text-gray-500">
-													{formatDate(comment.createdAt)}
-												</div>
-											</div>
-										</div>
-										<div class="comment-content text-gray-700">
-											{comment.comment}
-										</div>
-									</div>
-								{/each}
-							</div>
-						{/if}
+					<!-- Right Column: Leaderboard -->
+					<div class="leaderboard-column">
+						<GameLeaderboard gameId={game.id} />
 					</div>
 				</div>
 			</div>
@@ -400,7 +337,7 @@
 	.loading-spinner {
 		width: 40px;
 		height: 40px;
-		border: 4px solid #f3f4f6;
+		border: 4px solid var(--border-color);
 		border-top: 4px solid #3b82f6;
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
@@ -413,12 +350,6 @@
 		100% {
 			transform: rotate(360deg);
 		}
-	}
-
-	.card {
-		background: white;
-		border-radius: 12px;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 	}
 
 	.tag {

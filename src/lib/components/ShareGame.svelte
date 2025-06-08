@@ -12,47 +12,22 @@
 		shared: { platform: string; success: boolean };
 	}>();
 
-	let shareUrl = '';
 	let copying = false;
-	let shareLink: any = null;
-	let generateShareLinkError = '';
+	let shareUrl = '';
 
-	const platforms = [
-		{ id: 'twitter', name: 'Twitter', icon: '🐦', color: 'bg-blue-400' },
-		{ id: 'facebook', name: 'Facebook', icon: '📘', color: 'bg-blue-600' },
-		{ id: 'reddit', name: 'Reddit', icon: '🔴', color: 'bg-orange-500' },
-		{ id: 'copy', name: 'Copy Link', icon: '📋', color: 'bg-gray-600' }
-	] as const;
-
-	async function generateShareUrl() {
-		try {
-			shareLink = await api.createShareLink(game.id);
-			shareUrl = shareLink.shareUrl;
-		} catch (err) {
-			generateShareLinkError = err instanceof Error ? err.message : 'Failed to generate share link';
-		}
+	function generateShareUrl() {
+		// Generate direct game URL instead of using share tokens
+		const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+		shareUrl = `${baseUrl}/games/${game.id}`;
 	}
 
-	async function handleShare(platform: SocialShare['platform']) {
+	async function copyShareUrl() {
 		try {
-			const share: SocialShare = {
-				platform,
-				gameId: game.id,
-				score
-			};
-
-			const content = api.generateSocialShareContent(share);
-
-			if (platform === 'copy') {
-				await copyToClipboard(content.text);
-				dispatch('shared', { platform, success: true });
-			} else {
-				window.open(content.url, '_blank', 'width=600,height=400');
-				dispatch('shared', { platform, success: true });
-			}
+			await copyToClipboard(shareUrl);
+			dispatch('shared', { platform: 'copy', success: true });
 		} catch (err) {
-			console.error('Share failed:', err);
-			dispatch('shared', { platform, success: false });
+			console.error('Copy failed:', err);
+			dispatch('shared', { platform: 'copy', success: false });
 		}
 	}
 
@@ -85,35 +60,34 @@
 	}
 
 	// Generate share URL when modal opens
-	$: if (showModal && !shareUrl && !shareLink) {
+	$: if (showModal && !shareUrl) {
 		generateShareUrl();
 	}
 </script>
 
 {#if showModal}
 	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-		<div class="bg-white rounded-xl max-w-md w-full overflow-hidden">
-			<div class="share-header p-6 border-b">
+		<div class="card rounded-xl max-w-md w-full overflow-hidden">
+			<div class="share-header p-6" style="border-bottom: 1px solid var(--border-color);">
 				<div class="flex justify-between items-center">
-					<h3 class="text-lg font-semibold text-gray-800">Share Game</h3>
-					<button class="text-gray-500 hover:text-gray-700" on:click={closeModal}> ✕ </button>
+					<h3 class="text-lg font-semibold" style="color: var(--text-primary);">Share Game</h3>
+					<button class="hover-opacity" style="color: var(--text-secondary);" on:click={closeModal}> ✕ </button>
 				</div>
-				<p class="text-sm text-gray-600 mt-1">
-					Share "{game.name}" with friends
-					{#if score !== undefined}
-						• You scored {score.toLocaleString()} points!
-					{/if}
-				</p>
+				{#if score !== undefined}
+					<p class="text-sm mt-1" style="color: var(--text-secondary);">
+						You scored {score.toLocaleString()} points!
+					</p>
+				{/if}
 			</div>
 
 			<div class="share-content p-6">
 				<!-- Game Preview -->
-				<div class="game-preview bg-gray-50 rounded-lg p-4 mb-6">
-					<h4 class="font-medium text-gray-800 mb-1">{game.name}</h4>
-					<p class="text-sm text-gray-600 mb-2">
+				<div class="game-preview rounded-lg p-4 mb-6" style="background-color: var(--bg-tertiary);">
+					<h4 class="font-medium mb-1" style="color: var(--text-primary);">{game.name}</h4>
+					<p class="text-sm mb-2" style="color: var(--text-secondary);">
 						{game.description || 'A custom geography game'}
 					</p>
-					<div class="flex items-center text-xs text-gray-500">
+					<div class="flex items-center text-xs" style="color: var(--text-tertiary);">
 						<span class="mr-3">📸 {game.imageIds.length} photos</span>
 						<span class="mr-3">🎮 {game.playCount} plays</span>
 						{#if game.rating}
@@ -124,8 +98,8 @@
 
 				<!-- Share URL -->
 				{#if shareUrl}
-					<div class="share-url mb-6">
-						<label for="share-url-input" class="block text-sm font-medium text-gray-700 mb-2">
+					<div class="share-url">
+						<label for="share-url-input" class="block text-sm font-medium mb-2" style="color: var(--text-primary);">
 							Share URL
 						</label>
 						<div class="flex gap-2">
@@ -134,86 +108,29 @@
 								type="text"
 								readonly
 								value={shareUrl}
-								class="input-field flex-1 bg-gray-50"
+								class="input-field flex-1"
+								style="background-color: var(--bg-tertiary); color: var(--text-primary); border-color: var(--border-color);"
 							/>
 							<button
-								class="btn-secondary text-sm"
+								class="btn-secondary text-sm flex items-center gap-1"
 								disabled={copying}
-								on:click={() => copyToClipboard(shareUrl)}
+								on:click={copyShareUrl}
 								aria-label="Copy share URL to clipboard"
 							>
-								{copying ? '📋' : '📋'}
+								{#if copying}
+									<span class="text-green-600">✓</span>
+									<span>Copied</span>
+								{:else}
+									<span>🔗</span>
+									<span>Copy</span>
+								{/if}
 							</button>
 						</div>
 					</div>
-				{:else if generateShareLinkError}
-					<div class="error-message mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
-						<p class="text-sm text-red-600">{generateShareLinkError}</p>
-					</div>
-				{:else}
-					<div class="loading-state mb-6 text-center">
-						<div class="loading-spinner mx-auto mb-2"></div>
-						<p class="text-sm text-gray-600">Generating share link...</p>
-					</div>
 				{/if}
-
-				<!-- Platform Buttons -->
-				<div class="share-platforms">
-					<h4 class="text-sm font-medium text-gray-700 mb-3">Share on social media</h4>
-					<div class="grid grid-cols-2 gap-3">
-						{#each platforms as platform}
-							<button
-								class="share-btn flex items-center gap-3 p-3 rounded-lg border hover:shadow-md transition-all duration-200"
-								class:opacity-50={!shareUrl && platform.id !== 'copy'}
-								disabled={!shareUrl && platform.id !== 'copy'}
-								on:click={() => handleShare(platform.id)}
-							>
-								<div
-									class="share-icon w-8 h-8 {platform.color} rounded-lg flex items-center justify-center text-white text-sm"
-								>
-									{platform.icon}
-								</div>
-								<span class="text-sm font-medium text-gray-700">{platform.name}</span>
-							</button>
-						{/each}
-					</div>
-				</div>
-
-				<!-- Additional Info -->
-				<div class="additional-info mt-6 p-3 bg-blue-50 rounded-lg">
-					<p class="text-xs text-blue-700">
-						💡 Share links are valid for 30 days and track access for analytics
-					</p>
-				</div>
 			</div>
 		</div>
 	</div>
 {/if}
 
-<style>
-	.share-btn:hover:not(:disabled) {
-		transform: translateY(-1px);
-	}
 
-	.share-icon {
-		flex-shrink: 0;
-	}
-
-	.loading-spinner {
-		width: 20px;
-		height: 20px;
-		border: 2px solid #f3f4f6;
-		border-top: 2px solid #3b82f6;
-		border-radius: 50%;
-		animation: spin 1s linear infinite;
-	}
-
-	@keyframes spin {
-		0% {
-			transform: rotate(0deg);
-		}
-		100% {
-			transform: rotate(360deg);
-		}
-	}
-</style>

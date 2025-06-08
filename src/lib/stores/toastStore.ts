@@ -22,7 +22,7 @@ export function addToast(toast: Omit<Toast, 'id'>): string {
 	const newToast: Toast = {
 		id,
 		duration: 5000,
-		position: 'top-right',
+		position: 'bottom-left',
 		dismissible: true,
 		...toast
 	};

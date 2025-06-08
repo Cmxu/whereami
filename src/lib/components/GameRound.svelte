@@ -1030,7 +1030,7 @@
 			0 10px 10px -5px rgba(0, 0, 0, 0.04);
 		white-space: nowrap;
 		border: 1px solid rgba(255, 255, 255, 0.2);
-		z-index: 100; /* Ensure it's always on top */
+		z-index: 40;
 	}
 
 	.progress-fill {

@@ -45,6 +45,7 @@ export interface CustomGame {
 	description?: string;
 	imageIds: string[];
 	createdBy: string;
+	createdByUserId?: string; // Original user ID (populated by API)
 	createdAt: string;
 	isPublic: boolean;
 	playCount: number;
@@ -53,6 +54,9 @@ export interface CustomGame {
 	tags?: string[];
 	difficulty?: 'easy' | 'medium' | 'hard';
 	shareUrl?: string;
+	// Creator profile data (populated by API)
+	creatorProfilePicture?: string | null;
+	creatorJoinedAt?: string | null;
 }
 
 export interface GameRating {

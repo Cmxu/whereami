@@ -3,7 +3,6 @@ import type {
 	CustomGame,
 	Location,
 	GameRating,
-	GameComment,
 	ShareableGame,
 	UserProfile,
 	GameSearchFilters,
@@ -367,48 +366,7 @@ export class WhereAmIAPI {
 		}
 	}
 
-	/**
-	 * Add a comment to a game (requires authentication)
-	 */
-	async addComment(gameId: string, comment: string): Promise<GameComment> {
-		if (!this.isAuthenticated) {
-			throw new Error('Authentication required to comment');
-		}
 
-		const response = await fetch(`${this.baseUrl}/games/${gameId}/comments`, {
-			method: 'POST',
-			headers: this.getHeaders(),
-			body: JSON.stringify({ comment })
-		});
-
-		if (!response.ok) {
-			if (response.status === 401) {
-				throw new Error('Please sign in to comment');
-			}
-			throw new Error('Failed to add comment');
-		}
-
-		return response.json();
-	}
-
-	/**
-	 * Get comments for a game
-	 */
-	async getGameComments(
-		gameId: string,
-		limit: number = 20,
-		offset: number = 0
-	): Promise<GameComment[]> {
-		const response = await fetch(
-			`${this.baseUrl}/games/${gameId}/comments?limit=${limit}&offset=${offset}`
-		);
-
-		if (!response.ok) {
-			throw new Error('Failed to fetch comments');
-		}
-
-		return response.json();
-	}
 
 	/**
 	 * Get user profile (requires authentication)
@@ -507,6 +465,63 @@ export class WhereAmIAPI {
 			const error = await response.json().catch(() => ({ error: 'Failed to delete game' }));
 			throw new Error(error.error || 'Failed to delete game');
 		}
+	}
+
+	/**
+	 * Submit a score after completing a game
+	 */
+	async submitScore(gameId: string, score: number, maxPossible: number, rounds: number): Promise<{
+		success: boolean;
+		isNewBest: boolean;
+	}> {
+		if (!this.isAuthenticated) {
+			throw new Error('Authentication required to submit scores');
+		}
+
+		const response = await fetch(`${this.baseUrl}/games/${gameId}/scores`, {
+			method: 'POST',
+			headers: this.getHeaders(),
+			body: JSON.stringify({
+				score,
+				maxPossible,
+				rounds
+			})
+		});
+
+		if (!response.ok) {
+			if (response.status === 401) {
+				throw new Error('Please sign in to submit scores');
+			}
+			const error = await response.json().catch(() => ({ error: 'Failed to submit score' }));
+			throw new Error(error.error || 'Failed to submit score');
+		}
+
+		const result = await response.json();
+		return {
+			success: result.success,
+			isNewBest: result.isNewBest
+		};
+	}
+
+	/**
+	 * Get leaderboard and average score for a game
+	 */
+	async getGameLeaderboard(gameId: string): Promise<{
+		averageScore: number;
+		averagePercentage: number;
+		totalPlays: number;
+		uniquePlayers: number;
+		leaderboard: Array<{
+			userId: string;
+			username: string;
+			score: number;
+			percentage: number;
+			playedAt: string;
+			rank: number;
+		}>;
+	}> {
+		const response = await fetch(`${this.baseUrl}/games/${gameId}/leaderboard`);
+		return this.handleResponse(response, 'Failed to fetch leaderboard data');
 	}
 
 	/**
