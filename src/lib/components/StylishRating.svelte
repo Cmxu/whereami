@@ -30,14 +30,17 @@
 		const fullStars = Math.floor(rating);
 		const hasHalfStar = rating % 1 >= 0.5;
 		const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-		
+
 		return '★'.repeat(fullStars) + (hasHalfStar ? '☆' : '') + '☆'.repeat(emptyStars);
 	}
 </script>
 
 {#if style === 'badge'}
 	<!-- Badge style for right-aligned placement -->
-	<div class="rating-badge inline-flex items-center gap-1 {sizeConfig[size].padding} rounded-full bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-700/30">
+	<div
+		class="rating-badge inline-flex items-center gap-1 {sizeConfig[size]
+			.padding} rounded-full bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-700/30"
+	>
 		{#if displayRating > 0}
 			<div class="flex items-center gap-1">
 				<span class="text-amber-500 {sizeConfig[size].starSize} leading-none">★</span>
@@ -72,7 +75,9 @@
 				{/if}
 			</div>
 		{:else}
-			<span class="text-gray-500 dark:text-gray-400 {sizeConfig[size].textSize}">No ratings yet</span>
+			<span class="text-gray-500 dark:text-gray-400 {sizeConfig[size].textSize}"
+				>No ratings yet</span
+			>
 		{/if}
 	</div>
 {:else}
@@ -113,4 +118,4 @@
 		background: rgba(245, 158, 11, 0.1);
 		border-color: rgba(245, 158, 11, 0.2);
 	}
-</style> 
+</style>

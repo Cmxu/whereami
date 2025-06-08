@@ -71,7 +71,7 @@ test.describe('Distance Format Test (No Auth)', () => {
 					// The distance should be a number followed by a unit (km or m)
 					// Examples: "1.5km", "250m", "12.34km"
 					const distancePattern = /^\d+(\.\d+)?(km|m)$/;
-					
+
 					if (distanceText && distancePattern.test(distanceText.trim())) {
 						console.log('✅ Distance format is correct!');
 						expect(distanceText).toMatch(distancePattern);
@@ -93,4 +93,4 @@ test.describe('Distance Format Test (No Auth)', () => {
 			expect(true).toBe(true);
 		}
 	});
-}); 
+});

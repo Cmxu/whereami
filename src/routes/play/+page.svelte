@@ -56,7 +56,7 @@
 
 		// Check if there's a game to resume or start
 		checkForSavedGame();
-		
+
 		// If no active game and no pending settings, redirect to home after a short delay
 		setTimeout(() => {
 			if (!$isGameActive && $gameState.rounds.length === 0 && !$isLoading && !$error) {
@@ -188,4 +188,4 @@
 			width: 100%;
 		}
 	}
-</style> 
+</style>

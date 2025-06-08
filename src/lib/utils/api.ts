@@ -366,8 +366,6 @@ export class WhereAmIAPI {
 		}
 	}
 
-
-
 	/**
 	 * Get user profile (requires authentication)
 	 */
@@ -470,7 +468,12 @@ export class WhereAmIAPI {
 	/**
 	 * Submit a score after completing a game
 	 */
-	async submitScore(gameId: string, score: number, maxPossible: number, rounds: number): Promise<{
+	async submitScore(
+		gameId: string,
+		score: number,
+		maxPossible: number,
+		rounds: number
+	): Promise<{
 		success: boolean;
 		isNewBest: boolean;
 	}> {

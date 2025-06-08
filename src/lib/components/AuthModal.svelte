@@ -119,13 +119,17 @@
 
 			<form on:submit|preventDefault={handleSubmit} class="space-y-4">
 				{#if error}
-					<div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded">
+					<div
+						class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded"
+					>
 						{error}
 					</div>
 				{/if}
 
 				{#if success}
-					<div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded">
+					<div
+						class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded"
+					>
 						{success}
 					</div>
 				{/if}
@@ -133,7 +137,10 @@
 				{#if mode === 'signup'}
 					<div class="grid grid-cols-2 gap-4">
 						<div>
-							<label for="firstName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+							<label
+								for="firstName"
+								class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+							>
 								First Name
 							</label>
 							<input
@@ -146,7 +153,10 @@
 							/>
 						</div>
 						<div>
-							<label for="lastName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+							<label
+								for="lastName"
+								class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+							>
 								Last Name
 							</label>
 							<input
@@ -162,7 +172,12 @@
 				{/if}
 
 				<div>
-					<label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"> Email </label>
+					<label
+						for="email"
+						class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+					>
+						Email
+					</label>
 					<input
 						id="email"
 						type="email"
@@ -176,7 +191,10 @@
 
 				{#if mode !== 'reset'}
 					<div>
-						<label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+						<label
+							for="password"
+							class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+						>
 							Password
 						</label>
 						<input
@@ -193,7 +211,10 @@
 
 				{#if mode === 'signup'}
 					<div>
-						<label for="confirmPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+						<label
+							for="confirmPassword"
+							class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+						>
 							Confirm Password
 						</label>
 						<input

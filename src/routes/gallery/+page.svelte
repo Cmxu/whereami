@@ -4,7 +4,17 @@
 	import { page } from '$app/stores';
 	import { fade, fly } from 'svelte/transition';
 	import { isAuthenticated } from '$lib/stores/authStore';
-	import UserGallery from '$lib/components/UserGallery.svelte';
+	// Dynamic import for UserGallery to reduce initial bundle size
+	let UserGallery: any;
+	let userGalleryLoaded = false;
+	
+	async function loadUserGallery() {
+		if (!UserGallery && !userGalleryLoaded) {
+			userGalleryLoaded = true;
+			const module = await import('$lib/components/UserGallery.svelte');
+			UserGallery = module.default;
+		}
+	}
 	import AuthModal from '$lib/components/AuthModal.svelte';
 	import Map from '$lib/components/Map.svelte';
 	import type { Location } from '$lib/types';
@@ -67,6 +77,8 @@
 			activeTab = 'upload';
 		} else {
 			activeTab = 'gallery';
+			// Load UserGallery component for gallery tab
+			await loadUserGallery();
 		}
 
 		// Show sign in prompt for unauthenticated users (only once on initial load)
@@ -131,6 +143,8 @@
 			activeTab = 'upload';
 		} else if (!tabParam && activeTab !== 'gallery') {
 			activeTab = 'gallery';
+			// Load UserGallery component when switching to gallery tab
+			loadUserGallery();
 		}
 	}
 
@@ -612,11 +626,21 @@
 		<div class="gallery-content">
 			{#if activeTab === 'gallery'}
 				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-					<UserGallery
-						on:createGame={handleCreateGame}
-						on:switchToUpload={handleSwitchToUpload}
-						on:switchToGallery={handleSwitchToGallery}
-					/>
+					{#if UserGallery}
+						<svelte:component 
+							this={UserGallery}
+							on:createGame={handleCreateGame}
+							on:switchToUpload={handleSwitchToUpload}
+							on:switchToGallery={handleSwitchToGallery}
+						/>
+					{:else}
+						<div class="flex items-center justify-center py-12">
+							<div class="text-center">
+								<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+								<p class="mt-2 text-sm text-gray-600">Loading gallery...</p>
+							</div>
+						</div>
+					{/if}
 				</div>
 			{:else if activeTab === 'upload'}
 				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

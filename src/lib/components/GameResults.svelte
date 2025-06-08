@@ -239,7 +239,9 @@
 							<div class="round-details">
 								<div class="font-medium text-gray-800">Round {index + 1}</div>
 								{#if round.formattedDistance}
-									<div class="text-sm text-gray-600">Distance: {round.formattedDistance}{round.formattedDistanceUnit}</div>
+									<div class="text-sm text-gray-600">
+										Distance: {round.formattedDistance}{round.formattedDistanceUnit}
+									</div>
 								{/if}
 							</div>
 						</div>
@@ -290,6 +292,7 @@
 		<div
 			class="modal-content bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden"
 			on:click|stopPropagation
+			on:keydown|stopPropagation
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="modal-title"
@@ -436,7 +439,8 @@
 						</div>
 						<div class="stat">
 							<div class="text-2xl font-bold text-orange-600">
-								{selectedRound.formattedDistance || 'N/A'}{selectedRound.formattedDistanceUnit || ''}
+								{selectedRound.formattedDistance || 'N/A'}{selectedRound.formattedDistanceUnit ||
+									''}
 							</div>
 							<div class="text-sm text-gray-600">Distance Off</div>
 						</div>

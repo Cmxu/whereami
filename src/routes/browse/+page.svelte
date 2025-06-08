@@ -387,10 +387,16 @@
 							style="background-color: var(--bg-primary); border-color: var(--border-color);"
 						>
 							<!-- Game Title Header -->
-							<div class="game-title-header p-4 border-b" style="border-color: var(--border-color);">
+							<div
+								class="game-title-header p-4 border-b"
+								style="border-color: var(--border-color);"
+							>
 								<div class="flex items-start justify-between gap-3">
 									<div class="flex-1 min-w-0">
-										<h3 class="font-semibold text-lg mb-1 truncate" style="color: var(--text-primary);">
+										<h3
+											class="font-semibold text-lg mb-1 truncate"
+											style="color: var(--text-primary);"
+										>
 											{game.name}
 										</h3>
 										{#if game.description}
@@ -399,7 +405,7 @@
 											</p>
 										{/if}
 									</div>
-									
+
 									<!-- Photo Count Badge (Right Side) -->
 									<div class="photos-section flex-shrink-0">
 										<div class="game-stats-badge px-3 py-1 rounded-full text-xs font-medium">
@@ -429,7 +435,7 @@
 											</div>
 										{/if}
 									</div>
-									
+
 									<!-- Creator Info -->
 									<div class="flex-1 min-w-0">
 										<p class="text-sm font-medium truncate" style="color: var(--text-primary);">
@@ -439,7 +445,7 @@
 											{formatDate(game.createdAt)}
 										</p>
 									</div>
-									
+
 									<!-- Rating Badge -->
 									<div class="rating-section flex-shrink-0">
 										<StylishRating {game} size="sm" style="badge" />
@@ -557,10 +563,16 @@
 						>
 							<!-- Game Title Header -->
 							<a href="/games/{game.id}" class="game-title-link block">
-								<div class="game-title-header p-4 border-b" style="border-color: var(--border-color);">
+								<div
+									class="game-title-header p-4 border-b"
+									style="border-color: var(--border-color);"
+								>
 									<div class="flex items-start justify-between gap-3">
 										<div class="flex-1 min-w-0">
-											<h3 class="font-semibold text-lg mb-1 truncate" style="color: var(--text-primary);">
+											<h3
+												class="font-semibold text-lg mb-1 truncate"
+												style="color: var(--text-primary);"
+											>
 												{game.name}
 											</h3>
 											{#if game.description}
@@ -569,7 +581,7 @@
 												</p>
 											{/if}
 										</div>
-										
+
 										<!-- Photo Count Badge (Right Side) -->
 										<div class="photos-section flex-shrink-0">
 											<div class="game-stats-badge px-3 py-1 rounded-full text-xs font-medium">
@@ -582,10 +594,15 @@
 
 							<!-- Creator Profile Section -->
 							<a href="/games/{game.id}" class="creator-link block">
-								<div class="creator-section p-4 border-b" style="border-color: var(--border-color);">
+								<div
+									class="creator-section p-4 border-b"
+									style="border-color: var(--border-color);"
+								>
 									<div class="flex items-center space-x-3">
 										<!-- Creator Avatar -->
-										<div class="creator-avatar w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+										<div
+											class="creator-avatar w-10 h-10 rounded-full overflow-hidden flex-shrink-0"
+										>
 											{#if $userProfile?.profilePicture}
 												<img
 													src={`/api/images/${$userProfile.profilePicture}`}
@@ -601,7 +618,7 @@
 												</div>
 											{/if}
 										</div>
-										
+
 										<!-- Creator Info -->
 										<div class="flex-1 min-w-0">
 											<p class="text-sm font-medium truncate" style="color: var(--text-primary);">
@@ -611,11 +628,15 @@
 												{formatDate(game.createdAt)}
 											</p>
 										</div>
-										
+
 										<!-- Visibility Badge -->
 										<div class="visibility-section flex-shrink-0">
-											<div class="visibility-badge inline-block px-2 py-1 rounded text-xs font-medium
-												{game.isPublic ? 'bg-green-100-theme text-green-800-theme' : 'bg-gray-100-theme text-gray-800-theme'}">
+											<div
+												class="visibility-badge inline-block px-2 py-1 rounded text-xs font-medium
+												{game.isPublic
+													? 'bg-green-100-theme text-green-800-theme'
+													: 'bg-gray-100-theme text-gray-800-theme'}"
+											>
 												{game.isPublic ? '🌍 Public' : '🔒 Private'}
 											</div>
 										</div>
@@ -748,8 +769,6 @@
 		transform: translateY(-2px);
 	}
 
-
-
 	.game-title-header,
 	.creator-section {
 		transition: background-color 0.2s ease;
@@ -778,6 +797,7 @@
 	.line-clamp-2 {
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
+		line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}

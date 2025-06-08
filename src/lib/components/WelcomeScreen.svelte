@@ -2,10 +2,7 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import type { GameSettings } from '$lib/types';
 	import { hasSavedGameInProgress, resumeSavedGame } from '$lib/stores/gameStore';
-	import {
-		getUserPreferences,
-		type UserPreferences
-	} from '$lib/utils/localStorage';
+	import { getUserPreferences, type UserPreferences } from '$lib/utils/localStorage';
 
 	const dispatch = createEventDispatcher<{
 		startGame: GameSettings;
@@ -124,10 +121,6 @@
 			</div>
 		</div>
 
-
-
-
-
 		<!-- Footer -->
 		<div class="welcome-footer text-xs md:text-sm">
 			<p>WhereAmI v2.0 - created by calvin</p>
@@ -142,8 +135,6 @@
 		overflow: hidden;
 		transition: background-color 0.3s ease;
 	}
-
-
 
 	.welcome-content {
 		position: relative;
@@ -227,8 +218,6 @@
 		transform: scale(1.05);
 	}
 
-
-
 	.resume-notification {
 		animation: slideInDown 0.5s ease-out;
 	}
@@ -287,8 +276,6 @@
 		.option-button {
 			padding: 1.5rem;
 		}
-
-
 	}
 
 	/* Reduced motion support */

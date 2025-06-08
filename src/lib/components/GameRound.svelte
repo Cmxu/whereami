@@ -64,11 +64,11 @@
 				const aspectRatio = imageElement.naturalHeight / imageElement.naturalWidth;
 				const targetWidth = 400; // Base width
 				const targetHeight = targetWidth * aspectRatio;
-				
+
 				// Constrain to reasonable bounds
 				const finalWidth = Math.min(600, Math.max(300, targetWidth));
 				const finalHeight = Math.min(450, Math.max(200, targetHeight));
-				
+
 				smallImageSize = { width: finalWidth, height: finalHeight };
 			}
 		}, 100);
@@ -117,7 +117,7 @@
 			if (mapComponent && mapComponent.invalidateSize) {
 				mapComponent.invalidateSize();
 			}
-			
+
 			// Restore saved map state after a brief delay to ensure map is ready
 			setTimeout(() => {
 				if (mapComponent && savedMapCenter && savedMapZoom !== null) {
@@ -560,10 +560,11 @@
 									<!-- Score on the left -->
 									<div class="score-section">
 										<div class="score-display text-lg font-bold text-blue-600">
-											{guessResult.score.toLocaleString()} <span class="text-lg font-medium text-gray-600">points</span>
+											{guessResult.score.toLocaleString()}
+											<span class="text-lg font-medium text-gray-600">points</span>
 										</div>
 									</div>
-									
+
 									<!-- Badge in the center -->
 									<div class="badge-section flex-shrink-0 mx-3">
 										<div
@@ -586,15 +587,18 @@
 														: 'Keep trying!'}
 										</div>
 									</div>
-									
+
 									<!-- Distance on the right -->
 									<div class="distance-section text-right">
 										<div class="distance-display text-lg font-bold text-blue-600">
-											{guessResult.formattedDistance} <span class="text-lg font-medium text-gray-600">{guessResult.formattedDistanceUnit}</span>
+											{guessResult.formattedDistance}
+											<span class="text-lg font-medium text-gray-600"
+												>{guessResult.formattedDistanceUnit}</span
+											>
 										</div>
 									</div>
 								</div>
-								
+
 								<button
 									class="btn-primary w-full text-sm py-2"
 									on:click={handleNextRound}
@@ -636,11 +640,7 @@
 							}}
 							aria-label="Drag to resize image or press Enter to increase size"
 						>
-							<svg
-								class="w-4 h-4 text-gray-600"
-								fill="currentColor"
-								viewBox="0 0 16 16"
-							>
+							<svg class="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 16 16">
 								<circle cx="10" cy="6" r="2" />
 								<circle cx="6" cy="6" r="2" />
 								<circle cx="10" cy="10" r="2" />
@@ -895,11 +895,7 @@
 							}}
 							aria-label="Drag to resize map or press Enter to increase size"
 						>
-							<svg
-								class="w-4 h-4 text-gray-600"
-								fill="currentColor"
-								viewBox="0 0 16 16"
-							>
+							<svg class="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 16 16">
 								<circle cx="6" cy="6" r="2" />
 								<circle cx="10" cy="6" r="2" />
 								<circle cx="6" cy="10" r="2" />
@@ -928,10 +924,11 @@
 									<!-- Score on the left -->
 									<div class="score-section">
 										<div class="score-display text-lg font-bold text-blue-600">
-											{guessResult.score.toLocaleString()} <span class="text-lg font-medium text-gray-300">points</span>
+											{guessResult.score.toLocaleString()}
+											<span class="text-lg font-medium text-gray-300">points</span>
 										</div>
 									</div>
-									
+
 									<!-- Badge in the center -->
 									<div class="badge-section flex-shrink-0 mx-2">
 										<div
@@ -954,11 +951,14 @@
 														: 'Keep trying!'}
 										</div>
 									</div>
-									
+
 									<!-- Distance on the right -->
 									<div class="distance-section text-right">
 										<div class="distance-display text-lg font-bold text-blue-600">
-											{guessResult.formattedDistance} <span class="text-lg font-medium text-gray-300">{guessResult.formattedDistanceUnit}</span>
+											{guessResult.formattedDistance}
+											<span class="text-lg font-medium text-gray-300"
+												>{guessResult.formattedDistanceUnit}</span
+											>
 										</div>
 									</div>
 								</div>
@@ -1221,7 +1221,8 @@
 		gap: 0.5rem;
 	}
 
-	.score-section, .distance-section {
+	.score-section,
+	.distance-section {
 		flex: 0 0 auto; /* Don't grow or shrink, use natural width */
 		min-width: 0; /* Allow text truncation if needed */
 	}

@@ -156,23 +156,35 @@
 							Game Performance
 						</h3>
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<div class="text-center p-4 rounded-lg" style="background-color: var(--bg-secondary);">
+							<div
+								class="text-center p-4 rounded-lg"
+								style="background-color: var(--bg-secondary);"
+							>
 								<div class="text-2xl font-bold text-blue-600 mb-2">{localStats.totalGames}</div>
 								<div class="text-sm" style="color: var(--text-secondary);">Games Played</div>
 							</div>
-							<div class="text-center p-4 rounded-lg" style="background-color: var(--bg-secondary);">
+							<div
+								class="text-center p-4 rounded-lg"
+								style="background-color: var(--bg-secondary);"
+							>
 								<div class="text-2xl font-bold text-green-600 mb-2">
 									{localStats.averageScore.toLocaleString()}
 								</div>
 								<div class="text-sm" style="color: var(--text-secondary);">Avg Score</div>
 							</div>
-							<div class="text-center p-4 rounded-lg" style="background-color: var(--bg-secondary);">
+							<div
+								class="text-center p-4 rounded-lg"
+								style="background-color: var(--bg-secondary);"
+							>
 								<div class="text-2xl font-bold text-purple-600 mb-2">
 									{localStats.bestScore.toLocaleString()}
 								</div>
 								<div class="text-sm" style="color: var(--text-secondary);">Best Score</div>
 							</div>
-							<div class="text-center p-4 rounded-lg" style="background-color: var(--bg-secondary);">
+							<div
+								class="text-center p-4 rounded-lg"
+								style="background-color: var(--bg-secondary);"
+							>
 								<div class="text-2xl font-bold text-orange-600 mb-2">
 									{localStats.averageAccuracy}%
 								</div>
@@ -187,7 +199,9 @@
 						</h3>
 						<div class="text-center py-8">
 							<div class="text-4xl mb-4">🎮</div>
-							<p style="color: var(--text-secondary);">Start playing games to see your performance stats!</p>
+							<p style="color: var(--text-secondary);">
+								Start playing games to see your performance stats!
+							</p>
 						</div>
 					</div>
 				{/if}

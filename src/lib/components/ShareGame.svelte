@@ -71,7 +71,9 @@
 			<div class="share-header p-6" style="border-bottom: 1px solid var(--border-color);">
 				<div class="flex justify-between items-center">
 					<h3 class="text-lg font-semibold" style="color: var(--text-primary);">Share Game</h3>
-					<button class="hover-opacity" style="color: var(--text-secondary);" on:click={closeModal}> ✕ </button>
+					<button class="hover-opacity" style="color: var(--text-secondary);" on:click={closeModal}>
+						✕
+					</button>
 				</div>
 				{#if score !== undefined}
 					<p class="text-sm mt-1" style="color: var(--text-secondary);">
@@ -99,7 +101,11 @@
 				<!-- Share URL -->
 				{#if shareUrl}
 					<div class="share-url">
-						<label for="share-url-input" class="block text-sm font-medium mb-2" style="color: var(--text-primary);">
+						<label
+							for="share-url-input"
+							class="block text-sm font-medium mb-2"
+							style="color: var(--text-primary);"
+						>
 							Share URL
 						</label>
 						<div class="flex gap-2">
@@ -132,5 +138,3 @@
 		</div>
 	</div>
 {/if}
-
-

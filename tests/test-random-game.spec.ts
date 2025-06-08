@@ -61,9 +61,7 @@ test.describe('Random Game Functionality', () => {
 
 	test('should handle API endpoint directly', async ({ page }) => {
 		// Test the API endpoint directly
-		const response = await page.request.get(
-			'https://geo.cmxu.io/api/images/random?count=5'
-		);
+		const response = await page.request.get('https://geo.cmxu.io/api/images/random?count=5');
 
 		console.log(`Response status: ${response.status()}`);
 

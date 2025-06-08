@@ -42,11 +42,11 @@ test.describe('Browse Page Creator Profile Improvements', () => {
 
 		if (gameCount > 0) {
 			const firstGameCard = gameCards.first();
-			
+
 			// Check for creator name
 			const creatorName = firstGameCard.locator('.creator-profile-header p').first();
 			await expect(creatorName).toBeVisible();
-			
+
 			// Check for creation date
 			const creationDate = firstGameCard.locator('.creator-profile-header p').nth(1);
 			await expect(creationDate).toBeVisible();
@@ -64,7 +64,7 @@ test.describe('Browse Page Creator Profile Improvements', () => {
 
 		if (gameCount > 0) {
 			const firstGameCard = gameCards.first();
-			
+
 			// Check that game card has proper structure
 			await expect(firstGameCard.locator('.creator-profile-header')).toBeVisible();
 			await expect(firstGameCard.locator('.game-header')).toBeVisible();
@@ -99,4 +99,4 @@ test.describe('Browse Page Creator Profile Improvements', () => {
 			console.log('✅ Responsive design maintained on desktop');
 		}
 	});
-}); 
+});

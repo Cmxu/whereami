@@ -56,7 +56,7 @@ test.describe('Continue Game Popup', () => {
 		await page.click('text=Quick Game');
 		await page.waitForURL('**/play');
 		await page.waitForLoadState('networkidle');
-		
+
 		await expect(page.locator('button:has-text("← Exit")')).toBeVisible();
 		await page.click('button:has-text("← Exit")');
 		await page.waitForURL('**/');
@@ -79,7 +79,7 @@ test.describe('Continue Game Popup', () => {
 		await page.click('text=Quick Game');
 		await page.waitForURL('**/play');
 		await page.waitForLoadState('networkidle');
-		
+
 		await page.click('button:has-text("← Exit")');
 		await page.waitForURL('**/');
 		await page.waitForLoadState('networkidle');
@@ -97,4 +97,4 @@ test.describe('Continue Game Popup', () => {
 		// The popup should still be there since we didn't complete the game
 		await expect(page.locator('.resume-notification')).toBeVisible();
 	});
-}); 
+});

@@ -50,14 +50,14 @@ test.describe('Play Tab Graying', () => {
 		const quickGameButton = page.locator('button').filter({ hasText: 'Quick Game' });
 		if (await quickGameButton.isVisible()) {
 			await quickGameButton.click();
-			
+
 			// Wait for game to initialize
 			await page.waitForTimeout(2000);
-			
+
 			// Check that the play tab is now active (not grayed out)
 			const playLinkActive = page.locator('a[href="/play"]').filter({ hasText: '🎮 Play' });
 			await expect(playLinkActive).toBeVisible();
-			
+
 			// Check that the disabled version is not visible
 			const playTabDisabled = page.locator('.nav-link-disabled').filter({ hasText: '🎮 Play' });
 			await expect(playTabDisabled).not.toBeVisible();
@@ -73,14 +73,14 @@ test.describe('Play Tab Graying', () => {
 		const quickGameButton = page.locator('button').filter({ hasText: 'Quick Game' });
 		if (await quickGameButton.isVisible()) {
 			await quickGameButton.click();
-			
+
 			// Wait for game to initialize and complete it quickly
 			await page.waitForTimeout(2000);
-			
+
 			// If we're in a game, navigate to home to reset
 			await page.goto('/');
 			await page.waitForLoadState('networkidle');
-			
+
 			// The play tab should be grayed out again
 			const playTabDisabled = page.locator('.nav-link-disabled').filter({ hasText: '🎮 Play' });
 			await expect(playTabDisabled).toBeVisible();
@@ -96,18 +96,18 @@ test.describe('Play Tab Graying', () => {
 		const quickGameButton = page.locator('button').filter({ hasText: 'Quick Game' });
 		if (await quickGameButton.isVisible()) {
 			await quickGameButton.click();
-			
+
 			// Wait for game to initialize
 			await page.waitForTimeout(2000);
-			
+
 			// Click on the active play tab
 			const playLinkActive = page.locator('a[href="/play"]').filter({ hasText: '🎮 Play' });
 			if (await playLinkActive.isVisible()) {
 				await playLinkActive.click();
-				
+
 				// Should navigate to play page
 				await expect(page).toHaveURL('/play');
 			}
 		}
 	});
-}); 
+});

@@ -8,7 +8,12 @@ import type {
 	GuessResult,
 	GameSession
 } from '$lib/types';
-import { processGuess, processGuessWithOptimalLocation, calculateTotalScore, generateSessionId } from '$lib/utils/gameLogic';
+import {
+	processGuess,
+	processGuessWithOptimalLocation,
+	calculateTotalScore,
+	generateSessionId
+} from '$lib/utils/gameLogic';
 import { api } from '$lib/utils/api';
 import {
 	saveCurrentGame,
@@ -264,17 +269,23 @@ export function proceedToNextRound() {
 			hasSavedGameInProgress.set(false);
 
 			// Submit score to leaderboard if it's a custom game and user is authenticated
-			if (currentGameSettings.gameMode === 'custom' && currentGameSettings.gameId && api.isAuthenticated) {
+			if (
+				currentGameSettings.gameMode === 'custom' &&
+				currentGameSettings.gameId &&
+				api.isAuthenticated
+			) {
 				const maxPossible = state.rounds.length * 10000;
-				api.submitScore(
-					currentGameSettings.gameId,
-					state.totalScore,
-					maxPossible,
-					state.rounds.length
-				).catch((error) => {
-					console.warn('Failed to submit score to leaderboard:', error);
-					// Don't block the game completion flow if score submission fails
-				});
+				api
+					.submitScore(
+						currentGameSettings.gameId,
+						state.totalScore,
+						maxPossible,
+						state.rounds.length
+					)
+					.catch((error) => {
+						console.warn('Failed to submit score to leaderboard:', error);
+						// Don't block the game completion flow if score submission fails
+					});
 			}
 		}
 

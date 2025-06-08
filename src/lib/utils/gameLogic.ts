@@ -19,12 +19,12 @@ export const normalizeLongitude = (lng: number): number => {
  */
 export const calculateLongitudeDifference = (lng1: number, lng2: number): number => {
 	const diff = lng2 - lng1;
-	
+
 	// If difference is greater than 180°, the shortest path crosses the antimeridian
 	if (Math.abs(diff) > 180) {
 		return diff > 0 ? diff - 360 : diff + 360;
 	}
-	
+
 	return diff;
 };
 
@@ -38,28 +38,28 @@ export const findOptimalActualLocation = (guess: Location, actual: Location): Lo
 		lat: guess.lat,
 		lng: normalizeLongitude(guess.lng)
 	};
-	
+
 	const normalizedActual: Location = {
 		lat: actual.lat,
 		lng: normalizeLongitude(actual.lng)
 	};
-	
+
 	// For antimeridian crossing cases, check both possible actual locations
 	const actualEast: Location = {
 		lat: normalizedActual.lat,
 		lng: normalizedActual.lng >= 0 ? normalizedActual.lng : normalizedActual.lng + 360
 	};
-	
+
 	const actualWest: Location = {
 		lat: normalizedActual.lat,
 		lng: normalizedActual.lng < 0 ? normalizedActual.lng : normalizedActual.lng - 360
 	};
-	
+
 	// Calculate distances to both versions
 	const distanceToNormal = calculateDistance(normalizedGuess, normalizedActual);
 	const distanceToEast = calculateDistance(normalizedGuess, actualEast);
 	const distanceToWest = calculateDistance(normalizedGuess, actualWest);
-	
+
 	// Return the actual location that gives the shortest distance
 	if (distanceToEast <= distanceToNormal && distanceToEast <= distanceToWest) {
 		return { lat: actualEast.lat, lng: normalizeLongitude(actualEast.lng) };
@@ -86,7 +86,7 @@ export const calculateDistance = (point1: Location, point2: Location): number =>
 		lat: point1.lat,
 		lng: normalizeLongitude(point1.lng)
 	};
-	
+
 	const normalizedPoint2: Location = {
 		lat: point2.lat,
 		lng: normalizeLongitude(point2.lng)
@@ -94,7 +94,7 @@ export const calculateDistance = (point1: Location, point2: Location): number =>
 
 	// Calculate differences in coordinates
 	const dLat = toRad(normalizedPoint2.lat - normalizedPoint1.lat);
-	
+
 	// Use the optimized longitude difference that considers antimeridian crossing
 	const lngDiff = calculateLongitudeDifference(normalizedPoint1.lng, normalizedPoint2.lng);
 	const dLng = toRad(lngDiff);
@@ -117,14 +117,14 @@ export const calculateDistance = (point1: Location, point2: Location): number =>
  * Optimized score calculation with steep drop-off curve
  */
 export const calculateScore = (distance: number): number => {
-    if (distance <= MIN_DISTANCE) return MAX_SCORE;
-    if (distance >= MAX_DISTANCE) return 0;
-    
-    // Composite exponential decay
-    const fast = Math.exp(-distance / 40);
-    const slow = Math.exp(-distance / 600);
-    const blend = 0.80 * fast + 0.20 * slow;
-    return Math.round(MAX_SCORE * blend);
+	if (distance <= MIN_DISTANCE) return MAX_SCORE;
+	if (distance >= MAX_DISTANCE) return 0;
+
+	// Composite exponential decay
+	const fast = Math.exp(-distance / 40);
+	const slow = Math.exp(-distance / 600);
+	const blend = 0.8 * fast + 0.2 * slow;
+	return Math.round(MAX_SCORE * blend);
 };
 
 /**
@@ -152,7 +152,7 @@ export const processGuessWithOptimalLocation = (
 ): { result: GuessResult; optimalActualLocation: Location } => {
 	// Find the optimal actual location that minimizes distance (handles antimeridian crossing)
 	const optimalActualLocation = findOptimalActualLocation(userGuess, actualLocation);
-	
+
 	const distance = calculateDistance(userGuess, optimalActualLocation);
 	const score = calculateScore(distance);
 	const formattedDistanceResult = formatDistance(distance);
@@ -235,7 +235,7 @@ export const calculateGeodesicPath = (
 		lat: point1.lat,
 		lng: normalizeLongitude(point1.lng)
 	};
-	
+
 	const optimalPoint2 = findOptimalActualLocation(normalizedPoint1, point2);
 
 	const toRad = (value: number) => (value * Math.PI) / 180;

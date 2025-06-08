@@ -3,7 +3,17 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { isAuthenticated } from '$lib/stores/authStore';
-	import UserGallery from '$lib/components/UserGallery.svelte';
+	// Dynamic import for UserGallery to reduce initial bundle size
+	let UserGallery: any;
+	let userGalleryLoaded = false;
+	
+	async function loadUserGallery() {
+		if (!UserGallery && !userGalleryLoaded) {
+			userGalleryLoaded = true;
+			const module = await import('$lib/components/UserGallery.svelte');
+			UserGallery = module.default;
+		}
+	}
 	import AuthModal from '$lib/components/AuthModal.svelte';
 	import type { ImageMetadata } from '$lib/types';
 	import { api } from '$lib/utils/api';
@@ -19,13 +29,16 @@
 	let newGameTags: string[] = [];
 	let newGameDifficulty: 'easy' | 'medium' | 'hard' | undefined = undefined;
 	let creating = false;
-	let userGalleryComponent: UserGallery;
+	let userGalleryComponent: any;
 
 	// Reactive variables for header display
 	$: selectedCount = selectedImages.length;
 	$: canCreateGame = selectedCount >= 3 && selectedCount <= 20;
 
-	onMount(() => {
+	onMount(async () => {
+		// Load UserGallery component
+		await loadUserGallery();
+		
 		// Show sign in prompt for unauthenticated users
 		if (!$isAuthenticated) {
 			showInfo('Sign in to create custom games');
@@ -214,13 +227,23 @@
 		<!-- Content -->
 		<div class="create-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 			<!-- Photo Gallery -->
-			<UserGallery
-				selectable={true}
-				multiSelect={true}
-				on:imagesSelect={(event) => (selectedImages = event.detail)}
-				on:switchToUpload={handleUploadPhotos}
-				bind:this={userGalleryComponent}
-			/>
+			{#if UserGallery}
+				<svelte:component 
+					this={UserGallery}
+					selectable={true}
+					multiSelect={true}
+					on:imagesSelect={(event) => (selectedImages = event.detail)}
+					on:switchToUpload={handleUploadPhotos}
+					bind:this={userGalleryComponent}
+				/>
+			{:else}
+				<div class="flex items-center justify-center py-12">
+					<div class="text-center">
+						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+						<p class="mt-2 text-sm text-gray-600">Loading photo gallery...</p>
+					</div>
+				</div>
+			{/if}
 		</div>
 	</div>
 {/if}

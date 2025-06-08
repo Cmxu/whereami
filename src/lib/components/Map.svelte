@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import type { Location } from '$lib/types';
-	import { calculateGeodesicPath, normalizeLongitude, findOptimalActualLocation } from '$lib/utils/gameLogic';
+	import {
+		calculateGeodesicPath,
+		normalizeLongitude,
+		findOptimalActualLocation
+	} from '$lib/utils/gameLogic';
 
 	export let center: Location = { lat: 10, lng: 0 };
 	export let zoom: number = 2;
@@ -50,11 +54,13 @@
 	 * Normalize marker positions to handle antimeridian crossing
 	 * This ensures markers are placed on the correct world copy for optimal distance display
 	 */
-	function normalizeMarkersForDisplay(inputMarkers: Array<{
-		location: Location;
-		popup?: string;
-		type?: 'guess' | 'actual' | 'custom';
-	}>): Array<{
+	function normalizeMarkersForDisplay(
+		inputMarkers: Array<{
+			location: Location;
+			popup?: string;
+			type?: 'guess' | 'actual' | 'custom';
+		}>
+	): Array<{
 		location: Location;
 		popup?: string;
 		type?: 'guess' | 'actual' | 'custom';
@@ -106,9 +112,9 @@
 	}
 
 	// Function to check WebGL capabilities and limitations
-	function checkWebGLCapabilities(): { 
-		hasWebGL: boolean; 
-		maxVertexAttribs: number; 
+	function checkWebGLCapabilities(): {
+		hasWebGL: boolean;
+		maxVertexAttribs: number;
 		supportsComplexVectors: boolean;
 		supportsUint32Indices: boolean;
 		maxTextureSize: number;
@@ -116,29 +122,29 @@
 		try {
 			const canvas = document.createElement('canvas');
 			const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-			
+
 			if (!gl) {
-				return { 
-					hasWebGL: false, 
-					maxVertexAttribs: 0, 
+				return {
+					hasWebGL: false,
+					maxVertexAttribs: 0,
 					supportsComplexVectors: false,
 					supportsUint32Indices: false,
 					maxTextureSize: 0
 				};
 			}
-			
+
 			// Type assertion for WebGL context
 			const webglContext = gl as WebGLRenderingContext;
 			const maxVertexAttribs = webglContext.getParameter(webglContext.MAX_VERTEX_ATTRIBS);
 			const maxTextureSize = webglContext.getParameter(webglContext.MAX_TEXTURE_SIZE);
-			
+
 			// Check for OES_element_index_uint extension (allows 32-bit indices up to 4.3 billion)
 			const uintExtension = webglContext.getExtension('OES_element_index_uint');
 			const supportsUint32Indices = !!uintExtension;
-			
+
 			// Consider complex vectors safe if we have decent WebGL support AND 32-bit indices
 			const supportsComplexVectors = maxVertexAttribs >= 16 && supportsUint32Indices;
-			
+
 			// Only log WebGL extension details in development
 			if (import.meta.env.DEV) {
 				console.log('WebGL Extensions Available:', {
@@ -147,20 +153,20 @@
 					maxTextureSize
 				});
 			}
-			
+
 			canvas.remove();
-			return { 
-				hasWebGL: true, 
-				maxVertexAttribs, 
+			return {
+				hasWebGL: true,
+				maxVertexAttribs,
 				supportsComplexVectors,
 				supportsUint32Indices,
 				maxTextureSize
 			};
 		} catch (error) {
 			console.warn('WebGL capability check failed:', error);
-			return { 
-				hasWebGL: false, 
-				maxVertexAttribs: 0, 
+			return {
+				hasWebGL: false,
+				maxVertexAttribs: 0,
 				supportsComplexVectors: false,
 				supportsUint32Indices: false,
 				maxTextureSize: 0
@@ -171,26 +177,26 @@
 	// Function to switch between outdoor and satellite basemaps
 	function toggleBasemapMode() {
 		if (!map || !isMapReady) return;
-		
+
 		isSatelliteMode = !isSatelliteMode;
-		
+
 		// Remove current basemap layer
 		if (currentBasemapLayer && map.hasLayer(currentBasemapLayer)) {
 			map.removeLayer(currentBasemapLayer);
 		}
-		
+
 		// Add new basemap based on mode
 		loadBasemap(isSatelliteMode ? 'satellite' : 'outdoor');
 	}
-	
+
 	// Function to load a specific basemap type
 	function loadBasemap(basemapType: 'outdoor' | 'satellite') {
 		if (!map || !esriLeaflet || !esriVector) return;
-		
+
 		const useVectorBasemap = webglCapabilities.supportsComplexVectors;
 		const basemapStyle = basemapType === 'satellite' ? 'arcgis/imagery' : 'arcgis/outdoor';
 		const rasterBasemap = basemapType === 'satellite' ? 'Imagery' : 'Streets';
-		
+
 		try {
 			if (useVectorBasemap) {
 				// Use vector basemap with optimizations
@@ -202,34 +208,37 @@
 					updateWhenIdle: true,
 					keepBuffer: 2
 				};
-				
+
 				currentBasemapLayer = esriVector.vectorBasemapLayer(basemapStyle, layerOptions);
-				
+
 				// Add error handling for WebGL issues
 				currentBasemapLayer.on('error', (e: any) => {
 					const errorMessage = e.toString().toLowerCase();
-					const isVertexLimitError = errorMessage.includes('vertex') || 
-						errorMessage.includes('vertices') || 
+					const isVertexLimitError =
+						errorMessage.includes('vertex') ||
+						errorMessage.includes('vertices') ||
 						errorMessage.includes('65535') ||
 						errorMessage.includes('buffer');
-					
+
 					if (!isVertexLimitError && import.meta.env.DEV) {
 						console.warn('Vector basemap error detected, falling back to raster basemap:', e);
 					}
-					
+
 					if (map.hasLayer(currentBasemapLayer)) {
 						map.removeLayer(currentBasemapLayer);
 					}
-					
+
 					// Fallback to raster basemap
 					try {
 						currentBasemapLayer = esriLeaflet.basemapLayer(rasterBasemap, {
 							token: apiKey
 						});
 						currentBasemapLayer.addTo(map);
-						
+
 						if (import.meta.env.DEV) {
-							console.log(`Switched to raster ${basemapType} basemap due to vector rendering issues`);
+							console.log(
+								`Switched to raster ${basemapType} basemap due to vector rendering issues`
+							);
 						}
 					} catch (rasterError) {
 						if (import.meta.env.DEV) {
@@ -237,9 +246,9 @@
 						}
 					}
 				});
-				
+
 				currentBasemapLayer.addTo(map);
-				
+
 				if (import.meta.env.DEV) {
 					console.log(`Loaded vector ${basemapType} basemap with language: ${mapLanguage}`);
 				}
@@ -249,7 +258,7 @@
 					token: apiKey
 				});
 				currentBasemapLayer.addTo(map);
-				
+
 				if (import.meta.env.DEV) {
 					console.log(`Loaded raster ${basemapType} basemap due to limited WebGL capabilities`);
 				}
@@ -266,48 +275,48 @@
 		// Get browser language
 		const browserLang = navigator.language || navigator.languages?.[0] || 'en-US';
 		const langCode = browserLang.toLowerCase().split('-')[0];
-		
+
 		// Map of common browser language codes to Esri supported language codes
 		const supportedLanguages: Record<string, string> = {
-			'ar': 'ar',     // Arabic
-			'bg': 'bg',     // Bulgarian
-			'bs': 'bs',     // Bosnian
-			'ca': 'ca',     // Catalan
-			'cs': 'cs',     // Czech
-			'da': 'da',     // Danish
-			'de': 'de',     // German
-			'el': 'el',     // Greek
-			'en': 'en',     // English
-			'es': 'es',     // Spanish
-			'et': 'et',     // Estonian
-			'fi': 'fi',     // Finnish
-			'fr': 'fr',     // French
-			'he': 'he',     // Hebrew
-			'hr': 'hr',     // Croatian
-			'hu': 'hu',     // Hungarian
-			'id': 'id',     // Indonesian
-			'it': 'it',     // Italian
-			'ja': 'ja',     // Japanese
-			'ko': 'ko',     // Korean
-			'lt': 'lt',     // Lithuanian
-			'lv': 'lv',     // Latvian
-			'nb': 'nb',     // Norwegian Bokmål
-			'nl': 'nl',     // Dutch
-			'pl': 'pl',     // Polish
-			'pt': 'pt',     // Portuguese
-			'ro': 'ro',     // Romanian
-			'ru': 'ru',     // Russian
-			'sk': 'sk',     // Slovak
-			'sl': 'sl',     // Slovenian
-			'sr': 'sr',     // Serbian
-			'sv': 'sv',     // Swedish
-			'th': 'th',     // Thai
-			'tr': 'tr',     // Turkish
-			'uk': 'uk',     // Ukrainian
-			'vi': 'vi',     // Vietnamese
-			'zh': 'zh'      // Chinese
+			ar: 'ar', // Arabic
+			bg: 'bg', // Bulgarian
+			bs: 'bs', // Bosnian
+			ca: 'ca', // Catalan
+			cs: 'cs', // Czech
+			da: 'da', // Danish
+			de: 'de', // German
+			el: 'el', // Greek
+			en: 'en', // English
+			es: 'es', // Spanish
+			et: 'et', // Estonian
+			fi: 'fi', // Finnish
+			fr: 'fr', // French
+			he: 'he', // Hebrew
+			hr: 'hr', // Croatian
+			hu: 'hu', // Hungarian
+			id: 'id', // Indonesian
+			it: 'it', // Italian
+			ja: 'ja', // Japanese
+			ko: 'ko', // Korean
+			lt: 'lt', // Lithuanian
+			lv: 'lv', // Latvian
+			nb: 'nb', // Norwegian Bokmål
+			nl: 'nl', // Dutch
+			pl: 'pl', // Polish
+			pt: 'pt', // Portuguese
+			ro: 'ro', // Romanian
+			ru: 'ru', // Russian
+			sk: 'sk', // Slovak
+			sl: 'sl', // Slovenian
+			sr: 'sr', // Serbian
+			sv: 'sv', // Swedish
+			th: 'th', // Thai
+			tr: 'tr', // Turkish
+			uk: 'uk', // Ukrainian
+			vi: 'vi', // Vietnamese
+			zh: 'zh' // Chinese
 		};
-		
+
 		// Return supported language or default to English
 		return supportedLanguages[langCode] || 'en';
 	}
@@ -320,7 +329,10 @@
 				console.warn = (...args) => {
 					const message = args.join(' ').toLowerCase();
 					// Suppress known WebGL vertex limit warnings that we handle gracefully
-					if (message.includes('vertex') && (message.includes('65535') || message.includes('buffer'))) {
+					if (
+						message.includes('vertex') &&
+						(message.includes('65535') || message.includes('buffer'))
+					) {
 						return; // Suppress the warning
 					}
 					if (message.includes('webgl') && message.includes('performance')) {
@@ -329,7 +341,7 @@
 					originalWarn.apply(console, args);
 				};
 			}
-			
+
 			// Dynamically import Leaflet and Esri Leaflet to avoid SSR issues
 			const leaflet = await import('leaflet');
 			esriLeaflet = await import('esri-leaflet');
@@ -347,7 +359,9 @@
 				// RTL text plugin support for Arabic and Hebrew
 				const esriVectorAny = esriVector as any;
 				if (esriVectorAny.setRTLTextPlugin) {
-					esriVectorAny.setRTLTextPlugin('https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.js');
+					esriVectorAny.setRTLTextPlugin(
+						'https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.js'
+					);
 				}
 			} catch (error) {
 				console.warn('RTL text plugin not available:', error);
@@ -375,19 +389,21 @@
 			apiKey = import.meta.env.VITE_ESRI_API_KEY;
 			mapLanguage = getMapLanguage();
 			webglCapabilities = checkWebGLCapabilities();
-			
+
 			// Only log detailed WebGL info in development
 			if (import.meta.env.DEV) {
 				console.log('WebGL capabilities:', webglCapabilities);
-				
+
 				if (webglCapabilities.supportsUint32Indices) {
-					console.log('✅ Device supports 32-bit indices (up to 4.3 billion vertices via OES_element_index_uint)');
+					console.log(
+						'✅ Device supports 32-bit indices (up to 4.3 billion vertices via OES_element_index_uint)'
+					);
 				} else {
 					console.log('⚠️  Device limited to 16-bit indices (max 65,535 vertices per segment)');
 				}
 			}
-			
-						// Load initial outdoor basemap
+
+			// Load initial outdoor basemap
 			loadBasemap('outdoor');
 
 			// Create a layer group for markers
@@ -575,22 +591,36 @@
 		</div>
 	{/if}
 	<div bind:this={mapContainer} class="map-container" class:map-hidden={isLoading}></div>
-	
+
 	<!-- Satellite mode toggle button -->
 	{#if isMapReady}
-		<button 
+		<button
 			class="satellite-toggle-btn"
 			on:click={toggleBasemapMode}
 			title={isSatelliteMode ? 'Switch to street view' : 'Switch to satellite view'}
 		>
 			{#if isSatelliteMode}
 				<!-- Map icon for street view -->
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<svg
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+				>
 					<polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
 				</svg>
 			{:else}
 				<!-- Mountain icon for satellite view -->
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<svg
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+				>
 					<path d="m8 3 4 8 5-5 5 15H2L8 3z"></path>
 				</svg>
 			{/if}

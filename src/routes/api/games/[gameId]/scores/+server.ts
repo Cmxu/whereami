@@ -111,7 +111,11 @@ export const POST = async ({ params, request, platform }: RequestEvent) => {
 		const { score, maxPossible, rounds } = await request.json();
 
 		// Validate score data
-		if (typeof score !== 'number' || typeof maxPossible !== 'number' || typeof rounds !== 'number') {
+		if (
+			typeof score !== 'number' ||
+			typeof maxPossible !== 'number' ||
+			typeof rounds !== 'number'
+		) {
 			return json(
 				{ error: 'Invalid score data: score, maxPossible, and rounds must be numbers' },
 				{
@@ -161,7 +165,7 @@ export const POST = async ({ params, request, platform }: RequestEvent) => {
 		// Save user's score (keep their best score for this game)
 		const userScoreKey = `scores:user:${user.id}:${gameId}`;
 		const existingUserScoreData = await env.GAME_DATA.get(userScoreKey);
-		
+
 		if (existingUserScoreData) {
 			const existingScore = JSON.parse(existingUserScoreData);
 			// Only save if this is a better score
@@ -177,7 +181,7 @@ export const POST = async ({ params, request, platform }: RequestEvent) => {
 		const gameLeaderboardKey = `scores:game:${gameId}`;
 		const existingLeaderboardData = await env.GAME_DATA.get(gameLeaderboardKey);
 		const leaderboard = existingLeaderboardData ? JSON.parse(existingLeaderboardData) : [];
-		
+
 		// Add this score with unique ID for tracking
 		const scoreId = `${user.id}:${Date.now()}`;
 		leaderboard.push({
@@ -193,8 +197,8 @@ export const POST = async ({ params, request, platform }: RequestEvent) => {
 		await env.GAME_DATA.put(gameLeaderboardKey, JSON.stringify(leaderboard));
 
 		return json(
-			{ 
-				success: true, 
+			{
+				success: true,
 				score: gameScore,
 				isNewBest: !existingUserScoreData || score > JSON.parse(existingUserScoreData).score
 			},
@@ -223,4 +227,4 @@ export const OPTIONS = async () => {
 			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 		}
 	});
-}; 
+};

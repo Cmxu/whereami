@@ -142,7 +142,7 @@
   - Statistics include comprehensive game performance metrics for better player engagement
   - Successfully deployed to production at https://6565a779.whereami-5kp.pages.dev
   - **UI Improvements**: Removed duplicate Quick Actions sidebar and reorganized layout
-    - Enhanced "Game Creator" section with larger avatar and creator stats (photos, plays)  
+    - Enhanced "Game Creator" section with larger avatar and creator stats (photos, plays)
     - Added new "Game Details" section with structured information display (difficulty, locations, rating, total plays)
     - Moved tags to the sidebar Game Details section for better organization
     - Improved spacing and visual hierarchy for better user experience
@@ -208,7 +208,7 @@
     - Dark mode support with theme-aware colors and hover effects
     - Responsive sizing (sm/md/lg) and backdrop blur effects
   - **Right-Aligned Ratings**: Moved ratings from bottom section to top-right corner as attractive badges
-  - **Improved Information Organization**: 
+  - **Improved Information Organization**:
     - Public games show rating badges in top-right
     - User games show visibility badges (Public/Private) in top-right
     - Photo count badges remain with creator information

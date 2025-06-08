@@ -22,7 +22,6 @@
 
 ## Completed Tasks
 
-
 - [x] ~~When the map is big, it covers the submit button area, make sure the z levels are set correctly~~ **FIXED**: Reduced action buttons z-index to z-60 and added viewport constraints (max-width: calc(100vw - 48px)) to ensure buttons stay within screen bounds. Action buttons positioned at bottom-right with proper spacing.
 - [x] ~~When the map is small, after submitting a guess, the next round button and other stats get cutoff, make sure they are correctly placed~~ **FIXED**: Reverted to original small map layout structure. Stats (score, badge, distance) appear in the action-buttons area after location submission, maintaining the original styling but ensuring proper visibility order. Reset button SVG also fixed with cleaner refresh icon.
 - [x] ~~For the small map, the text and distance still appear behind the map, make them appear after the round but they should be in the same div as the next round button and the map (in between them)~~ **FIXED**: Restructured small map overlay to place result stats in a separate `result-stats` section positioned between the map container and action buttons. Added proper z-index (z-50) and background styling to ensure stats are visible above the map (z-10). Test confirmed correct layout order: Map -> Result Stats -> Button.

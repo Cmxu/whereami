@@ -14,7 +14,10 @@ async function getGameMetadata(gameId: string, env: any): Promise<CustomGame | n
 }
 
 // Helper function to get user profile data including display name and profile picture
-async function getUserProfile(userId: string, env: any): Promise<{
+async function getUserProfile(
+	userId: string,
+	env: any
+): Promise<{
 	displayName: string;
 	profilePicture: string | null;
 	createdAt: string | null;

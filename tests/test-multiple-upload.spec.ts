@@ -199,9 +199,7 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 
 		// Also check user images API directly
 		try {
-			const userImagesResponse = await page.request.get(
-				'https://geo.cmxu.io/api/images/user'
-			);
+			const userImagesResponse = await page.request.get('https://geo.cmxu.io/api/images/user');
 			if (userImagesResponse.ok()) {
 				const userImagesData = await userImagesResponse.json();
 				console.log(`API shows ${userImagesData.images?.length || 0} images`);

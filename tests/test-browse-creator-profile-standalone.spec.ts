@@ -15,10 +15,10 @@ test.describe('Browse Page Creator Profile - Standalone', () => {
 			// Check that the first game card has creator profile header
 			const firstGameCard = gameCards.first();
 			const creatorProfileHeader = firstGameCard.locator('.creator-profile-header');
-			
+
 			if (await creatorProfileHeader.isVisible()) {
 				console.log('✅ Creator profile header found');
-				
+
 				// Check that creator avatar is present
 				const creatorAvatar = firstGameCard.locator('.creator-avatar');
 				await expect(creatorAvatar).toBeVisible();
@@ -47,7 +47,7 @@ test.describe('Browse Page Creator Profile - Standalone', () => {
 		if (gameCount > 0) {
 			const firstGameCard = gameCards.first();
 			const creatorProfileHeader = firstGameCard.locator('.creator-profile-header');
-			
+
 			if (await creatorProfileHeader.isVisible()) {
 				// Check for creator name
 				const creatorName = creatorProfileHeader.locator('p').first();
@@ -55,7 +55,7 @@ test.describe('Browse Page Creator Profile - Standalone', () => {
 					const nameText = await creatorName.textContent();
 					console.log(`✅ Creator name found: ${nameText}`);
 				}
-				
+
 				// Check for creation date
 				const creationDate = creatorProfileHeader.locator('p').nth(1);
 				if (await creationDate.isVisible()) {
@@ -75,7 +75,7 @@ test.describe('Browse Page Creator Profile - Standalone', () => {
 
 		if (gameCount > 0) {
 			const firstGameCard = gameCards.first();
-			
+
 			// Check that game card has proper structure
 			const hasCreatorHeader = await firstGameCard.locator('.creator-profile-header').isVisible();
 			const hasGameHeader = await firstGameCard.locator('.game-header').isVisible();
@@ -95,4 +95,4 @@ test.describe('Browse Page Creator Profile - Standalone', () => {
 			}
 		}
 	});
-}); 
+});

@@ -69,7 +69,7 @@ export const GET = async ({ params, platform }: RequestEvent) => {
 		// Get all scores for this game
 		const gameLeaderboardKey = `scores:game:${gameId}`;
 		const leaderboardData = await env.GAME_DATA.get(gameLeaderboardKey);
-		
+
 		if (!leaderboardData) {
 			// No scores yet
 			return json(
@@ -97,8 +97,8 @@ export const GET = async ({ params, platform }: RequestEvent) => {
 
 		// Get unique players and their best scores
 		const userBestScores = new Map<string, GameScore>();
-		
-		allScores.forEach(score => {
+
+		allScores.forEach((score) => {
 			const existing = userBestScores.get(score.userId);
 			if (!existing || score.score > existing.score) {
 				userBestScores.set(score.userId, score);
@@ -150,4 +150,4 @@ export const OPTIONS = async () => {
 			'Access-Control-Allow-Headers': 'Content-Type'
 		}
 	});
-}; 
+};

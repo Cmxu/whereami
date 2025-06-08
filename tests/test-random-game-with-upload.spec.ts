@@ -82,9 +82,7 @@ test.describe('Random Game with Upload Test', () => {
 		await page.waitForTimeout(2000);
 
 		// Test the API endpoint directly
-		const response = await page.request.get(
-			'https://geo.cmxu.io/api/images/random?count=3'
-		);
+		const response = await page.request.get('https://geo.cmxu.io/api/images/random?count=3');
 		console.log(`API Response status: ${response.status()}`);
 
 		if (response.status() === 200) {
