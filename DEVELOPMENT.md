@@ -24,6 +24,34 @@
 - [ ] Optimize image loading and compression
 - [ ] Add proper error boundaries for API failures
 - [ ] Adjust profile picture, zoom and move
+- [x] **Antimeridian Crossing Pin Placement Fix** - Fixed issue where pins were placed on wrong world copy when zoomed out
+  - **Root Cause**: While Leaflet's `worldCopyJump` handles most antimeridian cases, pins could still be placed an entire map apart when zoomed out, even though distance calculation was correct
+  - **Solution**: Implemented comprehensive antimeridian crossing handling in game logic and map components
+    - Added `normalizeLongitude()` function to ensure all coordinates are in [-180, 180] range
+    - Created `calculateLongitudeDifference()` to find shortest longitude difference considering antimeridian crossing
+    - Implemented `findOptimalActualLocation()` to determine which world copy of the actual location minimizes distance to the guess
+    - Enhanced `calculateDistance()` function to use normalized coordinates and optimal longitude differences
+    - Updated `processGuess()` to use optimal actual location for accurate distance calculation and pin placement
+    - Modified Map component to normalize marker positions using `normalizeMarkersForDisplay()` function
+    - Enhanced `calculateGeodesicPath()` to use normalized coordinates for proper distance line rendering
+  - **Technical Implementation**:
+    - All longitude values are normalized to [-180, 180] range before calculations
+    - Distance calculation considers both possible actual locations (east and west of antimeridian) and chooses the shortest
+    - Map markers are placed using optimal coordinates to ensure they appear on the correct world copy
+    - Distance lines properly follow the shortest great-circle path across the antimeridian
+    - Click handlers normalize longitude coordinates to prevent edge case issues
+  - **Testing**: Created comprehensive test suite to verify antimeridian crossing scenarios (Tokyo to Honolulu, etc.)
+  - Successfully deployed to production at https://883157ef.whereami-5kp.pages.dev
+  - **UX Enhancement**: Fixed pin placement visibility issue where clicks near antimeridian appeared to not register
+    - **Problem**: While distance calculations were correct, pins would "jump" to opposite side of map when clicked near ±180° longitude
+    - **Solution**: Separated "display location" from "calculation location" - pins now appear where user clicked, but optimal locations are still used for distance calculations
+    - **Result**: Improved user experience where guess pins stay visible near click location while maintaining accurate shortest-distance scoring
+    - Successfully deployed UX fix to production at https://8eda275b.whereami-5kp.pages.dev
+  - **Results Display Optimization**: Enhanced pin positioning during results phase for optimal distance visualization
+    - **Behavior**: During guessing phase, pins appear exactly where user clicks (good UX). During results display, both pins move to optimal normalized positions for clearest shortest-distance visualization
+    - **Implementation**: Uses `showDistanceLine` flag to determine phase - preserves click location during guessing, optimizes positioning for results
+    - **Benefits**: Best of both worlds - responsive clicking experience during gameplay, optimal visual representation during results
+    - Successfully deployed results optimization to production at https://0dcb7b5b.whereami-5kp.pages.dev
 - [x] **Map Language Localization** - Added automatic language localization for Esri basemap labels based on browser language
   - Implemented browser language detection function that maps common language codes to Esri supported language codes
   - Added comprehensive support for 35+ languages including Arabic, Chinese, Spanish, French, German, Russian, and many others

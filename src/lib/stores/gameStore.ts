@@ -8,7 +8,7 @@ import type {
 	GuessResult,
 	GameSession
 } from '$lib/types';
-import { processGuess, calculateTotalScore, generateSessionId } from '$lib/utils/gameLogic';
+import { processGuess, processGuessWithOptimalLocation, calculateTotalScore, generateSessionId } from '$lib/utils/gameLogic';
 import { api } from '$lib/utils/api';
 import {
 	saveCurrentGame,

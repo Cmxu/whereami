@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import type { Location } from '$lib/types';
-	import { calculateGeodesicPath } from '$lib/utils/gameLogic';
+	import { calculateGeodesicPath, normalizeLongitude, findOptimalActualLocation } from '$lib/utils/gameLogic';
 
 	export let center: Location = { lat: 10, lng: 0 };
 	export let zoom: number = 2;
@@ -40,10 +40,69 @@
 		return (e: any) => {
 			const location: Location = {
 				lat: Math.round(e.latlng.lat * 1000000) / 1000000, // Round to 6 decimal places
-				lng: Math.round(e.latlng.lng * 1000000) / 1000000
+				lng: Math.round(e.latlng.lng * 1000000) / 1000000 // Keep original longitude (don't normalize for UX)
 			};
 			dispatch('mapClick', location);
 		};
+	}
+
+	/**
+	 * Normalize marker positions to handle antimeridian crossing
+	 * This ensures markers are placed on the correct world copy for optimal distance display
+	 */
+	function normalizeMarkersForDisplay(inputMarkers: Array<{
+		location: Location;
+		popup?: string;
+		type?: 'guess' | 'actual' | 'custom';
+	}>): Array<{
+		location: Location;
+		popup?: string;
+		type?: 'guess' | 'actual' | 'custom';
+	}> {
+		if (inputMarkers.length < 2) return inputMarkers;
+
+		// Find guess and actual markers
+		const guessMarker = inputMarkers.find((m: any) => m.type === 'guess');
+		const actualMarker = inputMarkers.find((m: any) => m.type === 'actual');
+
+		if (!guessMarker || !actualMarker) return inputMarkers;
+
+		// Find optimal actual location relative to guess for distance calculation
+		const optimalActual = findOptimalActualLocation(guessMarker.location, actualMarker.location);
+
+		// Return markers with proper positioning
+		return inputMarkers.map((marker: any) => {
+			if (marker.type === 'actual') {
+				// Place actual marker in optimal location for shortest distance display
+				return {
+					...marker,
+					location: optimalActual
+				};
+			} else if (marker.type === 'guess') {
+				// During results display (when showDistanceLine is true), move guess pin to optimal location
+				// During guessing phase, keep pin where user clicked for better UX
+				if (showDistanceLine) {
+					// Results phase: position both pins optimally for best distance line visualization
+					const optimalGuess = findOptimalActualLocation(optimalActual, guessMarker.location);
+					return {
+						...marker,
+						location: optimalGuess
+					};
+				} else {
+					// Guessing phase: keep guess marker where user actually clicked
+					return marker;
+				}
+			} else {
+				// For other markers, normalize to prevent edge cases
+				return {
+					...marker,
+					location: {
+						lat: marker.location.lat,
+						lng: normalizeLongitude(marker.location.lng)
+					}
+				};
+			}
+		});
 	}
 
 	// Function to check WebGL capabilities and limitations
@@ -313,7 +372,7 @@
 				.addTo(map);
 
 			// Initialize global variables for basemap management
-			apiKey = 'AAPT85fOqywZsicJupSmVSCGriYtqpo7tzlLTic1t06a-lYPB0t5NVkpVlZJD6WLjDMSp91zLlol7rBtBQNJPXJYuYQh_lMCnu33hD4HHEPKeelZwzUuOxwHNObexVGmM2TZ7Fj9M9Enq89hIFjk32JrD97eHAwY2_448_8tYPXvMwQlVDYQnptO0YLtCbkXEONSB1IHnUayYlXEmr_63aFXa3k-FfWlmuCfZMohdt-1m10.AT2_8cWawvJh';
+			apiKey = import.meta.env.VITE_ESRI_API_KEY;
 			mapLanguage = getMapLanguage();
 			webglCapabilities = checkWebGLCapabilities();
 			
@@ -396,11 +455,14 @@
 			distanceLine = null;
 		}
 
+		// Normalize markers for proper antimeridian handling
+		const normalizedMarkers = normalizeMarkersForDisplay(markers);
+
 		let guessMarker: any = null;
 		let actualMarker: any = null;
 
 		// Add new markers
-		markers.forEach((marker) => {
+		normalizedMarkers.forEach((marker) => {
 			const markerType = marker.type || 'custom';
 			const color =
 				markerType === 'guess' ? '#ef4444' : markerType === 'actual' ? '#22c55e' : '#3b82f6';

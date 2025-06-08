@@ -242,7 +242,7 @@
 	}
 
 	function zoomIn() {
-		imageScale = Math.min(imageScale * 1.2, 8);
+		imageScale = Math.min(imageScale * 1.2, 12);
 	}
 
 	function zoomOut() {
@@ -391,6 +391,8 @@
 		guessResult = null;
 		showResult = false;
 		imageLoaded = false;
+		// Reset to large image mode after each round
+		showMapFull = false;
 		// Reset image zoom
 		imageScale = 1;
 		imageTranslateX = 0;
