@@ -2,8 +2,9 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { isAuthenticated } from '$lib/stores/authStore';
+	import { isAuthenticated, userProfile, displayName } from '$lib/stores/authStore';
 	import GameRating from '$lib/components/GameRating.svelte';
+	import StylishRating from '$lib/components/StylishRating.svelte';
 	import ShareGame from '$lib/components/ShareGame.svelte';
 	import type { CustomGame, GameSearchFilters } from '$lib/types';
 	import { api } from '$lib/utils/api';
@@ -385,11 +386,34 @@
 							class="game-card rounded-lg border overflow-hidden shadow-sm hover:shadow-md transition-shadow"
 							style="background-color: var(--bg-primary); border-color: var(--border-color);"
 						>
-							<!-- Creator Profile Header -->
-							<div class="creator-profile-header p-4 border-b" style="border-color: var(--border-color);">
+							<!-- Game Title Header -->
+							<div class="game-title-header p-4 border-b" style="border-color: var(--border-color);">
+								<div class="flex items-start justify-between gap-3">
+									<div class="flex-1 min-w-0">
+										<h3 class="font-semibold text-lg mb-1 truncate" style="color: var(--text-primary);">
+											{game.name}
+										</h3>
+										{#if game.description}
+											<p class="text-sm line-clamp-2 mb-3" style="color: var(--text-secondary);">
+												{game.description}
+											</p>
+										{/if}
+									</div>
+									
+									<!-- Photo Count Badge (Right Side) -->
+									<div class="photos-section flex-shrink-0">
+										<div class="game-stats-badge px-3 py-1 rounded-full text-xs font-medium">
+											📷 {game.imageIds.length} photos
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Creator Profile Section -->
+							<div class="creator-section p-4 border-b" style="border-color: var(--border-color);">
 								<div class="flex items-center space-x-3">
 									<!-- Creator Avatar -->
-									<div class="creator-avatar w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+									<div class="creator-avatar w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
 										{#if game.creatorProfilePicture}
 											<img
 												src={`/api/images/${game.creatorProfilePicture}`}
@@ -399,7 +423,7 @@
 											/>
 										{:else}
 											<div
-												class="w-full h-full bg-blue-500 flex items-center justify-center text-white font-semibold"
+												class="w-full h-full bg-blue-500 flex items-center justify-center text-white font-medium text-sm"
 											>
 												{game.createdBy.charAt(0).toUpperCase()}
 											</div>
@@ -416,52 +440,38 @@
 										</p>
 									</div>
 									
-									<!-- Game Stats Badge -->
-									<div class="game-stats-badge bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
-										📷 {game.imageIds.length} photos
+									<!-- Rating Badge -->
+									<div class="rating-section flex-shrink-0">
+										<StylishRating {game} size="sm" style="badge" />
 									</div>
 								</div>
 							</div>
 
-							<div class="game-header p-4 border-b" style="border-color: var(--border-color);">
-								<h3 class="font-semibold mb-1" style="color: var(--text-primary);">{game.name}</h3>
-								{#if game.description}
-									<p class="text-sm line-clamp-2" style="color: var(--text-secondary);">
-										{game.description}
-									</p>
-								{/if}
-							</div>
-
 							<div class="game-info p-4 space-y-3">
-								<!-- Creator and photo count now shown in header -->
+								<!-- Difficulty and Tags -->
+								<div class="meta-badges flex flex-wrap gap-2">
+									{#if game.difficulty}
+										<div
+											class="difficulty-badge inline-block px-2 py-1 rounded text-xs font-medium
+											{game.difficulty === 'easy'
+												? 'bg-green-100-theme text-green-800-theme'
+												: game.difficulty === 'medium'
+													? 'bg-yellow-100-theme text-yellow-800-theme'
+													: 'bg-red-100-theme text-red-800-theme'}"
+										>
+											{game.difficulty.charAt(0).toUpperCase() + game.difficulty.slice(1)}
+										</div>
+									{/if}
 
-								{#if game.difficulty}
-									<div
-										class="difficulty-badge inline-block px-2 py-1 rounded text-xs font-medium
-										{game.difficulty === 'easy'
-											? 'bg-green-100 text-green-800'
-											: game.difficulty === 'medium'
-												? 'bg-yellow-100 text-yellow-800'
-												: 'bg-red-100 text-red-800'}"
-									>
-										{game.difficulty.charAt(0).toUpperCase() + game.difficulty.slice(1)}
-									</div>
-								{/if}
-
-								{#if game.tags && game.tags.length > 0}
-									<div class="tags flex flex-wrap gap-1">
-										{#each game.tags.slice(0, 3) as tag}
+									{#if game.tags && game.tags.length > 0}
+										{#each game.tags.slice(0, 2) as tag}
 											<span
 												class="tag bg-blue-100-theme text-blue-800-theme px-2 py-1 rounded text-xs"
 											>
 												{tag}
 											</span>
 										{/each}
-									</div>
-								{/if}
-
-								<div class="game-rating">
-									<GameRating {game} readonly={true} size="sm" />
+									{/if}
 								</div>
 
 								<div class="game-actions flex gap-2 pt-2">
@@ -545,108 +555,122 @@
 							class="game-card rounded-lg border overflow-hidden shadow-sm hover:shadow-md transition-shadow"
 							style="background-color: var(--bg-primary); border-color: var(--border-color);"
 						>
-							<!-- Creator Profile Header -->
-							<div class="creator-profile-header p-4 border-b" style="border-color: var(--border-color);">
-								<div class="flex items-center space-x-3">
-									<!-- Creator Avatar -->
-									<div class="creator-avatar w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-										{#if game.creatorProfilePicture}
-											<img
-												src={`/api/images/${game.creatorProfilePicture}`}
-												alt="{game.createdBy}'s profile"
-												class="w-full h-full object-cover"
-												loading="lazy"
-											/>
-										{:else}
-											<div
-												class="w-full h-full bg-blue-500 flex items-center justify-center text-white font-semibold"
-											>
-												{game.createdBy.charAt(0).toUpperCase()}
+							<!-- Game Title Header -->
+							<a href="/games/{game.id}" class="game-title-link block">
+								<div class="game-title-header p-4 border-b" style="border-color: var(--border-color);">
+									<div class="flex items-start justify-between gap-3">
+										<div class="flex-1 min-w-0">
+											<h3 class="font-semibold text-lg mb-1 truncate" style="color: var(--text-primary);">
+												{game.name}
+											</h3>
+											{#if game.description}
+												<p class="text-sm line-clamp-2 mb-3" style="color: var(--text-secondary);">
+													{game.description}
+												</p>
+											{/if}
+										</div>
+										
+										<!-- Photo Count Badge (Right Side) -->
+										<div class="photos-section flex-shrink-0">
+											<div class="game-stats-badge px-3 py-1 rounded-full text-xs font-medium">
+												📷 {game.imageIds.length} photos
 											</div>
-										{/if}
-									</div>
-									
-									<!-- Creator Info -->
-									<div class="flex-1 min-w-0">
-										<p class="text-sm font-medium truncate" style="color: var(--text-primary);">
-											{game.createdBy}
-										</p>
-										<p class="text-xs" style="color: var(--text-secondary);">
-											{formatDate(game.createdAt)}
-										</p>
-									</div>
-									
-									<!-- Visibility Badge -->
-									<div class="visibility-badge inline-block px-2 py-1 rounded text-xs font-medium
-										{game.isPublic ? 'bg-green-100 text-green-800' : 'bg-gray-100-theme text-gray-800-theme'}">
-										{game.isPublic ? '🌍 Public' : '🔒 Private'}
+										</div>
 									</div>
 								</div>
-							</div>
+							</a>
 
-							<a href="/games/{game.id}" class="game-link block">
-								<div class="game-header p-4 border-b" style="border-color: var(--border-color);">
-									<h3 class="font-semibold mb-1" style="color: var(--text-primary);">
-										{game.name}
-									</h3>
-									{#if game.description}
-										<p class="text-sm line-clamp-2" style="color: var(--text-secondary);">
-											{game.description}
-										</p>
-									{/if}
-								</div>
-
-								<div class="game-info p-4 space-y-3">
-									<!-- Photo count shown in header -->
-									<div class="game-meta-info flex justify-between text-sm">
-										<span style="color: var(--text-secondary);">{game.imageIds.length} photos</span>
+							<!-- Creator Profile Section -->
+							<a href="/games/{game.id}" class="creator-link block">
+								<div class="creator-section p-4 border-b" style="border-color: var(--border-color);">
+									<div class="flex items-center space-x-3">
+										<!-- Creator Avatar -->
+										<div class="creator-avatar w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+											{#if $userProfile?.profilePicture}
+												<img
+													src={`/api/images/${$userProfile.profilePicture}`}
+													alt="Your profile"
+													class="w-full h-full object-cover"
+													loading="lazy"
+												/>
+											{:else}
+												<div
+													class="w-full h-full bg-blue-500 flex items-center justify-center text-white font-medium text-sm"
+												>
+													{$displayName.charAt(0).toUpperCase()}
+												</div>
+											{/if}
+										</div>
+										
+										<!-- Creator Info -->
+										<div class="flex-1 min-w-0">
+											<p class="text-sm font-medium truncate" style="color: var(--text-primary);">
+												{$displayName}
+											</p>
+											<p class="text-xs" style="color: var(--text-secondary);">
+												{formatDate(game.createdAt)}
+											</p>
+										</div>
+										
+										<!-- Visibility Badge -->
+										<div class="visibility-section flex-shrink-0">
+											<div class="visibility-badge inline-block px-2 py-1 rounded text-xs font-medium
+												{game.isPublic ? 'bg-green-100-theme text-green-800-theme' : 'bg-gray-100-theme text-gray-800-theme'}">
+												{game.isPublic ? '🌍 Public' : '🔒 Private'}
+											</div>
+										</div>
 									</div>
+								</div>
+							</a>
 
+							<div class="game-info p-4 space-y-3">
+								<!-- Difficulty Tags -->
+								<div class="meta-badges flex flex-wrap gap-2">
 									{#if game.difficulty}
 										<div
 											class="difficulty-badge inline-block px-2 py-1 rounded text-xs font-medium
 											{game.difficulty === 'easy'
-												? 'bg-green-100 text-green-800'
+												? 'bg-green-100-theme text-green-800-theme'
 												: game.difficulty === 'medium'
-													? 'bg-yellow-100 text-yellow-800'
-													: 'bg-red-100 text-red-800'}"
+													? 'bg-yellow-100-theme text-yellow-800-theme'
+													: 'bg-red-100-theme text-red-800-theme'}"
 										>
 											{game.difficulty.charAt(0).toUpperCase() + game.difficulty.slice(1)}
 										</div>
 									{/if}
 								</div>
-							</a>
 
-							<div class="game-actions p-4 pt-0 flex gap-2">
-								<button
-									class="btn-primary flex-1"
-									on:click={(e) => {
-										e.stopPropagation();
-										playUserGame(game);
-									}}
-								>
-									🎮 Play
-								</button>
-								<button
-									class="btn-secondary"
-									on:click={(e) => {
-										e.stopPropagation();
-										shareGame(game);
-									}}
-									title="Share"
-								>
-									📤
-								</button>
-								<button
-									class="btn-danger px-3"
-									on:click={(e) => {
-										e.stopPropagation();
-										confirmDeleteGame(game);
-									}}
-									title="Delete game"
-								>
-									🗑️
-								</button>
+								<div class="game-actions flex gap-2 pt-2">
+									<button
+										class="btn-primary flex-1"
+										on:click={(e) => {
+											e.stopPropagation();
+											playUserGame(game);
+										}}
+									>
+										🎮 Play
+									</button>
+									<button
+										class="btn-secondary"
+										on:click={(e) => {
+											e.stopPropagation();
+											shareGame(game);
+										}}
+										title="Share"
+									>
+										📤
+									</button>
+									<button
+										class="btn-danger px-3"
+										on:click={(e) => {
+											e.stopPropagation();
+											confirmDeleteGame(game);
+										}}
+										title="Delete game"
+									>
+										🗑️
+									</button>
+								</div>
 							</div>
 						</div>
 					{/each}
@@ -726,12 +750,18 @@
 
 
 
-	.creator-profile-header {
-		background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+	.game-title-header,
+	.creator-section {
+		transition: background-color 0.2s ease;
+	}
+
+	.game-title-header:hover,
+	.creator-section:hover {
+		background: var(--bg-tertiary);
 	}
 
 	.creator-avatar {
-		border: 2px solid #e2e8f0;
+		border: 2px solid var(--border-color);
 		transition: transform 0.2s ease;
 	}
 
@@ -740,8 +770,9 @@
 	}
 
 	.game-stats-badge {
-		background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-		border: 1px solid #93c5fd;
+		background-color: var(--blue-50);
+		color: var(--blue-700);
+		border: 1px solid var(--blue-200);
 	}
 
 	.line-clamp-2 {

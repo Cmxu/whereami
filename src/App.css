@@ -27,6 +27,16 @@
 	--blue-600: #2563eb;
 	--blue-700: #1d4ed8;
 	--blue-800: #1e40af;
+
+	/* Badge and theme colors */
+	--green-100: #dcfce7;
+	--green-800: #166534;
+	--yellow-100: #fef3c7;
+	--yellow-800: #92400e;
+	--red-100: #fee2e2;
+	--red-800: #991b1b;
+	--gray-100: #f3f4f6;
+	--gray-800: #1f2937;
 }
 
 :root.dark {
@@ -55,6 +65,16 @@
 	--blue-600: #60a5fa;
 	--blue-700: #93c5fd;
 	--blue-800: #dbeafe;
+
+	/* Badge and theme colors for dark mode */
+	--green-100: #064e3b;
+	--green-800: #86efac;
+	--yellow-100: #451a03;
+	--yellow-800: #fde047;
+	--red-100: #450a0a;
+	--red-800: #fca5a5;
+	--gray-100: #374151;
+	--gray-800: #d1d5db;
 }
 
 /* Global reset and base styles */
@@ -561,4 +581,37 @@ body {
 
 .border-blue-500-theme {
 	border-color: var(--blue-500);
+}
+
+/* Theme-aware badge colors */
+.bg-green-100-theme {
+	background-color: var(--green-100);
+}
+
+.text-green-800-theme {
+	color: var(--green-800);
+}
+
+.bg-yellow-100-theme {
+	background-color: var(--yellow-100);
+}
+
+.text-yellow-800-theme {
+	color: var(--yellow-800);
+}
+
+.bg-red-100-theme {
+	background-color: var(--red-100);
+}
+
+.text-red-800-theme {
+	color: var(--red-800);
+}
+
+.bg-gray-100-theme {
+	background-color: var(--gray-100);
+}
+
+.text-gray-800-theme {
+	color: var(--gray-800);
 }

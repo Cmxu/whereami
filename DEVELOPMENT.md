@@ -27,6 +27,13 @@
 
 ### Completed
 
+- [x] **My Games User Profile Display Fix** - Fixed user name/profile picture display on the "my games" tab
+  - Fixed issue where "my games" tab was showing user IDs instead of display names and no profile pictures
+  - The problem was that the user games API didn't enrich games with creator profile data like the public games API
+  - Since these are the user's own games, updated the frontend to use current user profile data (`$userProfile` and `$displayName`) from the auth store
+  - Updated browse page to show the authenticated user's display name and profile picture instead of raw game creator data
+  - Users now see their proper display name and profile picture (or fallback initial) in the creator section of their own games
+  - Successfully deployed fix to production at https://0e9a7303.whereami-5kp.pages.dev
 - [x] **Share Tab Cleanup and Fixes** - Simplified and fixed the game sharing functionality
   - Removed misleading "Share links are valid for 30 days and track access for analytics" notice
   - Removed redundant "Share "{game name}" with friends" header text, keeping only score display when relevant
@@ -96,6 +103,39 @@
   - Fixed loading spinner border color to use `var(--border-color)` for dark mode compatibility
   - Removed hardcoded white card background from CSS, now uses global card styles
   - Successfully deployed to production at https://60d8265d.whereami-5kp.pages.dev
+- [x] **Dark Mode Fix for Browse Games Page** - Fixed dark mode styling issues on browse games screen
+  - Added theme-aware CSS variables for badge colors (`--green-100`, `--green-800`, `--yellow-100`, `--yellow-800`, `--red-100`, `--red-800`, `--gray-100`, `--gray-800`)
+  - Created theme-aware utility classes (`bg-green-100-theme`, `text-green-800-theme`, etc.) for consistent dark mode support
+  - Fixed creator profile header background to use `var(--bg-tertiary)` instead of hardcoded light gradient
+  - Updated creator avatar border to use `var(--border-color)` for proper dark mode theming
+  - Fixed game stats badge to use CSS variables (`var(--blue-50)`, `var(--blue-700)`, `var(--blue-200)`) instead of hardcoded colors
+  - Updated all difficulty badges to use theme-aware classes (`bg-green-100-theme text-green-800-theme`, etc.)
+  - Fixed visibility badges to use theme-aware gray colors for proper dark mode display
+  - Verified fixes with Playwright tests showing proper dark/light mode toggle functionality
+  - Successfully deployed to production at https://88ffb4fc.whereami-5kp.pages.dev
+- [x] **Browse Games Card Layout Redesign** - Reorganized game card layout with improved hierarchy and stylish rating display
+  - **New Layout Structure**: Changed from creator-first to title-first layout for better information hierarchy
+    - Game title and description now prominently displayed at the top
+    - Creator information moved to a dedicated section below the title
+    - Reduced creator avatar size from 12x12 to 10x10 for better proportions
+  - **Stylish Rating Component**: Created new `StylishRating.svelte` component with multiple display styles
+    - **Badge Style**: Amber-colored rating badge positioned on the right side of game cards
+    - **Compact & Inline Styles**: Alternative display options for different contexts
+    - Dark mode support with theme-aware colors and hover effects
+    - Responsive sizing (sm/md/lg) and backdrop blur effects
+  - **Right-Aligned Ratings**: Moved ratings from bottom section to top-right corner as attractive badges
+  - **Improved Information Organization**: 
+    - Public games show rating badges in top-right
+    - User games show visibility badges (Public/Private) in top-right
+    - Photo count badges remain with creator information
+    - Difficulty and tag badges consolidated in a cleaner meta-badges section
+  - **Enhanced Visual Polish**: Added hover effects and improved spacing throughout card sections
+  - Successfully deployed to production at https://cac03bcb.whereami-5kp.pages.dev
+  - **Badge Position Update**: Switched positions of rating and photo count badges based on user feedback
+    - Photo count badges now appear in top-right corner next to game titles
+    - Rating badges moved to creator section for public games
+    - Visibility badges moved to creator section for user games
+    - Successfully deployed update to https://55d24120.whereami-5kp.pages.dev
 - [x] **Game Review Page Updates** - Removed commenting functionality and fixed rating system
   - Completely removed comments section from game review pages (`/games/[gameId]`)
   - Removed comment-related API functions (`addComment`, `getGameComments`) from API utility
