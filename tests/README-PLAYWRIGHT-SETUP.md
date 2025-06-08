@@ -7,7 +7,7 @@ This document describes the Playwright test setup for the WhereAmI application. 
 ## Configuration Changes
 
 1. **Fully headless**: All tests run headless including authentication setup
-2. **Base URL**: Uses `https://whereami-5kp.pages.dev` (always contains the most up-to-date deployment)
+2. **Base URL**: Uses `https://geo.cmxu.io` (always contains the most up-to-date deployment)
 3. **Authentication**: Automated using direct Supabase client authentication
 4. **HTML Report**: HTML reports are generated but never auto-open to avoid interrupting workflow
 
@@ -60,7 +60,7 @@ The authentication setup (`tests/auth.setup.ts`) will:
 
 ## URLs
 
-All tests use `https://whereami-5kp.pages.dev` as the base URL, which always contains the most up-to-date deployment.
+All tests use `https://geo.cmxu.io` as the base URL, which always contains the most up-to-date deployment.
 
 ## Reports
 

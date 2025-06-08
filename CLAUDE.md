@@ -112,7 +112,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Testing Requirements**
 
 - All new features should have Playwright E2E tests
-- Tests run against production environment (whereami-5kp.pages.dev)
+- Tests run against production environment (geo.cmxu.io)
 - Use authenticated user state for tests requiring login
 - After feature implementation, run tests to verify functionality
 

@@ -9,7 +9,7 @@ test.describe('Map Square Layout', () => {
 		await page.context().clearCookies();
 
 		// Navigate to the main page
-		await page.goto('https://whereami-5kp.pages.dev/');
+		await page.goto('https://geo.cmxu.io/');
 
 		// Wait for the page to load
 		await page.waitForLoadState('networkidle');

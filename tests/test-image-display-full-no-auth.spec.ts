@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 test.describe('Game Image Display - Full Picture Visibility (No Auth)', () => {
 	test('should display the entire image at start with object-contain styling', async ({ page }) => {
 		// Navigate to the main page
-		await page.goto('https://whereami-5kp.pages.dev/');
+		await page.goto('https://geo.cmxu.io/');
 
 		// Wait for the page to load
 		await page.waitForLoadState('networkidle');
@@ -141,7 +141,7 @@ test.describe('Game Image Display - Full Picture Visibility (No Auth)', () => {
 
 	test('should handle image transitions between rounds properly', async ({ page }) => {
 		// Navigate to the main page
-		await page.goto('https://whereami-5kp.pages.dev/');
+		await page.goto('https://geo.cmxu.io/');
 
 		// Wait for the page to load
 		await page.waitForLoadState('networkidle');

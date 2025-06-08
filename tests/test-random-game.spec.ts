@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 test.describe('Random Game Functionality', () => {
 	test('should be able to start a random game', async ({ page }) => {
 		// Navigate to the main page
-		await page.goto('https://whereami-5kp.pages.dev/');
+		await page.goto('https://geo.cmxu.io/');
 
 		// Wait for the page to load
 		await page.waitForLoadState('networkidle');
@@ -62,7 +62,7 @@ test.describe('Random Game Functionality', () => {
 	test('should handle API endpoint directly', async ({ page }) => {
 		// Test the API endpoint directly
 		const response = await page.request.get(
-			'https://whereami-5kp.pages.dev/api/images/random?count=5'
+			'https://geo.cmxu.io/api/images/random?count=5'
 		);
 
 		console.log(`Response status: ${response.status()}`);

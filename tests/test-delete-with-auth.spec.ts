@@ -58,7 +58,7 @@ test.describe('Delete Image with Authentication', () => {
 	});
 
 	test('API test: Verify delete endpoint with proper error handling', async ({ request }) => {
-		const baseUrl = 'https://whereami-5kp.pages.dev';
+		const baseUrl = 'https://geo.cmxu.io';
 
 		// Test various scenarios with the delete endpoint
 		console.log('🧪 Testing delete API endpoint scenarios...');

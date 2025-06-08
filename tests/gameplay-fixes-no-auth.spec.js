@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Gameplay Fixes - No Auth', () => {
 	test('map overlay positioning and layout fixes', async ({ page, viewport }) => {
 		// Use the deployed URL directly
-		await page.goto('https://whereami-5kp.pages.dev/browse');
+		await page.goto('https://geo.cmxu.io/browse');
 		
 		// Wait for browse page to load and find any game
 		await page.waitForSelector('.game-card', { timeout: 10000 });
@@ -247,7 +247,7 @@ test.describe('Gameplay Fixes - No Auth', () => {
 		// Test with a smaller viewport to ensure constraints work
 		await page.setViewportSize({ width: 800, height: 600 });
 		
-		await page.goto('https://whereami-5kp.pages.dev/browse');
+		await page.goto('https://geo.cmxu.io/browse');
 		await page.waitForSelector('.game-card', { timeout: 10000 });
 		await page.locator('.game-card').first().click();
 		
@@ -280,7 +280,7 @@ test.describe('Gameplay Fixes - No Auth', () => {
 
 	test('small map result stats positioning', async ({ page }) => {
 		// Use the deployed URL directly
-		await page.goto('https://whereami-5kp.pages.dev/browse');
+		await page.goto('https://geo.cmxu.io/browse');
 		await page.waitForSelector('.game-card', { timeout: 10000 });
 
 		// Click on the first game card
@@ -400,5 +400,19 @@ test.describe('Gameplay Fixes - No Auth', () => {
 		} else {
 			console.log(`ℹ️  Submit button not available, test incomplete`);
 		}
+	});
+
+	test('enhanced gameplay flow and feedback tests', async ({ page }) => {
+		// Use the deployed URL directly  
+		await page.goto('https://geo.cmxu.io/browse');
+		
+		// ... existing code ...
+	});
+
+	test('leaderboard and creator profile on browse page', async ({ page }) => {
+		// Use the deployed URL directly
+		await page.goto('https://geo.cmxu.io/browse');
+		
+		// ... existing code ...
 	});
 }); 

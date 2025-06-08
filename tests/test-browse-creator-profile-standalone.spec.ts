@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Browse Page Creator Profile - Standalone', () => {
 	test('should display creator profile headers instead of game thumbnails', async ({ page }) => {
-		await page.goto('https://whereami-5kp.pages.dev/browse');
+		await page.goto('https://geo.cmxu.io/browse');
 		await page.waitForLoadState('networkidle');
 
 		// Check if there are any games loaded
@@ -38,7 +38,7 @@ test.describe('Browse Page Creator Profile - Standalone', () => {
 	});
 
 	test('should show creator information in profile header', async ({ page }) => {
-		await page.goto('https://whereami-5kp.pages.dev/browse');
+		await page.goto('https://geo.cmxu.io/browse');
 		await page.waitForLoadState('networkidle');
 
 		const gameCards = page.locator('.game-card');
@@ -67,7 +67,7 @@ test.describe('Browse Page Creator Profile - Standalone', () => {
 	});
 
 	test('should have improved game card styling', async ({ page }) => {
-		await page.goto('https://whereami-5kp.pages.dev/browse');
+		await page.goto('https://geo.cmxu.io/browse');
 		await page.waitForLoadState('networkidle');
 
 		const gameCards = page.locator('.game-card');

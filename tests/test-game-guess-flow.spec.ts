@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 test.describe('Game Guess Flow', () => {
 	test('should display results after making a guess', async ({ page }) => {
 		// Navigate to the main page
-		await page.goto('https://whereami-5kp.pages.dev/');
+		await page.goto('https://geo.cmxu.io/');
 
 		// Wait for the page to load
 		await page.waitForLoadState('networkidle');

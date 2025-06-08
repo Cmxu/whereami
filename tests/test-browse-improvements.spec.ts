@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Browse Screen Improvements', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto('https://whereami-5kp.pages.dev/browse');
+		await page.goto('https://geo.cmxu.io/browse');
 	});
 
 	test('should display game thumbnails for public games', async ({ page }) => {

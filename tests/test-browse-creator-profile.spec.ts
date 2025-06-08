@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Browse Page Creator Profile Improvements', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto('https://whereami-5kp.pages.dev/browse');
+		await page.goto('https://geo.cmxu.io/browse');
 	});
 
 	test('should display creator profile headers instead of game thumbnails', async ({ page }) => {

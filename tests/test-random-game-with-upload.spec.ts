@@ -7,7 +7,7 @@ test.use({
 test.describe('Random Game with Upload Test', () => {
 	test('should upload an image and then enable random games', async ({ page }) => {
 		// Navigate to the gallery upload page
-		await page.goto('https://whereami-5kp.pages.dev/gallery?tab=upload');
+		await page.goto('https://geo.cmxu.io/gallery?tab=upload');
 		await page.waitForLoadState('networkidle');
 
 		// Check if we're authenticated
@@ -83,7 +83,7 @@ test.describe('Random Game with Upload Test', () => {
 
 		// Test the API endpoint directly
 		const response = await page.request.get(
-			'https://whereami-5kp.pages.dev/api/images/random?count=3'
+			'https://geo.cmxu.io/api/images/random?count=3'
 		);
 		console.log(`API Response status: ${response.status()}`);
 
@@ -112,7 +112,7 @@ test.describe('Random Game with Upload Test', () => {
 		}
 
 		// Now try to start a random game from the homepage
-		await page.goto('https://whereami-5kp.pages.dev/');
+		await page.goto('https://geo.cmxu.io/');
 		await page.waitForLoadState('networkidle');
 
 		// Click Quick Game or Full Game button

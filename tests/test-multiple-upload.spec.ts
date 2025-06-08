@@ -12,7 +12,7 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 		page
 	}) => {
 		// Navigate to the gallery upload page
-		await page.goto('https://whereami-5kp.pages.dev/gallery?tab=upload');
+		await page.goto('https://geo.cmxu.io/gallery?tab=upload');
 		await page.waitForLoadState('networkidle');
 
 		// Check if we're authenticated
@@ -24,7 +24,7 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 		}
 
 		// Get initial profile stats by going to profile page first
-		await page.goto('https://whereami-5kp.pages.dev/profile');
+		await page.goto('https://geo.cmxu.io/profile');
 		await page.waitForLoadState('networkidle');
 		await page.waitForTimeout(2000);
 
@@ -34,7 +34,7 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 		console.log(`Initial images uploaded count: ${initialCount}`);
 
 		// Go back to upload page
-		await page.goto('https://whereami-5kp.pages.dev/gallery?tab=upload');
+		await page.goto('https://geo.cmxu.io/gallery?tab=upload');
 		await page.waitForLoadState('networkidle');
 
 		// Create test image files (3 images)
@@ -176,7 +176,7 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 		while (attempts < maxAttempts) {
 			console.log(`Attempt ${attempts + 1}: Checking profile stats...`);
 
-			await page.goto('https://whereami-5kp.pages.dev/profile');
+			await page.goto('https://geo.cmxu.io/profile');
 			await page.waitForLoadState('networkidle');
 			await page.waitForTimeout(3000);
 
@@ -200,7 +200,7 @@ test.describe('Multiple Image Upload KV Count Test', () => {
 		// Also check user images API directly
 		try {
 			const userImagesResponse = await page.request.get(
-				'https://whereami-5kp.pages.dev/api/images/user'
+				'https://geo.cmxu.io/api/images/user'
 			);
 			if (userImagesResponse.ok()) {
 				const userImagesData = await userImagesResponse.json();

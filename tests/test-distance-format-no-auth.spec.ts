@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Distance Format Test (No Auth)', () => {
 	test('should display distance with proper number and unit format', async ({ page }) => {
 		// Navigate to the main page
-		await page.goto('https://whereami-5kp.pages.dev/');
+		await page.goto('https://geo.cmxu.io/');
 
 		// Wait for the page to load
 		await page.waitForLoadState('networkidle');

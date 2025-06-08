@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 test.describe('Game Next Round Flow', () => {
 	test('should not show loading map when moving to next round', async ({ page }) => {
 		// Navigate to the main page
-		await page.goto('https://whereami-5kp.pages.dev/');
+		await page.goto('https://geo.cmxu.io/');
 
 		// Wait for the page to load
 		await page.waitForLoadState('networkidle');

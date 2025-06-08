@@ -22,7 +22,7 @@ export default defineConfig({
 	/* Shared settings for all the projects below. See https://playwright.dev/docs/config#global-configuration */
 	use: {
 		/* Base URL to use in actions like `await page.goto('/')`. */
-		baseURL: 'https://whereami-5kp.pages.dev',
+		baseURL: 'https://geo.cmxu.io',
 		/* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
 		trace: 'on-first-retry',
 		/* Take screenshot on failure */

@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Continue Game Popup', () => {
 	test.beforeEach(async ({ page }) => {
 		// Start from the home page
-		await page.goto('https://whereami-5kp.pages.dev');
+		await page.goto('https://geo.cmxu.io');
 		await page.waitForLoadState('networkidle');
 	});
 
