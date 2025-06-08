@@ -24,6 +24,44 @@
 - [ ] Optimize image loading and compression
 - [ ] Add proper error boundaries for API failures
 - [ ] Adjust profile picture, zoom and move
+- [x] **Map Language Localization** - Added automatic language localization for Esri basemap labels based on browser language
+  - Implemented browser language detection function that maps common language codes to Esri supported language codes
+  - Added comprehensive support for 35+ languages including Arabic, Chinese, Spanish, French, German, Russian, and many others
+  - Enhanced vector basemap initialization to include language parameter for localized place labels
+  - Added RTL (Right-to-Left) text support for Arabic and Hebrew languages using Mapbox GL RTL plugin
+  - Implemented graceful fallback to English for unsupported languages
+  - Added console logging to track language detection and application for debugging purposes
+  - Created comprehensive Playwright tests to verify language localization functionality
+  - Successfully deployed to production at https://9e433e5c.whereami-5kp.pages.dev
+  - **WebGL Vertex Limit Fix**: Resolved "Max vertices per segment is 65535" error with comprehensive solutions
+    - Added WebGL capability detection to assess device rendering limitations before loading vector basemaps
+    - Implemented automatic fallback from vector to raster basemaps for devices with limited WebGL support
+    - Added vector basemap performance optimizations (maxNativeZoom: 15, tileSize: 512, reduced buffer)
+    - Enhanced error handling with runtime detection and automatic fallback on WebGL vertex buffer overflow
+    - Added real-time error listeners to switch from vector to raster basemaps when rendering issues occur
+    - Successfully deployed WebGL-optimized version to https://cd8a6827.whereami-5kp.pages.dev
+  - **Satellite Mode Toggle**: Added ability to toggle between satellite and street view basemaps
+    - Implemented satellite toggle button positioned in top-left corner of all maps
+    - Button shows "Satellite" when in outdoor/street mode and "Street" when in satellite mode
+    - Seamless switching between Esri's outdoor vector basemap and satellite imagery basemap
+    - Maintains all existing WebGL optimizations and fallback mechanisms for both basemap types
+    - Added proper styling with backdrop blur, hover effects, and dark mode support
+    - Mobile-optimized button sizing and positioning for touch interfaces
+    - Successfully deployed satellite toggle feature to https://d57adffb.whereami-5kp.pages.dev
+- [x] **Esri Leaflet Vector Basemap Integration** - Successfully migrated from OpenStreetMap to Esri's premium vector satellite imagery basemaps
+  - Installed `esri-leaflet` and `esri-leaflet-vector` plugins with TypeScript support
+  - Integrated ArcGIS API key for authenticated access to premium mapping services
+  - Updated Map component to use Esri's Vector Basemap Service (`arcgis/imagery`) with correct API syntax
+  - Fixed implementation to use proper basemap name (`arcgis/imagery`) and token property as per official documentation
+  - Resolved vector plugin initialization issue by using direct module import (`esriVector.vectorBasemapLayer`)
+  - Eliminated deprecation warning by using modern vector basemap service instead of legacy tile service
+  - Implemented robust multi-tier fallback system: Vector Basemap → Classic Basemap → OpenStreetMap
+  - Created custom TypeScript declarations for esri-leaflet-vector module
+  - Enhanced visual quality with professional-grade vector satellite imagery throughout the application
+  - Improved performance with vector-based rendering compared to raster tiles
+  - Removed debug console messages for cleaner production code
+  - Guaranteed service availability with authenticated API key access
+  - Successfully deployed working vector basemap implementation to production at https://87590e67.whereami-5kp.pages.dev
 
 ### Completed
 
@@ -220,6 +258,15 @@
   - Eliminates need to replay completed rounds when resuming from home page
   - Provides seamless continuation of interrupted gameplay sessions
   - Successfully deployed to production at https://f9194953.whereami-5kp.pages.dev
+- [x] **Dark Mode Fix for Authentication Modal** - Fixed text readability issue in login/signup input fields
+  - Updated `AuthModal.svelte` to use proper dark mode styling for all input fields
+  - Fixed modal background to use `dark:bg-gray-800` instead of hardcoded white
+  - Added `dark:text-white` and `dark:bg-gray-700` classes to all input fields for proper text visibility
+  - Updated labels, error messages, and footer text to use dark mode color variants
+  - Fixed placeholder text colors with `dark:placeholder-gray-400` for better contrast
+  - All form elements now have proper contrast and readability in both light and dark modes
+  - Verified fix with Playwright tests showing proper dark mode styling application
+  - Successfully deployed to production at https://17a0b171.whereami-5kp.pages.dev
 - [x] Seperate the home and game play pages - Created new `/play` endpoint for game functionality
 - [x] Move the stats from the home page to your profile
 - [x] Gray out play tab when no game is active with tooltip "Pick a game type to start playing!"

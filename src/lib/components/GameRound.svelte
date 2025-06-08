@@ -153,7 +153,7 @@
 
 		// For top-left resize handle (inverted deltas)
 		resizeCurrentSize.width = Math.max(250, Math.min(1200, resizeStartSize.width - deltaX));
-		resizeCurrentSize.height = Math.max(250, Math.min(600, resizeStartSize.height - deltaY));
+		resizeCurrentSize.height = Math.max(250, Math.min(800, resizeStartSize.height - deltaY));
 
 		if (mapComponent && mapComponent.invalidateSize) {
 			mapComponent.invalidateSize();
