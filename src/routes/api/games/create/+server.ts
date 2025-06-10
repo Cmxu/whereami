@@ -157,15 +157,7 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			);
 		}
 
-		if (gameData.imageIds.length > 50) {
-			return json(
-				{ error: 'Maximum 50 images allowed per game' },
-				{
-					status: 400,
-					headers: { 'Access-Control-Allow-Origin': '*' }
-				}
-			);
-		}
+		// No maximum limit on images per game
 
 		// Validate that all images exist and belong to the user
 		const imagePromises = gameData.imageIds.map((id) => getImageMetadata(id, env));

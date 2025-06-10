@@ -114,7 +114,7 @@ export const GET = async ({ request, platform }: RequestEvent) => {
 		const url = new URL(request.url);
 		const limitParam = url.searchParams.get('limit') || '50';
 		const offsetParam = url.searchParams.get('offset') || '0';
-		const limit = Math.max(1, Math.min(100, parseInt(limitParam)));
+		const limit = Math.max(1, parseInt(limitParam)); // No maximum limit
 		const offset = Math.max(0, parseInt(offsetParam));
 
 		// Get user's image list from KV

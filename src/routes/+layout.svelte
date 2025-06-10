@@ -26,6 +26,9 @@
 		}
 	});
 
+	// MAINTENANCE MODE - Set to true to enable maintenance mode
+	const MAINTENANCE_MODE = false;
+
 	// Set up automatic auth token management
 	user.subscribe(async ($user) => {
 		if ($user) {
@@ -55,18 +58,36 @@
 </script>
 
 {#if authInitialized}
-	<div class="app-layout">
-		<!-- Global Navigation -->
-		<Navigation />
+	<!-- Maintenance Mode Overlay -->
+	{#if MAINTENANCE_MODE}
+		<div class="maintenance-overlay">
+			<div class="maintenance-content">
+				<div class="maintenance-icon">🚧</div>
+				<h1 class="maintenance-title">Currently Down for Development</h1>
+				<p class="maintenance-message">
+					We're working on some exciting updates to make WhereAmI even better!
+					<br />
+					Please check back soon.
+				</p>
+				<div class="maintenance-footer">
+					<p class="maintenance-eta">Expected back online shortly</p>
+				</div>
+			</div>
+		</div>
+	{:else}
+		<div class="app-layout">
+			<!-- Global Navigation -->
+			<Navigation />
 
-		<!-- Main content -->
-		<main class="main-content">
-			<slot />
-		</main>
-	</div>
+			<!-- Main content -->
+			<main class="main-content">
+				<slot />
+			</main>
+		</div>
 
-	<!-- Global Toast Container -->
-	<ToastContainer />
+		<!-- Global Toast Container -->
+		<ToastContainer />
+	{/if}
 {:else}
 	<!-- Loading screen while auth initializes -->
 	<div class="app-loading">
@@ -188,6 +209,102 @@
 	@media (max-width: 768px) {
 		:global(.mobile-stack) {
 			flex-direction: column;
+		}
+	}
+
+	/* Maintenance Mode Styles */
+	.maintenance-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 9999;
+		padding: 2rem;
+	}
+
+	.maintenance-content {
+		text-align: center;
+		color: white;
+		max-width: 500px;
+		width: 100%;
+		animation: fadeInUp 0.8s ease-out;
+	}
+
+	.maintenance-icon {
+		font-size: 4rem;
+		margin-bottom: 1.5rem;
+		animation: bounce 2s infinite;
+	}
+
+	.maintenance-title {
+		font-size: 2.5rem;
+		font-weight: bold;
+		margin-bottom: 1.5rem;
+		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+	}
+
+	.maintenance-message {
+		font-size: 1.2rem;
+		line-height: 1.6;
+		margin-bottom: 2rem;
+		opacity: 0.9;
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+	}
+
+	.maintenance-footer {
+		border-top: 1px solid rgba(255, 255, 255, 0.2);
+		padding-top: 1.5rem;
+	}
+
+	.maintenance-eta {
+		font-size: 0.9rem;
+		opacity: 0.8;
+		font-style: italic;
+	}
+
+	@keyframes fadeInUp {
+		from {
+			opacity: 0;
+			transform: translateY(30px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes bounce {
+		0%, 20%, 53%, 80%, 100% {
+			transform: translate3d(0, 0, 0);
+		}
+		40%, 43% {
+			transform: translate3d(0, -10px, 0);
+		}
+		70% {
+			transform: translate3d(0, -5px, 0);
+		}
+		90% {
+			transform: translate3d(0, -2px, 0);
+		}
+	}
+
+	/* Mobile responsiveness for maintenance mode */
+	@media (max-width: 768px) {
+		.maintenance-title {
+			font-size: 2rem;
+		}
+		
+		.maintenance-message {
+			font-size: 1.1rem;
+		}
+		
+		.maintenance-icon {
+			font-size: 3rem;
 		}
 	}
 </style>

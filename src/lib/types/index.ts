@@ -33,10 +33,12 @@ export interface ImageMetadata {
 	r2Key: string;
 	location: Location;
 	uploadedBy: string;
+	uploadedByUsername?: string;
 	uploadedAt: string;
 	isPublic: boolean;
 	tags?: string[];
 	thumbnailUrl?: string;
+	sourceUrl?: string; // Source URL for attribution (especially for curated public images)
 }
 
 export interface CustomGame {

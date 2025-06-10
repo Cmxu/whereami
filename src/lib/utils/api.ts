@@ -47,7 +47,7 @@ export class WhereAmIAPI {
 	/**
 	 * Upload an image with location data (requires authentication)
 	 */
-	async uploadImage(file: File, location: Location, customName?: string): Promise<string> {
+	async uploadImage(file: File, location: Location, customName?: string, sourceUrl?: string): Promise<string> {
 		if (!this.isAuthenticated) {
 			throw new Error('Authentication required to upload images');
 		}
@@ -59,6 +59,11 @@ export class WhereAmIAPI {
 		// Add custom name if provided
 		if (customName && customName.trim()) {
 			formData.append('customName', customName.trim());
+		}
+
+		// Add source URL if provided
+		if (sourceUrl && sourceUrl.trim()) {
+			formData.append('sourceUrl', sourceUrl.trim());
 		}
 
 		const headers: Record<string, string> = {};
@@ -225,6 +230,20 @@ export class WhereAmIAPI {
 				throw new Error('Please sign in to view your images');
 			}
 			throw new Error('Failed to fetch user images');
+		}
+
+		const data = await response.json();
+		return data.images || data; // Handle both old and new response formats
+	}
+
+	/**
+	 * Get curated public images available for everyone
+	 */
+	async getPublicImages(): Promise<ImageMetadata[]> {
+		const response = await fetch(`${this.baseUrl}/images/public`);
+
+		if (!response.ok) {
+			throw new Error('Failed to fetch curated public images');
 		}
 
 		const data = await response.json();

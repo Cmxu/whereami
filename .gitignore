@@ -125,3 +125,26 @@ temp/
 /playwright-report/
 /blob-report/
 /playwright/.auth/
+
+# Public Images - ignore only image files, not the directory structure
+/public_images/*.jpg
+/public_images/*.jpeg
+/public_images/*.png
+/public_images/*.gif
+/public_images/*.webp
+/public_images/*.bmp
+/public_images/*.tiff
+/public_images/*.svg
+/public_images/*.heic
+/public_images/*.avif
+# Also ignore images in subdirectories
+/public_images/**/*.jpg
+/public_images/**/*.jpeg
+/public_images/**/*.png
+/public_images/**/*.gif
+/public_images/**/*.webp
+/public_images/**/*.bmp
+/public_images/**/*.tiff
+/public_images/**/*.svg
+/public_images/**/*.heic
+/public_images/**/*.avif

@@ -10,7 +10,7 @@ pages_build_output_dir = ".svelte-kit/cloudflare"
 binding = "IMAGES_BUCKET"
 bucket_name = "whereami-images"
 
-# KV namespaces
+# KV namespaces (shared between prod and dev)
 [[kv_namespaces]]
 binding = "IMAGE_DATA"
 id = "ed09b9a23eeb4a58b500f03e636ea811"
@@ -23,6 +23,7 @@ id = "7fb86fe8775e461996350c8f2dc6f86b"
 binding = "GAME_DATA"
 id = "8b8aaaeb40844b2c9591c98860b9dd47"
 
+# Variables
 [vars]
 ENVIRONMENT = "production"
 CORS_ORIGIN = "*"

@@ -36,7 +36,7 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 
 		// Parse query parameters
 		const countParam = url.searchParams.get('count') || '10';
-		const count = Math.max(1, Math.min(50, parseInt(countParam))); // Limit between 1-50
+		const count = Math.max(1, parseInt(countParam)); // Minimum 1, no maximum limit
 
 		// Get public images list
 		const publicImageIds = await getPublicImages(env);

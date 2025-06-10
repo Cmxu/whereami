@@ -24,6 +24,25 @@
 - [ ] Optimize image loading and compression
 - [ ] Add proper error boundaries for API failures
 - [ ] Adjust profile picture, zoom and move
+- [x] **Curated Public Images Gallery Tab** - Added curated images tab to gallery for official public photos
+  - Created new API endpoint `/api/images/public` to fetch images from dedicated public user account
+  - Added `getPublicImages()` method to API utility class for fetching curated public images
+  - Created `PublicGallery.svelte` component with browsing functionality for curated photos
+  - Updated gallery page to include three tabs: "My Photos", "Curated", and "Upload"
+  - Curated gallery shows images from a special "public" user account, separate from user-contributed photos
+  - Only images uploaded by the dedicated public user (userId: 'public') appear in this gallery
+  - Enhanced gallery navigation with proper tab switching and URL parameter handling
+  - Successfully deployed corrected implementation to production at https://600a4b83.whereami-5kp.pages.dev
+- [x] **Source URL Attribution for Curated Images** - Added source link attribution system for curated public images
+  - Added `sourceUrl` field to `ImageMetadata` interface for storing attribution links
+  - Enhanced upload API (`/api/images/upload-simple`) to accept and store optional source URLs
+  - Updated `uploadImage()` method in API utility to include sourceUrl parameter
+  - Added source URL input field to upload form for optional attribution during image upload
+  - Enhanced both `PublicGallery.svelte` and `UserGallery.svelte` components to display source attribution
+  - Source URLs appear as clickable "View Source" links when available, otherwise show default text
+  - Links open in new tabs with proper security attributes (`target="_blank" rel="noopener noreferrer"`)
+  - Supports attribution for both curated public images and user-uploaded images with sources
+  - Successfully deployed to production at https://f29b4ccf.whereami-5kp.pages.dev
 - [x] **Antimeridian Crossing Pin Placement Fix** - Fixed issue where pins were placed on wrong world copy when zoomed out
   - **Root Cause**: While Leaflet's `worldCopyJump` handles most antimeridian cases, pins could still be placed an entire map apart when zoomed out, even though distance calculation was correct
   - **Solution**: Implemented comprehensive antimeridian crossing handling in game logic and map components
@@ -298,3 +317,90 @@
 - [x] Seperate the home and game play pages - Created new `/play` endpoint for game functionality
 - [x] Move the stats from the home page to your profile
 - [x] Gray out play tab when no game is active with tooltip "Pick a game type to start playing!"
+
+# WhereAmI Development Guide
+
+## Development vs Production Deployments
+
+### 🔧 Development Environment
+- **Purpose**: Test features without affecting production
+- **URL**: `https://dev.whereami.pages.dev`
+- **Data**: Uses the same KV namespaces and R2 bucket as production
+- **Project**: `whereami` on Cloudflare Pages (dev branch)
+
+### 🚀 Production Environment  
+- **Purpose**: Live site for users
+- **URL**: `https://geo.cmxu.io`
+- **Data**: Shared with development (same backend)
+- **Project**: `whereami` on Cloudflare Pages (main branch)
+
+## Deployment Commands
+
+### Quick Commands (npm scripts):
+```bash
+# Deploy to development
+npm run deploy:dev
+
+# Deploy to production  
+npm run deploy:prod
+```
+
+### Manual Commands:
+```bash
+# Deploy to development
+./deploy.sh development
+
+# Deploy to production
+./deploy.sh production
+
+# Default (production)
+./deploy.sh
+```
+
+## Development Workflow
+
+1. **Make changes locally**
+   ```bash
+   npm run dev  # Test locally first
+   ```
+
+2. **Deploy to development for testing**
+   ```bash
+   npm run deploy:dev
+   ```
+   - Test at `https://dev.whereami.pages.dev`
+   - Same data as production, separate frontend
+   - Safe to test features, break things, etc.
+
+3. **Deploy to production when ready**
+   ```bash
+   npm run deploy:prod
+   ```
+   - Updates `https://geo.cmxu.io`
+   - Only do this when features are tested and ready
+
+## Environment Variables
+
+Both environments use the same:
+- KV namespaces (IMAGE_DATA, USER_DATA, GAME_DATA)
+- R2 bucket (whereami-images) 
+- Backend endpoints and data
+
+This means:
+- ✅ You can test with real data
+- ✅ No need to duplicate data
+- ⚠️ **Be careful**: Changes to data affect both environments
+
+## Maintenance Mode
+
+To enable maintenance mode on either environment:
+1. Edit `src/routes/+layout.svelte`
+2. Change `const MAINTENANCE_MODE = false;` to `const MAINTENANCE_MODE = true;`
+3. Deploy to the desired environment:
+   - Dev only: `npm run deploy:dev`
+   - Production only: `npm run deploy:prod`
+   - Both: Deploy to both environments
+
+---
+
+## Development Progress Checklist

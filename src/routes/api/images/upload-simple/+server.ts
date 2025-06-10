@@ -224,6 +224,7 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 		const imageFile = formData.get('image') as File;
 		const locationStr = formData.get('location') as string;
 		const customName = formData.get('customName') as string;
+		const sourceUrl = formData.get('sourceUrl') as string;
 
 		if (!imageFile) {
 			return json(
@@ -356,7 +357,8 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 				mimeType: imageFile.type,
 				url: imageUrl,
 				thumbnailUrl: thumbnailUrl,
-				isPublic: true // Default to public, can be changed later
+				isPublic: true, // Default to public, can be changed later
+				...(sourceUrl && sourceUrl.trim() && { sourceUrl: sourceUrl.trim() }) // Add sourceUrl if provided
 			};
 
 			// Store image metadata in KV

@@ -6,13 +6,23 @@
 	import { isAuthenticated } from '$lib/stores/authStore';
 	// Dynamic import for UserGallery to reduce initial bundle size
 	let UserGallery: any;
+	let PublicGallery: any;
 	let userGalleryLoaded = false;
+	let publicGalleryLoaded = false;
 	
 	async function loadUserGallery() {
 		if (!UserGallery && !userGalleryLoaded) {
 			userGalleryLoaded = true;
 			const module = await import('$lib/components/UserGallery.svelte');
 			UserGallery = module.default;
+		}
+	}
+
+	async function loadPublicGallery() {
+		if (!PublicGallery && !publicGalleryLoaded) {
+			publicGalleryLoaded = true;
+			const module = await import('$lib/components/PublicGallery.svelte');
+			PublicGallery = module.default;
 		}
 	}
 	import AuthModal from '$lib/components/AuthModal.svelte';
@@ -34,9 +44,10 @@
 		error?: string;
 		retryCount: number;
 		customName?: string;
+		sourceUrl?: string; // Optional source URL for attribution
 	}
 
-	type TabType = 'gallery' | 'upload';
+	type TabType = 'gallery' | 'public' | 'upload';
 
 	let activeTab: TabType = 'gallery';
 	let showAuthModal = false;
@@ -75,6 +86,10 @@
 		const tabParam = urlParams.get('tab');
 		if (tabParam === 'upload') {
 			activeTab = 'upload';
+		} else if (tabParam === 'public') {
+			activeTab = 'public';
+			// Load PublicGallery component for public tab
+			await loadPublicGallery();
 		} else {
 			activeTab = 'gallery';
 			// Load UserGallery component for gallery tab
@@ -141,6 +156,10 @@
 		// Only update if URL doesn't match current tab (avoid infinite loops)
 		if (tabParam === 'upload' && activeTab !== 'upload') {
 			activeTab = 'upload';
+		} else if (tabParam === 'public' && activeTab !== 'public') {
+			activeTab = 'public';
+			// Load PublicGallery component when switching to public tab
+			loadPublicGallery();
 		} else if (!tabParam && activeTab !== 'gallery') {
 			activeTab = 'gallery';
 			// Load UserGallery component when switching to gallery tab
@@ -163,6 +182,10 @@
 
 	function handleSwitchToGallery() {
 		goto('/gallery');
+	}
+
+	function handleSwitchToPublic() {
+		goto('/gallery?tab=public');
 	}
 
 	// Basic upload functionality
@@ -387,7 +410,7 @@
 			}, 200);
 
 			// Upload the image with custom name if provided
-			const imageId = await api.uploadImage(file.file, file.location, file.customName || undefined);
+			const imageId = await api.uploadImage(file.file, file.location, file.customName || undefined, file.sourceUrl || undefined);
 
 			clearInterval(progressInterval);
 			file.progress = 100;
@@ -610,6 +633,12 @@
 								🖼️ My Photos
 							</button>
 							<button
+								class="tab-button {activeTab === 'public' ? 'active' : ''}"
+								on:click={() => goto('/gallery?tab=public')}
+							>
+								🌍 Curated
+							</button>
+							<button
 								class="tab-button {activeTab === 'upload' ? 'active' : ''}"
 								on:click={() => goto('/gallery?tab=upload')}
 								disabled={!$isAuthenticated}
@@ -638,6 +667,27 @@
 							<div class="text-center">
 								<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
 								<p class="mt-2 text-sm text-gray-600">Loading gallery...</p>
+							</div>
+						</div>
+					{/if}
+				</div>
+			{:else if activeTab === 'public'}
+				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+					{#if PublicGallery}
+						<svelte:component 
+							this={PublicGallery}
+							selectable={false}
+							multiSelect={false}
+							on:imageSelect={(_event: any) => {
+								// Single image select - not implementing game creation from single image
+								// User can browse but needs to go to create page for game creation
+							}}
+						/>
+					{:else}
+						<div class="flex items-center justify-center py-12">
+							<div class="text-center">
+								<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+								<p class="mt-2 text-sm text-gray-600">Loading curated gallery...</p>
 							</div>
 						</div>
 					{/if}
@@ -947,6 +997,18 @@
 																<span class="flex-1">No location - click "Add Location"</span>
 															</div>
 														{/if}
+													</div>
+
+													<!-- Source URL (Optional) -->
+													<div class="source-url mb-3">
+														<input
+															type="url"
+															class="input-field text-xs w-full"
+															placeholder="Source URL (optional) - for attribution"
+															bind:value={file.sourceUrl}
+															on:input={() => (uploadFiles = [...uploadFiles])}
+															title="Optional source URL for photo attribution"
+														/>
 													</div>
 
 													<!-- Upload Status & Actions -->

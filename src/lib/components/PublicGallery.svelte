@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
-	import Map from './Map.svelte';
-	import type { Location, ImageMetadata } from '$lib/types';
+	import type { ImageMetadata } from '$lib/types';
 	import { api } from '$lib/utils/api';
 
 	const dispatch = createEventDispatcher<{
 		imageSelect: ImageMetadata;
 		imagesSelect: ImageMetadata[];
 		createGame: ImageMetadata[];
-		switchToUpload: void;
 	}>();
 
 	export let selectable = false;
@@ -22,15 +20,6 @@
 	let error: string | null = null;
 	let searchQuery = '';
 	let sortBy: 'newest' | 'oldest' | 'name' = 'newest';
-	let filterBy: 'all' | 'public' | 'private' = 'all';
-	let showLocationMap = false;
-	let selectedImageForLocation: ImageMetadata | null = null;
-	let editingLocation: Location | null = null;
-
-	// Image name editing state
-	let showNameEditor = false;
-	let selectedImageForNameEdit: ImageMetadata | null = null;
-	let editingName = '';
 
 	// Pagination
 	let currentPage = 1;
@@ -45,10 +34,10 @@
 		try {
 			loading = true;
 			error = null;
-			images = await api.getUserImages();
+			images = await api.getPublicImages();
 			updateFilteredImages();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to load images';
+			error = err instanceof Error ? err.message : 'Failed to load curated public images';
 		} finally {
 			loading = false;
 		}
@@ -65,11 +54,6 @@
 					img.filename.toLowerCase().includes(query) ||
 					img.tags?.some((tag) => tag.toLowerCase().includes(query))
 			);
-		}
-
-		// Apply visibility filter
-		if (filterBy !== 'all') {
-			filtered = filtered.filter((img) => (filterBy === 'public' ? img.isPublic : !img.isPublic));
 		}
 
 		// Apply sorting
@@ -153,127 +137,27 @@
 		currentPage = Math.max(1, Math.min(page, totalPages));
 	}
 
-	async function deleteImage(image: ImageMetadata) {
-		if (!confirm(`Are you sure you want to delete "${image.filename}"?`)) {
-			return;
-		}
-
-		try {
-			await api.deleteImage(image.id);
-			images = images.filter((img) => img.id !== image.id);
-			selectedImages.delete(image.id);
-			selectedImages = new Set(selectedImages);
-			updateFilteredImages();
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to delete image';
-		}
+	// Watch for changes in search and sort
+	$: if (searchQuery !== undefined || sortBy !== undefined) {
+		updateFilteredImages();
 	}
 
-	async function updateImageLocation(image: ImageMetadata, location: Location) {
-		try {
-			await api.updateImageLocation(image.id, location);
-
-			// Update local data
-			const imageIndex = images.findIndex((img) => img.id === image.id);
-			if (imageIndex !== -1) {
-				images[imageIndex].location = location;
-				images = [...images];
-				updateFilteredImages();
-			}
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to update location';
-		}
-	}
-
-	async function updateImageName(image: ImageMetadata, newName: string) {
-		try {
-			const updatedImage = await api.updateImage(image.id, { filename: newName });
-
-			// Update local data
-			const imageIndex = images.findIndex((img) => img.id === image.id);
-			if (imageIndex !== -1) {
-				images[imageIndex] = { ...images[imageIndex], ...updatedImage };
-				images = [...images];
-				updateFilteredImages();
-			}
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to update image name';
-			throw err;
-		}
-	}
-
-	function editImageLocation(image: ImageMetadata) {
-		selectedImageForLocation = image;
-		editingLocation = { ...image.location };
-		showLocationMap = true;
-	}
-
-	function editImageName(image: ImageMetadata) {
-		selectedImageForNameEdit = image;
-		editingName = image.filename;
-		showNameEditor = true;
-	}
-
-	function handleMapClick(event: CustomEvent<Location>) {
-		editingLocation = event.detail;
-	}
-
-	async function saveLocationEdit() {
-		if (selectedImageForLocation && editingLocation) {
-			await updateImageLocation(selectedImageForLocation, editingLocation);
-			showLocationMap = false;
-			selectedImageForLocation = null;
-		}
-	}
-
-	async function saveNameEdit() {
-		if (selectedImageForNameEdit && editingName.trim()) {
-			try {
-				await updateImageName(selectedImageForNameEdit, editingName.trim());
-				showNameEditor = false;
-				selectedImageForNameEdit = null;
-				editingName = '';
-			} catch (err) {
-				// Error handling is done in updateImageName function
-			}
-		}
-	}
-
-	function cancelLocationEdit() {
-		showLocationMap = false;
-		selectedImageForLocation = null;
-		editingLocation = null;
-	}
-
-	function cancelNameEdit() {
-		showNameEditor = false;
-		selectedImageForNameEdit = null;
-		editingName = '';
-	}
-
-	function createGameFromSelected() {
-		const selected = images.filter((img) => selectedImages.has(img.id));
-		dispatch('createGame', selected);
-	}
-
-	// Reactive updates
-	$: updateFilteredImages(), searchQuery, sortBy, filterBy;
 	$: selectedCount = selectedImages.size;
 	$: canCreateGame = selectedCount >= 3 && selectedCount <= 20;
 </script>
 
-<div class="user-gallery">
+<div class="public-gallery">
 	<!-- Filters and Search -->
 	<div
 		class="gallery-filters mb-8 p-6 rounded-lg border"
 		style="background-color: var(--bg-primary); border-color: var(--border-color);"
 	>
-		<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
 			<!-- Search -->
 			<div class="search-field">
 				<input
 					type="text"
-					placeholder="Search photos..."
+					placeholder="Search curated photos..."
 					class="input-field h-11 w-full"
 					bind:value={searchQuery}
 				/>
@@ -288,15 +172,6 @@
 				</select>
 			</div>
 
-			<!-- Filter -->
-			<div class="filter-field">
-				<select class="input-field h-11 w-full" bind:value={filterBy}>
-					<option value="all">All Photos</option>
-					<option value="public">Public Only</option>
-					<option value="private">Private Only</option>
-				</select>
-			</div>
-
 			<!-- Batch Actions -->
 			<div class="batch-actions">
 				{#if selectable && multiSelect}
@@ -307,12 +182,11 @@
 						Select Page
 					</button>
 				{:else}
-					<button
-						class="btn-primary w-full h-11 flex items-center justify-center gap-2"
-						on:click={() => dispatch('switchToUpload')}
-					>
-						⬆️ Upload
-					</button>
+					<div class="text-center">
+						<span class="text-sm text-gray-600">
+							{images.length} curated public photos available
+						</span>
+					</div>
 				{/if}
 			</div>
 		</div>
@@ -322,7 +196,7 @@
 	{#if loading}
 		<div class="loading-state text-center py-12">
 			<div class="loading-spinner mx-auto mb-4"></div>
-			<p class="text-gray-600">Loading your photos...</p>
+			<p class="text-gray-600">Loading curated photos...</p>
 		</div>
 	{/if}
 
@@ -330,7 +204,7 @@
 	{#if error}
 		<div class="error-state text-center py-12">
 			<div class="text-red-500 text-4xl mb-4">⚠️</div>
-			<h3 class="text-lg font-semibold text-gray-800 mb-2">Error Loading Photos</h3>
+			<h3 class="text-lg font-semibold text-gray-800 mb-2">Error Loading Curated Photos</h3>
 			<p class="text-gray-600 mb-4">{error}</p>
 			<button class="btn-primary" on:click={loadImages}>Try Again</button>
 		</div>
@@ -339,12 +213,9 @@
 	<!-- Empty State -->
 	{#if !loading && !error && images.length === 0}
 		<div class="empty-state text-center py-12">
-			<div class="text-6xl mb-6">📸</div>
-			<h3 class="text-xl font-semibold text-gray-800 mb-4">No Photos Yet</h3>
-			<p class="text-gray-600 mb-6">Upload your first photos to start creating custom games</p>
-			<button class="btn-primary" on:click={() => dispatch('switchToUpload')}>
-				Upload Photos
-			</button>
+			<div class="text-6xl mb-6">🌍</div>
+			<h3 class="text-xl font-semibold text-gray-800 mb-4">No Public Photos Available</h3>
+			<p class="text-gray-600 mb-6">Public photos are curated images available for everyone to use in their games.</p>
 		</div>
 	{/if}
 
@@ -409,21 +280,15 @@
 								<span>{image.location.lat.toFixed(2)}, {image.location.lng.toFixed(2)}</span>
 							</div>
 							<div class="flex items-center gap-1">
-								{#if image.isPublic}
-									<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded" title="Public"
-										>🌐</span
-									>
-								{:else}
-									<span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded" title="Private"
-										>🔒</span
-									>
-								{/if}
+								<span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded" title="Public">
+									🌍 Public
+								</span>
 							</div>
 						</div>
 
-						<!-- Source Attribution -->
-						{#if image.sourceUrl}
-							<div class="source-info mt-2">
+						<!-- Source Info -->
+						<div class="source-info mt-2">
+							{#if image.sourceUrl}
 								<p class="text-xs text-gray-500">
 									Source: <a 
 										href={image.sourceUrl} 
@@ -435,41 +300,11 @@
 										View Source
 									</a>
 								</p>
-							</div>
-						{/if}
-
-						<!-- Action Buttons -->
-						<div class="action-buttons mt-3 space-y-2">
-							<div class="flex gap-2">
-								<button
-									class="btn-secondary text-xs flex-1"
-									on:click={(e) => {
-										e.stopPropagation();
-										editImageName(image);
-									}}
-								>
-									✏️ Edit Name
-								</button>
-								<button
-									class="btn-secondary text-xs flex-1"
-									on:click={(e) => {
-										e.stopPropagation();
-										editImageLocation(image);
-									}}
-								>
-									📍 Edit Location
-								</button>
-							</div>
-							<button
-								class="w-full text-red-500 hover:text-red-700 text-xs py-1 hover:bg-red-50 rounded transition-colors"
-								on:click={(e) => {
-									e.stopPropagation();
-									deleteImage(image);
-								}}
-								title="Delete photo"
-							>
-								🗑️ Delete Photo
-							</button>
+							{:else}
+								<p class="text-xs text-gray-500">
+									Curated Public Photo
+								</p>
+							{/if}
 						</div>
 					</div>
 
@@ -525,110 +360,10 @@
 		<div class="no-results text-center py-12">
 			<div class="text-4xl mb-4">🔍</div>
 			<h3 class="text-lg font-semibold text-gray-800 mb-2">No photos found</h3>
-			<p class="text-gray-600">Try adjusting your search or filters</p>
+			<p class="text-gray-600">Try adjusting your search</p>
 		</div>
 	{/if}
 </div>
-
-<!-- Location Editor Modal -->
-{#if showLocationMap && selectedImageForLocation}
-	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-		<div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-			<div class="modal-header p-4 border-b">
-				<h3 class="text-lg font-semibold text-gray-800">Edit Photo Location</h3>
-				<p class="text-sm text-gray-600">
-					Click on the map to update the location for "{selectedImageForLocation.filename}"
-				</p>
-			</div>
-			<div class="modal-content p-4">
-				<div class="location-editor-grid grid grid-cols-1 lg:grid-cols-2 gap-6">
-					<!-- Photo Preview -->
-					<div class="photo-section">
-						<div class="photo-preview-large">
-							<img
-								src={selectedImageForLocation.thumbnailUrl ||
-									`/api/images/${selectedImageForLocation.id}`}
-								alt={selectedImageForLocation.filename}
-								class="w-full h-64 object-cover rounded-lg"
-							/>
-							<div class="mt-4">
-								<h4 class="font-medium text-gray-800">{selectedImageForLocation.filename}</h4>
-								{#if editingLocation}
-									<p class="text-sm text-gray-600 mt-1">
-										New Location: {editingLocation.lat.toFixed(6)}, {editingLocation.lng.toFixed(6)}
-									</p>
-								{/if}
-							</div>
-						</div>
-					</div>
-
-					<!-- Map -->
-					<div class="map-section">
-						<Map
-							height="300px"
-							center={editingLocation || selectedImageForLocation.location}
-							zoom={10}
-							clickable={true}
-							markers={editingLocation
-								? [{ location: editingLocation, popup: 'New location' }]
-								: []}
-							on:mapClick={handleMapClick}
-						/>
-					</div>
-				</div>
-			</div>
-			<div class="modal-footer p-4 border-t flex justify-end gap-3">
-				<button class="btn-secondary" on:click={cancelLocationEdit}>Cancel</button>
-				<button class="btn-primary" disabled={!editingLocation} on:click={saveLocationEdit}>
-					Update Location
-				</button>
-			</div>
-		</div>
-	</div>
-{/if}
-
-<!-- Image Name Editor Modal -->
-{#if showNameEditor && selectedImageForNameEdit}
-	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-		<div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-			<div class="modal-header p-4 border-b">
-				<h3 class="text-lg font-semibold text-gray-800">Edit Image Name</h3>
-				<p class="text-sm text-gray-600">
-					Enter a new name for "{selectedImageForNameEdit.filename}"
-				</p>
-			</div>
-			<div class="modal-content p-4">
-				<div class="name-editor-grid grid grid-cols-1 gap-6">
-					<!-- Image Preview -->
-					<div class="image-preview">
-						<img
-							src={selectedImageForNameEdit.thumbnailUrl ||
-								`/api/images/${selectedImageForNameEdit.id}`}
-							alt={selectedImageForNameEdit.filename}
-							class="w-full h-64 object-cover rounded-lg"
-						/>
-					</div>
-
-					<!-- Name Input -->
-					<div class="name-input">
-						<input
-							type="text"
-							placeholder="Enter new name..."
-							class="input-field h-11"
-							bind:value={editingName}
-						/>
-					</div>
-				</div>
-			</div>
-			<div class="modal-footer p-4 border-t flex justify-end gap-3">
-				<button class="btn-secondary" on:click={cancelNameEdit}>Cancel</button>
-				<button class="btn-primary" disabled={!editingName.trim()} on:click={saveNameEdit}>
-					Update Name
-				</button>
-			</div>
-		</div>
-	</div>
-{/if}
 
 <style>
 	.gallery-item.selectable {
@@ -680,4 +415,4 @@
 			overflow-x: auto;
 		}
 	}
-</style>
+</style> 
