@@ -94,11 +94,11 @@ export async function initAuth() {
 			supabase.auth.onAuthStateChange(async (event, session) => {
 				console.log('Auth state change:', event, !!session?.user);
 
-				setUser(session?.user || null);
-
 				if (event === 'SIGNED_OUT') {
+					// Clear all auth state immediately on sign out
 					clearAuth();
 				} else if (event === 'SIGNED_IN' && session?.user) {
+					setUser(session.user);
 					try {
 						await loadUserProfile();
 					} catch (profileError) {
@@ -107,6 +107,9 @@ export async function initAuth() {
 				} else if (event === 'TOKEN_REFRESHED' && session?.user) {
 					// Token was refreshed, ensure we have the latest user data
 					setUser(session.user);
+				} else {
+					// For any other event, update user state
+					setUser(session?.user || null);
 				}
 			});
 
@@ -284,14 +287,23 @@ export async function signOut() {
 
 		if (error) {
 			setAuthError(error.message);
+			setAuthLoading(false);
 			return { success: false, error: error.message };
 		}
 
-		clearAuth();
+		// Don't call clearAuth() here - let the auth state listener handle it
+		// This prevents race conditions and ensures proper state synchronization
+		
+		// Wait a moment for the auth state change event to fire
+		await new Promise(resolve => setTimeout(resolve, 100));
+		
 		return { success: true };
 	} catch (error) {
 		console.error('Sign out error:', error);
 		setAuthError('An unexpected error occurred during sign out');
+		setAuthLoading(false);
+		// Fallback: clear auth state if something went wrong
+		clearAuth();
 		return { success: false, error: 'An unexpected error occurred' };
 	}
 }
@@ -345,6 +357,11 @@ export function clearAuth() {
 		totalScore: 0,
 		averageScore: 0
 	});
+	
+	// Force a re-render of reactive components
+	setTimeout(() => {
+		user.set(null);
+	}, 0);
 }
 
 // Utility function to check current authentication status

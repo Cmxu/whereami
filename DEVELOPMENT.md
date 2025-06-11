@@ -17,6 +17,40 @@
 
 ### Current Issues - High Priority
 
+- [x] **Scoring System Updates** - ✅ COMPLETED: Updated scoring function and cleaned up existing scores
+  - **Database Cleanup**: Successfully cleared all existing scores from both local and remote D1 databases due to scoring function changes
+    - Removed all game sessions, reset user stats (games_played, total_score, average_score to 0)
+    - Reset game play counts, ratings, and rating counts to 0 for clean slate
+    - Deleted all existing game ratings for fair comparison after scoring changes
+  - **Enhanced Score Storage**: Improved guess location storage for future score recalculation
+    - Modified API client `submitScore()` to include detailed round data with user guess locations
+    - Updated game store to pass complete round data (imageId, imageLocation, userGuess, score, distance) when submitting scores
+    - Enhanced game sessions table to properly store guess locations in `rounds_data` JSON field for future score recalculation
+    - System now captures all necessary data to recalculate scores if scoring algorithm changes again
+  - **Account Creation Prompt**: Added post-game account creation flow for unsigned users
+    - Created new `AccountCreationPrompt.svelte` component that appears after unsigned users complete custom games
+    - Prompts users with their score and benefits of creating an account (save to leaderboard, track progress, create games, etc.)
+    - Integrated with existing `AuthModal` component for seamless account creation workflow
+    - Automatically saves completed game score to leaderboard after successful account creation
+    - Added proper error handling for score submission failures with helpful user messaging
+    - Enhanced user acquisition by converting anonymous players into registered users
+
+### Current Issues - High Priority
+
+- [x] **Sign Out Button Reliability Fix** - ✅ FIXED: Sign out button often doesn't work until after a page refresh
+  - **Root Cause**: Race condition in authentication state management where manual `clearAuth()` call in `signOut()` function was competing with the auth state listener's `clearAuth()` call when Supabase fired the `SIGNED_OUT` event
+  - **Secondary Issue**: User menu dropdown would sometimes remain open even after sign out, creating inconsistent UI state
+  - **Solution**: Improved authentication state synchronization and user interface handling
+    - **Auth State Management**: Removed duplicate `clearAuth()` call from `signOut()` function to let the Supabase auth state listener handle all state clearing consistently
+    - **Race Condition Prevention**: Added small delay in `signOut()` to ensure auth state change event fires properly before resolving
+    - **Enhanced State Listener**: Improved `onAuthStateChange` listener to handle sign out events more robustly with immediate state clearing
+    - **UI State Management**: Added reactive statement in Navigation component to automatically close user menu when user is no longer authenticated
+    - **Immediate Visual Feedback**: Modified logout handler to close user menu immediately when clicked for better UX
+    - **Fallback Handling**: Added comprehensive error handling with fallback auth clearing if something goes wrong
+    - **Forced Re-render**: Enhanced `clearAuth()` function with setTimeout to force reactive component re-renders
+  - **Results**: Sign out now works consistently on first click without requiring page refresh, user menu closes properly, and auth state synchronizes correctly across all components
+  - Successfully deployed fix to ensure reliable sign out functionality
+
 - [x] **Custom Game Images Not Loading** - ✅ FIXED: Custom games work but images don't display properly
   - **Root Cause**: Image serving endpoint was using incorrect R2 object key - was using `imageId` directly instead of looking up the proper `r2Key` from database
   - **Solution**: Updated `/api/images/[imageId]/+server.ts` GET endpoint to:

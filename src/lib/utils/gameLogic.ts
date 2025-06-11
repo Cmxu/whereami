@@ -117,14 +117,33 @@ export const calculateDistance = (point1: Location, point2: Location): number =>
  * Optimized score calculation with steep drop-off curve
  */
 export const calculateScore = (distance: number): number => {
-	if (distance <= MIN_DISTANCE) return MAX_SCORE;
-	if (distance >= MAX_DISTANCE) return 0;
+	console.log('calculateScore called with distance:', distance);
+	
+	if (distance <= MIN_DISTANCE) {
+		console.log('Distance <= MIN_DISTANCE, returning MAX_SCORE:', MAX_SCORE);
+		return MAX_SCORE;
+	}
+	if (distance >= MAX_DISTANCE) {
+		console.log('Distance >= MAX_DISTANCE, returning 0');
+		return 0;
+	}
 
 	// Composite exponential decay
-	const fast = Math.exp(-distance / 40);
-	const slow = Math.exp(-distance / 600);
-	const blend = 0.8 * fast + 0.2 * slow;
-	return Math.round(MAX_SCORE * blend);
+	const fast = Math.exp(-distance / 20);
+	const slow = Math.exp(-distance / 1600);
+	const blend = 0.1 * fast + 0.9 * slow;
+	const score = Math.round(MAX_SCORE * blend);
+	
+	console.log('Scoring calculation:', {
+		distance,
+		fast,
+		slow, 
+		blend,
+		score,
+		constants: { MAX_SCORE, MIN_DISTANCE, MAX_DISTANCE }
+	});
+	
+	return score;
 };
 
 /**

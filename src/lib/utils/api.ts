@@ -544,7 +544,8 @@ export class WhereAmIAPI {
 		gameId: string,
 		score: number,
 		maxPossible: number,
-		rounds: number
+		rounds: number,
+		roundData?: any[]
 	): Promise<{
 		success: boolean;
 		isNewBest: boolean;
@@ -559,7 +560,8 @@ export class WhereAmIAPI {
 			body: JSON.stringify({
 				score,
 				maxPossible,
-				rounds
+				rounds,
+				roundData
 			})
 		});
 

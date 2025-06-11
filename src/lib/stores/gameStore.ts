@@ -275,12 +275,26 @@ export function proceedToNextRound() {
 				api.isAuthenticated
 			) {
 				const maxPossible = state.rounds.length * 10000;
+				
+				// Prepare round data for score recalculation
+				const roundData = state.rounds.map((round, index) => ({
+					id: index + 1,
+					imageId: round.image.id,
+					imageLocation: round.image.location,
+					userGuess: round.userGuess,
+					score: round.score,
+					distance: round.distance,
+					formattedDistance: round.formattedDistance,
+					formattedDistanceUnit: round.formattedDistanceUnit
+				}));
+				
 				api
 					.submitScore(
 						currentGameSettings.gameId,
 						state.totalScore,
 						maxPossible,
-						state.rounds.length
+						state.rounds.length,
+						roundData
 					)
 					.catch((error) => {
 						console.warn('Failed to submit score to leaderboard:', error);

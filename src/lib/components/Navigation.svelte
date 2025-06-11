@@ -12,10 +12,12 @@
 	let showUserMenu = false;
 
 	async function handleLogout() {
+		// Close the user menu immediately to provide immediate visual feedback
+		showUserMenu = false;
+		
 		const result = await signOut();
 		if (result.success) {
 			showSuccess('Signed out successfully');
-			showUserMenu = false;
 		} else {
 			showError('Failed to sign out');
 		}
@@ -52,6 +54,11 @@
 	}
 
 	$: currentPath = $page.url.pathname;
+	
+	// Close user menu when user is no longer authenticated
+	$: if (!$isAuthenticated) {
+		showUserMenu = false;
+	}
 
 	let navElement: HTMLElement;
 

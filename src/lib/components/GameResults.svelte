@@ -2,8 +2,10 @@
 	import { createEventDispatcher } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { gameState, gameSettings, getGameSummary } from '$lib/stores/gameStore';
+	import { isAuthenticated } from '$lib/stores/authStore';
 	import { getPerformanceRating } from '$lib/utils/gameLogic';
 	import Map from './Map.svelte';
+	import AccountCreationPrompt from './AccountCreationPrompt.svelte';
 	import type { Location } from '$lib/types';
 
 	const dispatch = createEventDispatcher<{
@@ -18,6 +20,7 @@
 	let isDragging = false;
 	let lastMouseX = 0;
 	let lastMouseY = 0;
+	let showAccountPrompt = false;
 
 	function handleBackToHome() {
 		dispatch('backToHome');
@@ -181,6 +184,17 @@
 	$: maxPossible = $gameState.rounds.length * 10000;
 	$: performanceRating = getPerformanceRating($gameState.totalScore, maxPossible);
 	$: percentage = Math.round(($gameState.totalScore / maxPossible) * 100);
+	
+	// Show account creation prompt for unsigned users who complete custom games
+	$: {
+		if (!$isAuthenticated && $gameSettings.gameMode === 'custom' && $gameSettings.gameId) {
+			showAccountPrompt = true;
+		}
+	}
+
+	function handleAccountPromptClose() {
+		showAccountPrompt = false;
+	}
 </script>
 
 <div class="game-results min-h-screen flex items-center justify-center p-4">
@@ -456,6 +470,12 @@
 		</div>
 	</div>
 {/if}
+
+<!-- Account Creation Prompt -->
+<AccountCreationPrompt 
+	bind:visible={showAccountPrompt}
+	on:close={handleAccountPromptClose}
+/>
 
 <style>
 	.game-results {
