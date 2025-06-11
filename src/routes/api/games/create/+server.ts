@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { CustomGame } from '$lib/types';
+import { D1Utils } from '$lib/db/d1-utils';
 
 interface CreateGameRequest {
 	name: string;
@@ -59,50 +60,16 @@ async function verifySupabaseToken(token: string, env: any): Promise<Authenticat
 	}
 }
 
-// Generate unique ID for game
-function generateGameId(): string {
-	return `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
 
-// Get image metadata from KV
-async function getImageMetadata(imageId: string, env: any) {
-	try {
-		const imageData = await env.IMAGE_DATA.get(`image:${imageId}`);
-		return imageData ? JSON.parse(imageData) : null;
-	} catch (error) {
-		console.error('Error getting image metadata:', error);
-		return null;
-	}
-}
 
-// Get user data from KV
-async function getUserData(userId: string, env: any) {
-	try {
-		const userData = await env.USER_DATA.get(`user:${userId}`);
-		return userData ? JSON.parse(userData) : null;
-	} catch (error) {
-		console.error('Error getting user data:', error);
-		return null;
-	}
-}
 
-// Save user data to KV
-async function saveUserData(userId: string, userData: any, env: any) {
-	try {
-		await env.USER_DATA.put(`user:${userId}`, JSON.stringify(userData));
-		return true;
-	} catch (error) {
-		console.error('Error saving user data:', error);
-		return false;
-	}
-}
 
 export const POST = async ({ request, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
-		if (!env?.IMAGE_DATA || !env?.USER_DATA || !env?.GAME_DATA) {
+		if (!env?.DB) {
 			return json(
-				{ error: 'Server configuration error: KV stores not configured' },
+				{ error: 'Server configuration error: Database not configured' },
 				{
 					status: 500,
 					headers: { 'Access-Control-Allow-Origin': '*' }
@@ -133,6 +100,9 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			);
 		}
 
+		// Initialize D1 utilities
+		const db = new D1Utils(env.DB);
+
 		// Parse request body
 		const gameData: CreateGameRequest = await request.json();
 
@@ -157,10 +127,8 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			);
 		}
 
-		// No maximum limit on images per game
-
 		// Validate that all images exist and belong to the user
-		const imagePromises = gameData.imageIds.map((id) => getImageMetadata(id, env));
+		const imagePromises = gameData.imageIds.map((id) => db.images.getImageById(id));
 		const imageResults = await Promise.all(imagePromises);
 		const validImages = imageResults.filter((img) => img !== null);
 
@@ -187,73 +155,22 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 		}
 
 		// Generate game ID
-		const gameId = generateGameId();
+		const gameId = crypto.randomUUID();
 
-		// Create game metadata
-		const game: CustomGame = {
+		// Create game in D1 database
+		const game = await db.games.createGame({
 			id: gameId,
 			name: gameData.name.trim(),
 			description: gameData.description?.trim(),
 			imageIds: gameData.imageIds,
 			createdBy: user.id,
-			createdAt: new Date().toISOString(),
 			isPublic: gameData.isPublic || false,
-			playCount: 0,
-			rating: 0,
-			ratingCount: 0,
 			tags: gameData.tags,
 			difficulty: gameData.difficulty
-		};
+		});
 
-		// Save game metadata to GAME_DATA KV (correct namespace)
-		await env.GAME_DATA.put(`game:${gameId}`, JSON.stringify(game));
-
-		// Update user's game count and add to user's games list
-		const userData = await getUserData(user.id, env);
-		if (userData) {
-			userData.gamesCreated = (userData.gamesCreated || 0) + 1;
-			userData.updatedAt = new Date().toISOString();
-			await saveUserData(user.id, userData, env);
-		}
-
-		// Add to user's games list
-		const userGamesKey = `user:${user.id}:games`;
-		const userGames = await env.USER_DATA.get(userGamesKey);
-		const gamesList = userGames ? JSON.parse(userGames) : [];
-		gamesList.unshift(gameId); // Add to beginning of list
-
-		// Keep only the last 1000 games per user
-		if (gamesList.length > 1000) {
-			gamesList.splice(1000);
-		}
-
-		await env.USER_DATA.put(userGamesKey, JSON.stringify(gamesList));
-
-		// Add to public games index if public
-		if (game.isPublic) {
-			const publicGamesKey = 'public_games_index';
-			const existingPublicGamesStr = await env.GAME_DATA.get(publicGamesKey);
-			const existingPublicGames = existingPublicGamesStr ? JSON.parse(existingPublicGamesStr) : [];
-
-			existingPublicGames.unshift({
-				gameId: gameId,
-				name: game.name,
-				description: game.description,
-				createdBy: game.createdBy,
-				createdAt: game.createdAt,
-				playCount: game.playCount,
-				imageCount: game.imageIds.length,
-				tags: game.tags,
-				difficulty: game.difficulty
-			});
-
-			// Keep only the last 1000 public games
-			if (existingPublicGames.length > 1000) {
-				existingPublicGames.splice(1000);
-			}
-
-			await env.GAME_DATA.put(publicGamesKey, JSON.stringify(existingPublicGames));
-		}
+		// Update user's game count
+		await db.users.incrementUserStats(user.id, { gamesCreated: 1 });
 
 		return json(
 			{ gameId: gameId, url: `/api/games/${gameId}`, success: true },

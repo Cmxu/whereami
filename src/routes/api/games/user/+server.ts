@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { CustomGame } from '$lib/types';
+import { D1Utils } from '$lib/db/d1-utils';
 
 interface AuthenticatedUser {
 	id: string;
@@ -50,22 +51,12 @@ async function verifySupabaseToken(token: string, env: any): Promise<Authenticat
 	}
 }
 
-async function getGameMetadata(gameId: string, env: any): Promise<CustomGame | null> {
-	try {
-		const gameData = await env.GAME_DATA.get(`game:${gameId}`);
-		return gameData ? JSON.parse(gameData) : null;
-	} catch (error) {
-		console.error('Error getting game metadata:', error);
-		return null;
-	}
-}
-
 export const GET = async ({ request, platform, url }: RequestEvent) => {
 	try {
 		const env = platform?.env;
-		if (!env?.IMAGE_DATA || !env?.USER_DATA || !env?.GAME_DATA) {
+		if (!env?.DB) {
 			return json(
-				{ error: 'Server configuration error: KV stores not configured' },
+				{ error: 'Server configuration error: D1 database not configured' },
 				{
 					status: 500,
 					headers: { 'Access-Control-Allow-Origin': '*' }
@@ -102,54 +93,30 @@ export const GET = async ({ request, platform, url }: RequestEvent) => {
 		const limit = Math.max(1, Math.min(100, parseInt(limitParam)));
 		const offset = Math.max(0, parseInt(offsetParam));
 
-		// Get user's games list from KV
-		const userGamesKey = `user:${user.id}:games`;
-		const userGamesData = await env.USER_DATA.get(userGamesKey);
+		// Initialize D1Utils
+		const db = new D1Utils(env.DB);
 
-		if (!userGamesData) {
-			return json(
-				{
-					games: [],
-					total: 0,
-					limit,
-					offset,
-					hasMore: false
-				},
-				{
-					headers: { 'Access-Control-Allow-Origin': '*' }
-				}
-			);
-		}
-
-		const gameIds: string[] = JSON.parse(userGamesData);
-
-		// Apply pagination
-		const paginatedIds = gameIds.slice(offset, offset + limit);
-
-		// Fetch metadata for each game
-		const gamePromises = paginatedIds.map((id) => getGameMetadata(id, env));
-		const gameResults = await Promise.all(gamePromises);
-
-		// Filter out null results (deleted games) and ensure user owns them
-		const validGames = gameResults.filter(
-			(game): game is NonNullable<typeof game> => game !== null && game.createdBy === user.id
-		);
+		// Get user's games from D1
+		const userGames = await db.games.getUserGames(user.id, limit, offset);
 
 		// Add computed fields
-		const enrichedGames = validGames.map((game) => ({
+		const enrichedGames = userGames.map((game) => ({
 			...game,
 			averageRating: (game.ratingCount || 0) > 0 ? (game.rating || 0) / (game.ratingCount || 1) : 0,
 			imageCount: game.imageIds.length,
 			url: `/games/${game.id}`
 		}));
 
+		// Get total count efficiently
+		const total = await db.games.getUserGamesCount(user.id);
+
 		return json(
 			{
 				games: enrichedGames,
-				total: gameIds.length,
+				total,
 				limit,
 				offset,
-				hasMore: offset + limit < gameIds.length
+				hasMore: offset + limit < total
 			},
 			{
 				headers: { 'Access-Control-Allow-Origin': '*' }

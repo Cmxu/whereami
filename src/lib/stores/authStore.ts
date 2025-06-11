@@ -127,6 +127,7 @@ export async function loadUserProfile() {
 			data: { session }
 		} = await supabase.auth.getSession();
 		if (!session?.access_token) {
+			setAuthLoading(false);
 			return;
 		}
 
@@ -138,7 +139,15 @@ export async function loadUserProfile() {
 
 		if (response.ok) {
 			const { profile } = await response.json();
-			userProfile.set(profile);
+			// Map backend fields to frontend fields
+			userProfile.set({
+				id: profile.id,
+				email: profile.email,
+				displayName: profile.username, // Backend uses 'username', frontend expects 'displayName'
+				profilePicture: profile.avatar, // Backend uses 'avatar', frontend expects 'profilePicture'
+				createdAt: profile.joinedAt,
+				updatedAt: profile.updatedAt
+			});
 
 			// Also update user stats from the profile data
 			if (profile) {
@@ -153,6 +162,8 @@ export async function loadUserProfile() {
 		}
 	} catch (error) {
 		console.error('Failed to load user profile:', error);
+	} finally {
+		setAuthLoading(false);
 	}
 }
 

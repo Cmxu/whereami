@@ -7,7 +7,8 @@ import type {
 	UserProfile,
 	GameSearchFilters,
 	SocialShare,
-	PaginatedResponse
+	PaginatedResponse,
+	PaginatedImagesResponse
 } from '$lib/types';
 
 export class WhereAmIAPI {
@@ -47,7 +48,7 @@ export class WhereAmIAPI {
 	/**
 	 * Upload an image with location data (requires authentication)
 	 */
-	async uploadImage(file: File, location: Location, customName?: string, sourceUrl?: string): Promise<string> {
+	async uploadImage(file: File, location: Location, customName?: string, sourceUrl?: string, isPublic?: boolean): Promise<string> {
 		if (!this.isAuthenticated) {
 			throw new Error('Authentication required to upload images');
 		}
@@ -64,6 +65,11 @@ export class WhereAmIAPI {
 		// Add source URL if provided
 		if (sourceUrl && sourceUrl.trim()) {
 			formData.append('sourceUrl', sourceUrl.trim());
+		}
+
+		// Add privacy setting if provided (defaults to true on backend if not specified)
+		if (isPublic !== undefined) {
+			formData.append('isPublic', String(isPublic));
 		}
 
 		const headers: Record<string, string> = {};
@@ -216,12 +222,17 @@ export class WhereAmIAPI {
 	/**
 	 * Get user's uploaded images (requires authentication)
 	 */
-	async getUserImages(): Promise<ImageMetadata[]> {
+	async getUserImages(limit: number = 50, offset: number = 0): Promise<PaginatedImagesResponse> {
 		if (!this.isAuthenticated) {
 			throw new Error('Authentication required to view user images');
 		}
 
-		const response = await fetch(`${this.baseUrl}/images/user`, {
+		const params = new URLSearchParams({
+			limit: limit.toString(),
+			offset: offset.toString()
+		});
+
+		const response = await fetch(`${this.baseUrl}/images/user?${params}`, {
 			headers: this.getHeaders()
 		});
 
@@ -233,21 +244,63 @@ export class WhereAmIAPI {
 		}
 
 		const data = await response.json();
-		return data.images || data; // Handle both old and new response formats
+		return {
+			images: data.images || data,
+			total: data.total || (data.images || data).length,
+			limit: data.limit || limit,
+			offset: data.offset || offset,
+			hasMore: data.hasMore || false
+		};
 	}
 
 	/**
-	 * Get curated public images available for everyone
+	 * Get all public images (any user's public photos)
 	 */
-	async getPublicImages(): Promise<ImageMetadata[]> {
-		const response = await fetch(`${this.baseUrl}/images/public`);
+	async getPublicImages(limit: number = 50, offset: number = 0): Promise<PaginatedImagesResponse> {
+		const params = new URLSearchParams({
+			limit: limit.toString(),
+			offset: offset.toString()
+		});
+
+		const response = await fetch(`${this.baseUrl}/images/public?${params}`);
 
 		if (!response.ok) {
-			throw new Error('Failed to fetch curated public images');
+			throw new Error('Failed to fetch public images');
 		}
 
 		const data = await response.json();
-		return data.images || data; // Handle both old and new response formats
+		return {
+			images: data.images || data,
+			total: data.total || (data.images || data).length,
+			limit: data.limit || limit,
+			offset: data.offset || offset,
+			hasMore: data.hasMore || false
+		};
+	}
+
+	/**
+	 * Get curated images specifically from the public@geo.cmxu.io account
+	 */
+	async getCuratedImages(limit: number = 50, offset: number = 0): Promise<PaginatedImagesResponse> {
+		const params = new URLSearchParams({
+			limit: limit.toString(),
+			offset: offset.toString()
+		});
+
+		const response = await fetch(`${this.baseUrl}/images/curated?${params}`);
+
+		if (!response.ok) {
+			throw new Error('Failed to fetch curated images');
+		}
+
+		const data = await response.json();
+		return {
+			images: data.images || data,
+			total: data.total || (data.images || data).length,
+			limit: data.limit || limit,
+			offset: data.offset || offset,
+			hasMore: data.hasMore || false
+		};
 	}
 
 	/**

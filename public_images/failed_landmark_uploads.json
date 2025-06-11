@@ -1,0 +1,30 @@
+[
+  {
+    "title": "File:Sundarbans, Mangrove forest (50083279617).png",
+    "landmark": "Sundarbans Mangrove Forest",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Sundarbans%2C_Mangrove_forest_%2850083279617%29.png",
+    "description": "Sentinel 2 satellite imagery",
+    "location": {
+      "lat": 21.760572,
+      "lon": 88.871139,
+      "country": "",
+      "region": ""
+    },
+    "commons_url": "https://commons.wikimedia.org/wiki/File:Sundarbans,_Mangrove_forest_(50083279617).png",
+    "error": "Failed to upload Sundarbans Mangrove Forest to gallery",
+    "error_type": "processing_failed"
+  },
+  {
+    "title": "File:Ko Phi Phi Island Thailand (2024-03-01-15-06-01 UMBRA-04).tiff",
+    "landmark": "Phi Phi Islands",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/0/01/Ko_Phi_Phi_Island_Thailand_%282024-03-01-15-06-01_UMBRA-04%29.tiff",
+    "description": "Ko_Phi_Phi_Island_Thailand (2024-03-01-15-06-01_UMBRA-04)",
+    "location": {
+      "lat": 7.683732,
+      "lon": 98.765808
+    },
+    "commons_url": "https://commons.wikimedia.org/wiki/File:Ko_Phi_Phi_Island_Thailand_(2024-03-01-15-06-01_UMBRA-04).tiff",
+    "error": "Failed to upload Phi Phi Islands to gallery",
+    "error_type": "processing_failed"
+  }
+]

@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { ImageMetadata } from '$lib/types';
+import { D1Utils } from '$lib/db/d1-utils';
 
 // Get image metadata from KV
 async function getImageMetadata(imageId: string, env: any): Promise<ImageMetadata | null> {
@@ -77,8 +78,8 @@ export const GET = async ({ url, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
 
-		if (!env?.IMAGE_DATA) {
-			console.error('KV namespaces not available');
+		if (!env?.DB) {
+			console.error('D1 database not available');
 			return json(
 				{ error: 'Server configuration error' },
 				{
@@ -90,46 +91,20 @@ export const GET = async ({ url, platform }: RequestEvent) => {
 			);
 		}
 
+		// Initialize D1Utils
+		const db = new D1Utils(env.DB);
+
 		// Parse query parameters
 		const limitParam = url.searchParams.get('limit') || '50';
 		const offsetParam = url.searchParams.get('offset') || '0';
 		const limit = Math.max(1, parseInt(limitParam)); // No maximum limit
 		const offset = Math.max(0, parseInt(offsetParam));
 
-		// Get public user's images list
-		const { publicImageIds, publicUserId } = await getPublicUserImages(env);
-
-		if (publicImageIds.length === 0 || !publicUserId) {
-			return json(
-				{
-					images: [],
-					total: 0,
-					limit,
-					offset,
-					hasMore: false
-				},
-				{
-					headers: {
-						'Access-Control-Allow-Origin': '*'
-					}
-				}
-			);
-		}
-
-		// Apply pagination
-		const paginatedIds = publicImageIds.slice(offset, offset + limit);
-
-		// Fetch metadata for each image
-		const imagePromises = paginatedIds.map((id: string) => getImageMetadata(id, env));
-		const imageResults = await Promise.all(imagePromises);
-
-		// Filter out any null results (deleted images) and ensure they belong to the public user
-		const validImages = imageResults.filter((img): img is ImageMetadata => {
-			return img !== null && img.uploadedBy === publicUserId;
-		});
+		// Get public images from D1
+		const publicImages = await db.images.getPublicImages(limit, offset);
 
 		// Add URLs for the images
-		const enrichedImages = validImages.map((image: ImageMetadata) => ({
+		const enrichedImages = publicImages.map((image: ImageMetadata) => ({
 			...image,
 			url: `/api/images/${image.id}/${image.filename}`,
 			thumbnailUrl:
@@ -138,13 +113,16 @@ export const GET = async ({ url, platform }: RequestEvent) => {
 			previewUrl: `/api/images/${image.id}/${image.filename}?w=800&h=600&fit=scale-down&q=85`
 		}));
 
+		// Get total count efficiently
+		const total = await db.images.getPublicImagesCount();
+
 		return json(
 			{
 				images: enrichedImages,
-				total: publicImageIds.length,
+				total,
 				limit,
 				offset,
-				hasMore: offset + limit < publicImageIds.length
+				hasMore: offset + limit < total
 			},
 			{
 				headers: {

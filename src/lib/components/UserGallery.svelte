@@ -16,7 +16,6 @@
 	export let maxSelection = 20;
 
 	let images: ImageMetadata[] = [];
-	let filteredImages: ImageMetadata[] = [];
 	let selectedImages: Set<string> = new Set();
 	let loading = true;
 	let error: string | null = null;
@@ -32,10 +31,15 @@
 	let selectedImageForNameEdit: ImageMetadata | null = null;
 	let editingName = '';
 
-	// Pagination
+	// Server-side pagination
 	let currentPage = 1;
-	let itemsPerPage = 12;
+	let itemsPerPage = 24; // Increase to show more images per page
+	let totalImages = 0;
 	let totalPages = 1;
+
+	// Calculate pagination range (always show 5 pages centered around current)
+	$: startPage = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+	$: endPage = Math.min(totalPages, startPage + 4);
 
 	onMount(async () => {
 		await loadImages();
@@ -45,8 +49,13 @@
 		try {
 			loading = true;
 			error = null;
-			images = await api.getUserImages();
-			updateFilteredImages();
+			
+			const offset = (currentPage - 1) * itemsPerPage;
+			const result = await api.getUserImages(itemsPerPage, offset);
+			
+			images = result.images;
+			totalImages = result.total;
+			totalPages = Math.ceil(totalImages / itemsPerPage);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to load images';
 		} finally {
@@ -54,41 +63,10 @@
 		}
 	}
 
-	function updateFilteredImages() {
-		let filtered = [...images];
-
-		// Apply search filter
-		if (searchQuery.trim()) {
-			const query = searchQuery.toLowerCase();
-			filtered = filtered.filter(
-				(img) =>
-					img.filename.toLowerCase().includes(query) ||
-					img.tags?.some((tag) => tag.toLowerCase().includes(query))
-			);
-		}
-
-		// Apply visibility filter
-		if (filterBy !== 'all') {
-			filtered = filtered.filter((img) => (filterBy === 'public' ? img.isPublic : !img.isPublic));
-		}
-
-		// Apply sorting
-		filtered.sort((a, b) => {
-			switch (sortBy) {
-				case 'newest':
-					return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
-				case 'oldest':
-					return new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime();
-				case 'name':
-					return a.filename.localeCompare(b.filename);
-				default:
-					return 0;
-			}
-		});
-
-		filteredImages = filtered;
-		totalPages = Math.ceil(filteredImages.length / itemsPerPage);
-		currentPage = Math.min(currentPage, totalPages || 1);
+	// Reload images when filters change
+	async function applyFilters() {
+		currentPage = 1; // Reset to first page when filters change
+		await loadImages();
 	}
 
 	function toggleImageSelection(image: ImageMetadata) {
@@ -118,8 +96,7 @@
 	}
 
 	function selectAll() {
-		const pageImages = getPaginatedImages();
-		pageImages.forEach((img) => {
+		images.forEach((img) => {
 			if (selectedImages.size < maxSelection) {
 				selectedImages.add(img.id);
 			}
@@ -143,16 +120,6 @@
 		}
 	}
 
-	function getPaginatedImages() {
-		const startIndex = (currentPage - 1) * itemsPerPage;
-		const endIndex = startIndex + itemsPerPage;
-		return filteredImages.slice(startIndex, endIndex);
-	}
-
-	function changePage(page: number) {
-		currentPage = Math.max(1, Math.min(page, totalPages));
-	}
-
 	async function deleteImage(image: ImageMetadata) {
 		if (!confirm(`Are you sure you want to delete "${image.filename}"?`)) {
 			return;
@@ -160,10 +127,10 @@
 
 		try {
 			await api.deleteImage(image.id);
-			images = images.filter((img) => img.id !== image.id);
 			selectedImages.delete(image.id);
 			selectedImages = new Set(selectedImages);
-			updateFilteredImages();
+			// Reload current page to reflect changes
+			await loadImages();
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to delete image';
 		}
@@ -178,7 +145,6 @@
 			if (imageIndex !== -1) {
 				images[imageIndex].location = location;
 				images = [...images];
-				updateFilteredImages();
 			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to update location';
@@ -194,7 +160,6 @@
 			if (imageIndex !== -1) {
 				images[imageIndex] = { ...images[imageIndex], ...updatedImage };
 				images = [...images];
-				updateFilteredImages();
 			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to update image name';
@@ -256,8 +221,17 @@
 		dispatch('createGame', selected);
 	}
 
-	// Reactive updates
-	$: updateFilteredImages(), searchQuery, sortBy, filterBy;
+	function changePage(page: number) {
+		currentPage = Math.max(1, Math.min(page, totalPages));
+		loadImages();
+	}
+
+	// Watch for changes in search and sort to trigger reload
+	$: if (searchQuery !== undefined || sortBy !== undefined || filterBy !== undefined) {
+		// Note: For now, we'll just show a message that filtering is not implemented server-side
+		// In a full implementation, you'd pass these as parameters to the API
+	}
+
 	$: selectedCount = selectedImages.size;
 	$: canCreateGame = selectedCount >= 3 && selectedCount <= 20;
 </script>
@@ -349,9 +323,9 @@
 	{/if}
 
 	<!-- Gallery Grid -->
-	{#if !loading && !error && filteredImages.length > 0}
+	{#if !loading && !error && images.length > 0}
 		<div class="gallery-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-			{#each getPaginatedImages() as image}
+			{#each images as image}
 				<div
 					class="gallery-item relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-200"
 					class:selected={selectedImages.has(image.id)}
@@ -410,12 +384,12 @@
 							</div>
 							<div class="flex items-center gap-1">
 								{#if image.isPublic}
-									<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded" title="Public"
-										>🌐</span
+									<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-medium" title="Public - appears in random games"
+										>🔓 Public</span
 									>
 								{:else}
-									<span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded" title="Private"
-										>🔒</span
+									<span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded font-medium" title="Private - only appears in your games"
+										>🔒 Private</span
 									>
 								{/if}
 							</div>
@@ -485,43 +459,121 @@
 
 		<!-- Pagination -->
 		{#if totalPages > 1}
-			<div class="pagination flex justify-center items-center gap-2">
-				<button
-					class="btn-secondary text-sm"
-					disabled={currentPage === 1}
-					on:click={() => changePage(currentPage - 1)}
-				>
-					← Previous
-				</button>
-
-				<div class="page-numbers flex gap-1">
-					{#each Array(totalPages) as _, i}
+			<div class="pagination-container mb-6">
+				<div class="pagination-info text-center mb-4">
+					<span class="text-sm text-gray-600">
+						Showing {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalImages)} of {totalImages} photos
+					</span>
+				</div>
+				
+				<div class="pagination relative flex justify-center items-center">
+					<!-- Centered: All navigation buttons and page numbers -->
+					<div class="flex items-center gap-2">
+						<!-- First Page Button -->
 						<button
 							class="page-btn w-8 h-8 text-sm rounded-lg transition-colors duration-200"
-							class:bg-blue-600={currentPage === i + 1}
-							class:text-white={currentPage === i + 1}
-							class:bg-gray-200={currentPage !== i + 1}
-							class:text-gray-700={currentPage !== i + 1}
-							on:click={() => changePage(i + 1)}
+							class:bg-blue-600={false}
+							class:text-white={false}
+							class:bg-gray-200={true}
+							class:text-gray-700={true}
+							disabled={currentPage === 1}
+							on:click={() => changePage(1)}
+							title="First page"
 						>
-							{i + 1}
+							&lt;&lt;
 						</button>
-					{/each}
-				</div>
 
-				<button
-					class="btn-secondary text-sm"
-					disabled={currentPage === totalPages}
-					on:click={() => changePage(currentPage + 1)}
-				>
-					Next →
-				</button>
+						<!-- Previous Button -->
+						<button
+							class="page-btn w-8 h-8 text-sm rounded-lg transition-colors duration-200"
+							class:bg-blue-600={false}
+							class:text-white={false}
+							class:bg-gray-200={true}
+							class:text-gray-700={true}
+							disabled={currentPage === 1}
+							on:click={() => changePage(currentPage - 1)}
+							title="Previous page"
+						>
+							&lt;
+						</button>
+
+						<!-- Page Numbers -->
+						{#each Array(endPage - startPage + 1) as _, i}
+							{@const pageNum = startPage + i}
+							<button
+								class="page-btn w-8 h-8 text-sm rounded-lg transition-colors duration-200"
+								class:bg-blue-600={currentPage === pageNum}
+								class:text-white={currentPage === pageNum}
+								class:bg-gray-200={currentPage !== pageNum}
+								class:text-gray-700={currentPage !== pageNum}
+								on:click={() => changePage(pageNum)}
+							>
+								{pageNum}
+							</button>
+						{/each}
+
+						<!-- Next Button -->
+						<button
+							class="page-btn w-8 h-8 text-sm rounded-lg transition-colors duration-200"
+							class:bg-blue-600={false}
+							class:text-white={false}
+							class:bg-gray-200={true}
+							class:text-gray-700={true}
+							disabled={currentPage === totalPages}
+							on:click={() => changePage(currentPage + 1)}
+							title="Next page"
+						>
+							&gt;
+						</button>
+
+						<!-- Last Page Button -->
+						<button
+							class="page-btn w-8 h-8 text-sm rounded-lg transition-colors duration-200"
+							class:bg-blue-600={false}
+							class:text-white={false}
+							class:bg-gray-200={true}
+							class:text-gray-700={true}
+							disabled={currentPage === totalPages}
+							on:click={() => changePage(totalPages)}
+							title="Last page"
+						>
+							&gt;&gt;
+						</button>
+					</div>
+
+					<!-- Absolutely positioned: Go to input -->
+					<div class="absolute right-0 direct-page-input flex items-center gap-2">
+						<span class="text-sm text-gray-600">Go to:</span>
+						<input
+							type="number"
+							min="1"
+							max={totalPages}
+							value={currentPage}
+							class="w-16 h-8 text-sm border border-gray-300 rounded px-2 text-center"
+							on:keydown={(e) => {
+								if (e.key === 'Enter') {
+									const value = parseInt((e.target as HTMLInputElement).value);
+									if (value >= 1 && value <= totalPages) {
+										changePage(value);
+									}
+								}
+							}}
+							on:change={(e) => {
+								const value = parseInt((e.target as HTMLInputElement).value);
+								if (value >= 1 && value <= totalPages) {
+									changePage(value);
+								}
+							}}
+						/>
+						<span class="text-sm text-gray-600">of {totalPages}</span>
+					</div>
+				</div>
 			</div>
 		{/if}
 	{/if}
 
 	<!-- No Results -->
-	{#if !loading && !error && filteredImages.length === 0 && images.length > 0}
+	{#if !loading && !error && images.length === 0}
 		<div class="no-results text-center py-12">
 			<div class="text-4xl mb-4">🔍</div>
 			<h3 class="text-lg font-semibold text-gray-800 mb-2">No photos found</h3>

@@ -72,7 +72,7 @@
 						'Content-Type': 'application/json',
 						Authorization: `Bearer ${accessToken}`
 					},
-					body: JSON.stringify({ displayName })
+					body: JSON.stringify({ username: displayName })
 				});
 
 				if (!response.ok) {

@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
+import { D1Utils } from '$lib/db/d1-utils';
 
 interface AuthenticatedUser {
 	id: string;
@@ -55,44 +56,12 @@ async function verifySupabaseToken(token: string, env: any): Promise<Authenticat
 	}
 }
 
-// Get image metadata from KV
-async function getImageMetadata(imageId: string, env: any): Promise<any> {
-	try {
-		const metadata = await env.IMAGE_DATA.get(`image:${imageId}`);
-		return metadata ? JSON.parse(metadata) : null;
-	} catch (error) {
-		console.error('Failed to get image metadata:', error);
-		return null;
-	}
-}
-
-// Get user data from KV store
-async function getUserData(userId: string, env: any): Promise<any> {
-	try {
-		const userData = await env.USER_DATA.get(`user:${userId}`);
-		return userData ? JSON.parse(userData) : null;
-	} catch (error) {
-		console.error('Failed to get user data:', error);
-		return null;
-	}
-}
-
-// Save user data to KV store
-async function saveUserData(userId: string, data: any, env: any): Promise<void> {
-	try {
-		await env.USER_DATA.put(`user:${userId}`, JSON.stringify(data));
-	} catch (error) {
-		console.error('Failed to save user data:', error);
-		throw error;
-	}
-}
-
 export const DELETE = async ({ params, request, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
 
-		if (!env?.USER_DATA || !env?.IMAGE_DATA || !env?.IMAGES_BUCKET) {
-			console.error('KV namespaces or R2 bucket not available');
+		if (!env?.DB || !env?.IMAGES_BUCKET) {
+			console.error('D1 database or R2 bucket not available');
 			return json(
 				{ error: 'Server configuration error' },
 				{
@@ -144,8 +113,11 @@ export const DELETE = async ({ params, request, platform }: RequestEvent) => {
 			);
 		}
 
-		// Get image metadata
-		const metadata = await getImageMetadata(imageId, env);
+		// Initialize D1Utils
+		const db = new D1Utils(env.DB);
+
+		// Get image metadata from D1
+		const metadata = await db.images.getImageById(imageId);
 		if (!metadata) {
 			return json(
 				{ error: 'Image not found' },
@@ -179,35 +151,11 @@ export const DELETE = async ({ params, request, platform }: RequestEvent) => {
 			const thumbnailKey = `thumbnails/${imageId}.${metadata.filename.split('.').pop()}`;
 			await env.IMAGES_BUCKET.delete(thumbnailKey);
 
-			// Delete metadata from KV
-			await env.IMAGE_DATA.delete(`image:${imageId}`);
-
-			// Remove from user's images list
-			const userImagesKey = `user:${user.id}:images`;
-			const userImagesData = await env.USER_DATA.get(userImagesKey);
-			if (userImagesData) {
-				const imagesList: string[] = JSON.parse(userImagesData);
-				const filteredImages = imagesList.filter((id) => id !== imageId);
-				await env.USER_DATA.put(userImagesKey, JSON.stringify(filteredImages));
-			}
-
-			// Remove from public images index if it was public
-			if (metadata.isPublic) {
-				const publicImagesData = await env.IMAGE_DATA.get('public_images');
-				if (publicImagesData) {
-					const publicImages: string[] = JSON.parse(publicImagesData);
-					const filteredPublicImages = publicImages.filter((id) => id !== imageId);
-					await env.IMAGE_DATA.put('public_images', JSON.stringify(filteredPublicImages));
-				}
-			}
+			// Delete image from D1 database
+			await db.images.deleteImage(imageId);
 
 			// Update user's image count
-			const userData = await getUserData(user.id, env);
-			if (userData && userData.imagesUploaded > 0) {
-				userData.imagesUploaded = userData.imagesUploaded - 1;
-				userData.updatedAt = new Date().toISOString();
-				await saveUserData(user.id, userData, env);
-			}
+			await db.users.incrementUserStats(user.id, { imagesUploaded: -1 });
 
 			return json(
 				{
@@ -255,8 +203,8 @@ export const PUT = async ({ params, request, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
 
-		if (!env?.USER_DATA || !env?.IMAGE_DATA) {
-			console.error('KV namespaces not available');
+		if (!env?.DB) {
+			console.error('D1 database not available');
 			return json(
 				{ error: 'Server configuration error' },
 				{
@@ -308,8 +256,11 @@ export const PUT = async ({ params, request, platform }: RequestEvent) => {
 			);
 		}
 
-		// Get image metadata
-		const metadata = await getImageMetadata(imageId, env);
+		// Initialize D1Utils
+		const db = new D1Utils(env.DB);
+
+		// Get image metadata from D1
+		const metadata = await db.images.getImageById(imageId);
 		if (!metadata) {
 			return json(
 				{ error: 'Image not found' },
@@ -338,6 +289,9 @@ export const PUT = async ({ params, request, platform }: RequestEvent) => {
 		// Parse request body
 		const updateData = await request.json();
 
+		// Prepare update object
+		const updates: any = {};
+
 		// Validate and update allowed fields
 		if (updateData.filename !== undefined) {
 			// Sanitize filename
@@ -353,54 +307,59 @@ export const PUT = async ({ params, request, platform }: RequestEvent) => {
 					}
 				);
 			}
-			metadata.filename = sanitizedFilename;
+			updates.filename = sanitizedFilename;
 		}
 
 		if (updateData.isPublic !== undefined) {
-			const wasPublic = metadata.isPublic;
-			metadata.isPublic = Boolean(updateData.isPublic);
-
-			// Update public images index if visibility changed
-			if (wasPublic !== metadata.isPublic) {
-				const publicImagesData = await env.IMAGE_DATA.get('public_images');
-				const publicImages: string[] = publicImagesData ? JSON.parse(publicImagesData) : [];
-
-				if (metadata.isPublic && !publicImages.includes(imageId)) {
-					// Add to public index
-					publicImages.unshift(imageId);
-					if (publicImages.length > 1000) {
-						publicImages.splice(1000);
-					}
-				} else if (!metadata.isPublic && publicImages.includes(imageId)) {
-					// Remove from public index
-					const filteredImages = publicImages.filter((id) => id !== imageId);
-					await env.IMAGE_DATA.put('public_images', JSON.stringify(filteredImages));
-				}
-
-				if (metadata.isPublic) {
-					await env.IMAGE_DATA.put('public_images', JSON.stringify(publicImages));
-				}
-			}
+			updates.isPublic = Boolean(updateData.isPublic);
 		}
 
 		if (updateData.tags !== undefined && Array.isArray(updateData.tags)) {
-			metadata.tags = updateData.tags
+			updates.tags = updateData.tags
 				.map((tag: string) => tag.trim())
 				.filter((tag: string) => tag.length > 0);
 		}
 
-		// Update the updatedAt timestamp
-		metadata.updatedAt = new Date().toISOString();
-
 		try {
-			// Save updated metadata to KV
-			await env.IMAGE_DATA.put(`image:${imageId}`, JSON.stringify(metadata));
+			// Update the image in D1
+			// Note: We need to implement an updateImage method in D1Utils
+			// For now, we'll handle this at the database level
+			const updateFields = [];
+			const updateValues = [];
+
+			if (updates.filename) {
+				updateFields.push('filename = ?');
+				updateValues.push(updates.filename);
+			}
+			if (updates.isPublic !== undefined) {
+				updateFields.push('is_public = ?');
+				updateValues.push(updates.isPublic);
+			}
+			if (updates.tags) {
+				updateFields.push('tags = ?');
+				updateValues.push(JSON.stringify(updates.tags));
+			}
+
+			if (updateFields.length > 0) {
+				updateFields.push('updated_at = ?');
+				updateValues.push(new Date().toISOString());
+				updateValues.push(imageId);
+
+				await env.DB.prepare(`
+					UPDATE images 
+					SET ${updateFields.join(', ')}
+					WHERE id = ?
+				`).bind(...updateValues).run();
+			}
+
+			// Get updated metadata
+			const updatedMetadata = await db.images.getImageById(imageId);
 
 			return json(
 				{
 					success: true,
 					message: 'Image updated successfully',
-					metadata: metadata
+					metadata: updatedMetadata
 				},
 				{
 					status: 200,
@@ -444,7 +403,7 @@ export const OPTIONS = async () => {
 		status: 200,
 		headers: {
 			'Access-Control-Allow-Origin': '*',
-			'Access-Control-Allow-Methods': 'DELETE, PUT, OPTIONS',
+			'Access-Control-Allow-Methods': 'DELETE, PUT, GET, OPTIONS',
 			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 		}
 	});
@@ -459,8 +418,8 @@ export const GET = async ({ params, platform }: RequestEvent) => {
 			return new Response('Image ID required', { status: 400 });
 		}
 
-		if (!env?.IMAGES_BUCKET) {
-			console.error('IMAGES_BUCKET R2 binding not found');
+		if (!env?.IMAGES_BUCKET || !env?.DB) {
+			console.error('IMAGES_BUCKET R2 binding or DB not found');
 			return new Response('Server configuration error', { status: 500 });
 		}
 
@@ -471,8 +430,15 @@ export const GET = async ({ params, platform }: RequestEvent) => {
 		if (imageId.startsWith('profile-pictures/')) {
 			objectKey = imageId;
 		} else {
-			// Legacy handling for regular images
-			objectKey = imageId;
+			// For regular images, get metadata from D1 to find the correct R2 key
+			const db = new D1Utils(env.DB);
+			const metadata = await db.images.getImageById(imageId);
+			
+			if (!metadata) {
+				return new Response('Image not found', { status: 404 });
+			}
+			
+			objectKey = metadata.r2Key;
 		}
 
 		// Get the image from R2

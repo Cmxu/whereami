@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { CustomGame } from '$lib/types';
+import { D1Utils } from '$lib/db/d1-utils';
 
 // Get game metadata from GAME_DATA namespace
 async function getGameMetadata(gameId: string, env: any): Promise<CustomGame | null> {
@@ -50,9 +51,9 @@ async function getUserProfile(
 export const GET = async ({ url, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
-		if (!env?.GAME_DATA) {
+		if (!env?.DB) {
 			return json(
-				{ error: 'Server configuration error: KV stores not configured' },
+				{ error: 'Server configuration error: D1 database not configured' },
 				{
 					status: 500,
 					headers: { 'Access-Control-Allow-Origin': '*' }
@@ -73,52 +74,13 @@ export const GET = async ({ url, platform }: RequestEvent) => {
 				?.split(',')
 				.filter((tag) => tag.trim()) || [];
 
-		// Get public games index from GAME_DATA
-		const publicGamesKey = 'public_games_index';
-		const existingPublicGamesStr = await env.GAME_DATA.get(publicGamesKey);
+		// Initialize D1Utils
+		const db = new D1Utils(env.DB);
 
-		if (!existingPublicGamesStr) {
-			return json(
-				{
-					games: [],
-					total: 0,
-					limit,
-					offset,
-					hasMore: false
-				},
-				{
-					headers: { 'Access-Control-Allow-Origin': '*' }
-				}
-			);
-		}
-
-		const publicGamesIndex = JSON.parse(existingPublicGamesStr);
-
-		if (publicGamesIndex.length === 0) {
-			return json(
-				{
-					games: [],
-					total: 0,
-					limit,
-					offset,
-					hasMore: false
-				},
-				{
-					headers: { 'Access-Control-Allow-Origin': '*' }
-				}
-			);
-		}
-
-		// Get full game metadata for all public games
-		const gamePromises = publicGamesIndex.map((indexEntry: any) =>
-			getGameMetadata(indexEntry.gameId || indexEntry.id, env)
-		);
-		const gameResults = await Promise.all(gamePromises);
-
-		// Filter out null results (deleted games) and ensure they're public
-		let validGames = gameResults.filter(
-			(game): game is CustomGame => game !== null && game.isPublic
-		);
+		// For now, we'll fetch a reasonable amount to allow for filtering
+		// In a production system, you'd want to implement search/filter at the SQL level
+		const fetchLimit = Math.max(limit * 2, 100); // Get 2x requested for filtering
+		let validGames = await db.games.getPublicGames(fetchLimit, 0);
 
 		// Apply search filter if provided
 		if (search) {
@@ -176,7 +138,7 @@ export const GET = async ({ url, platform }: RequestEvent) => {
 
 		// Get profile data for all creators
 		const creatorIds = [...new Set(paginatedGames.map((game) => game.createdBy))];
-		const profilePromises = creatorIds.map((id) => getUserProfile(id, env));
+		const profilePromises = creatorIds.map((id) => db.users.getUserById(id));
 		const profiles = await Promise.all(profilePromises);
 		const creatorProfiles = Object.fromEntries(
 			creatorIds.map((id, index) => [id, profiles[index]])
@@ -185,9 +147,9 @@ export const GET = async ({ url, platform }: RequestEvent) => {
 		// Add computed fields and creator profile data
 		const enrichedGames = paginatedGames.map((game) => ({
 			...game,
-			createdBy: creatorProfiles[game.createdBy]?.displayName || 'Anonymous',
-			creatorProfilePicture: creatorProfiles[game.createdBy]?.profilePicture || null,
-			creatorJoinedAt: creatorProfiles[game.createdBy]?.createdAt || null,
+			createdBy: creatorProfiles[game.createdBy]?.username || creatorProfiles[game.createdBy]?.email || 'Anonymous',
+			creatorProfilePicture: creatorProfiles[game.createdBy]?.avatar || null,
+			creatorJoinedAt: creatorProfiles[game.createdBy]?.joinedAt || null,
 			averageRating: (game.ratingCount || 0) > 0 ? (game.rating || 0) / (game.ratingCount || 1) : 0,
 			imageCount: game.imageIds.length
 		}));

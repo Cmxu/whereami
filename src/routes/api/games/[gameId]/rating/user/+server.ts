@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
+import { D1Utils } from '$lib/db/d1-utils';
 
 interface AuthenticatedUser {
 	id: string;
@@ -52,7 +53,7 @@ async function verifySupabaseToken(token: string, env: any): Promise<Authenticat
 export const GET = async ({ params, request, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
-		if (!env?.GAME_DATA) {
+		if (!env?.DB) {
 			return json(
 				{ error: 'Server configuration error' },
 				{
@@ -96,11 +97,12 @@ export const GET = async ({ params, request, platform }: RequestEvent) => {
 			);
 		}
 
-		// Check if user has rated this game
-		const userRatingKey = `rating:${gameId}:${user.id}`;
-		const ratingData = await env.GAME_DATA.get(userRatingKey);
+		const db = new D1Utils(env.DB);
 
-		if (!ratingData) {
+		// Get user's rating for this game
+		const rating = await db.games.getUserRating(gameId, user.id);
+
+		if (!rating) {
 			return json(
 				{ error: 'Rating not found' },
 				{
@@ -110,7 +112,6 @@ export const GET = async ({ params, request, platform }: RequestEvent) => {
 			);
 		}
 
-		const rating = JSON.parse(ratingData);
 		return json(rating, {
 			headers: { 'Access-Control-Allow-Origin': '*' }
 		});

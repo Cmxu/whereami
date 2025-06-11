@@ -3,15 +3,25 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { isAuthenticated } from '$lib/stores/authStore';
-	// Dynamic import for UserGallery to reduce initial bundle size
+	// Dynamic import for gallery components to reduce initial bundle size
 	let UserGallery: any;
+	let PublicGallery: any;
 	let userGalleryLoaded = false;
+	let publicGalleryLoaded = false;
 	
 	async function loadUserGallery() {
 		if (!UserGallery && !userGalleryLoaded) {
 			userGalleryLoaded = true;
 			const module = await import('$lib/components/UserGallery.svelte');
 			UserGallery = module.default;
+		}
+	}
+
+	async function loadPublicGallery() {
+		if (!PublicGallery && !publicGalleryLoaded) {
+			publicGalleryLoaded = true;
+			const module = await import('$lib/components/PublicGallery.svelte');
+			PublicGallery = module.default;
 		}
 	}
 	import AuthModal from '$lib/components/AuthModal.svelte';
@@ -30,6 +40,11 @@
 	let newGameDifficulty: 'easy' | 'medium' | 'hard' | undefined = undefined;
 	let creating = false;
 	let userGalleryComponent: any;
+	let publicGalleryComponent: any;
+
+	// Photo source selection
+	type PhotoSource = 'user' | 'curated' | 'both';
+	let photoSource: PhotoSource = 'user';
 
 	// Reactive variables for header display
 	$: selectedCount = selectedImages.length;
@@ -144,6 +159,27 @@
 			showInfo(`Select at least 3 photos to create a game (${selectedImages.length}/3)`);
 		}
 	}
+
+	async function handlePhotoSourceChange(newSource: PhotoSource) {
+		photoSource = newSource;
+		selectedImages = [];
+		
+		// Clear both gallery selections
+		if (userGalleryComponent) {
+			userGalleryComponent.deselectAll();
+		}
+		if (publicGalleryComponent) {
+			publicGalleryComponent.deselectAll();
+		}
+
+		// Load required galleries
+		if (newSource === 'user' || newSource === 'both') {
+			await loadUserGallery();
+		}
+		if (newSource === 'curated' || newSource === 'both') {
+			await loadPublicGallery();
+		}
+	}
 </script>
 
 <svelte:head>
@@ -226,21 +262,195 @@
 
 		<!-- Content -->
 		<div class="create-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+			<!-- Photo Source Selection -->
+			<div
+				class="photo-source-selection mb-8 p-6 rounded-lg border"
+				style="background-color: var(--bg-primary); border-color: var(--border-color);"
+			>
+				<h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">
+					Choose Photo Source
+				</h3>
+				<div class="flex flex-wrap gap-4">
+					<label class="photo-source-option">
+						<input
+							type="radio"
+							name="photoSource"
+							value="user"
+							bind:group={photoSource}
+							on:change={() => handlePhotoSourceChange('user')}
+							class="sr-only"
+						/>
+						<div
+							class="option-card px-4 py-3 rounded-lg border-2 transition-all cursor-pointer"
+							class:border-blue-500={photoSource === 'user'}
+							class:bg-blue-50={photoSource === 'user'}
+							class:border-gray-300={photoSource !== 'user'}
+						>
+							<div class="flex items-center space-x-3">
+								<span class="text-xl">📸</span>
+								<div>
+									<div class="font-medium" style="color: var(--text-primary);">
+										Your Photos
+									</div>
+									<div class="text-xs" style="color: var(--text-secondary);">
+										Use photos you've uploaded
+									</div>
+								</div>
+							</div>
+						</div>
+					</label>
+
+					<label class="photo-source-option">
+						<input
+							type="radio"
+							name="photoSource"
+							value="curated"
+							bind:group={photoSource}
+							on:change={() => handlePhotoSourceChange('curated')}
+							class="sr-only"
+						/>
+						<div
+							class="option-card px-4 py-3 rounded-lg border-2 transition-all cursor-pointer"
+							class:border-blue-500={photoSource === 'curated'}
+							class:bg-blue-50={photoSource === 'curated'}
+							class:border-gray-300={photoSource !== 'curated'}
+						>
+							<div class="flex items-center space-x-3">
+								<span class="text-xl">🌍</span>
+								<div>
+									<div class="font-medium" style="color: var(--text-primary);">
+										Curated Photos
+									</div>
+									<div class="text-xs" style="color: var(--text-secondary);">
+										Use public landmark photos
+									</div>
+								</div>
+							</div>
+						</div>
+					</label>
+
+					<label class="photo-source-option">
+						<input
+							type="radio"
+							name="photoSource"
+							value="both"
+							bind:group={photoSource}
+							on:change={() => handlePhotoSourceChange('both')}
+							class="sr-only"
+						/>
+						<div
+							class="option-card px-4 py-3 rounded-lg border-2 transition-all cursor-pointer"
+							class:border-blue-500={photoSource === 'both'}
+							class:bg-blue-50={photoSource === 'both'}
+							class:border-gray-300={photoSource !== 'both'}
+						>
+							<div class="flex items-center space-x-3">
+								<span class="text-xl">🎯</span>
+								<div>
+									<div class="font-medium" style="color: var(--text-primary);">
+										Both Sources
+									</div>
+									<div class="text-xs" style="color: var(--text-secondary);">
+										Mix your photos with curated ones
+									</div>
+								</div>
+							</div>
+						</div>
+					</label>
+				</div>
+			</div>
+
 			<!-- Photo Gallery -->
-			{#if UserGallery}
-				<svelte:component 
-					this={UserGallery}
-					selectable={true}
-					multiSelect={true}
-					on:imagesSelect={(event) => (selectedImages = event.detail)}
-					on:switchToUpload={handleUploadPhotos}
-					bind:this={userGalleryComponent}
-				/>
-			{:else}
-				<div class="flex items-center justify-center py-12">
-					<div class="text-center">
-						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-						<p class="mt-2 text-sm text-gray-600">Loading photo gallery...</p>
+			{#if photoSource === 'user'}
+				{#if UserGallery}
+					<svelte:component 
+						this={UserGallery}
+						selectable={true}
+						multiSelect={true}
+						on:imagesSelect={(event: CustomEvent<ImageMetadata[]>) => (selectedImages = event.detail)}
+						on:switchToUpload={handleUploadPhotos}
+						bind:this={userGalleryComponent}
+					/>
+				{:else}
+					<div class="flex items-center justify-center py-12">
+						<div class="text-center">
+							<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+							<p class="mt-2 text-sm text-gray-600">Loading your photos...</p>
+						</div>
+					</div>
+				{/if}
+			{:else if photoSource === 'curated'}
+				{#if PublicGallery}
+					<svelte:component 
+						this={PublicGallery}
+						selectable={true}
+						multiSelect={true}
+						on:imagesSelect={(event: CustomEvent<ImageMetadata[]>) => (selectedImages = event.detail)}
+						bind:this={publicGalleryComponent}
+					/>
+				{:else}
+					<div class="flex items-center justify-center py-12">
+						<div class="text-center">
+							<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+							<p class="mt-2 text-sm text-gray-600">Loading curated photos...</p>
+						</div>
+					</div>
+				{/if}
+			{:else if photoSource === 'both'}
+				<div class="space-y-8">
+					<!-- User Photos Section -->
+					<div>
+						<h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">
+							Your Photos
+						</h3>
+						{#if UserGallery}
+							<svelte:component 
+								this={UserGallery}
+								selectable={true}
+								multiSelect={true}
+								on:imagesSelect={(event: CustomEvent<ImageMetadata[]>) => {
+									const userImages = event.detail;
+									const publicImages = selectedImages.filter(img => !userImages.some((ui: ImageMetadata) => ui.id === img.id) && img.isPublic);
+									selectedImages = [...userImages, ...publicImages];
+								}}
+								on:switchToUpload={handleUploadPhotos}
+								bind:this={userGalleryComponent}
+							/>
+						{:else}
+							<div class="flex items-center justify-center py-12">
+								<div class="text-center">
+									<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+									<p class="mt-2 text-sm text-gray-600">Loading your photos...</p>
+								</div>
+							</div>
+						{/if}
+					</div>
+
+					<!-- Curated Photos Section -->
+					<div>
+						<h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);">
+							Curated Public Photos
+						</h3>
+						{#if PublicGallery}
+							<svelte:component 
+								this={PublicGallery}
+								selectable={true}
+								multiSelect={true}
+								on:imagesSelect={(event: CustomEvent<ImageMetadata[]>) => {
+									const publicImages = event.detail;
+									const userImages = selectedImages.filter(img => !publicImages.some((pi: ImageMetadata) => pi.id === img.id) && !img.isPublic);
+									selectedImages = [...userImages, ...publicImages];
+								}}
+								bind:this={publicGalleryComponent}
+							/>
+						{:else}
+							<div class="flex items-center justify-center py-12">
+								<div class="text-center">
+									<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+									<p class="mt-2 text-sm text-gray-600">Loading curated photos...</p>
+								</div>
+							</div>
+						{/if}
 					</div>
 				</div>
 			{/if}

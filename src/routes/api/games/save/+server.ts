@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { SavedGame, GameShareData } from '$lib/types';
+import { D1Utils } from '$lib/db/d1-utils';
 
 // Generate a random ID for the game
 function generateGameId(): string {
@@ -14,15 +15,18 @@ function generateShareToken(): string {
 
 export const POST = async ({ request, platform, url }: RequestEvent) => {
 	try {
-		if (!platform?.env?.GAME_DATA) {
+		if (!platform?.env?.DB) {
 			return json(
-				{ error: 'Game data storage not configured' },
+				{ error: 'Database not configured' },
 				{
 					status: 500,
 					headers: { 'Access-Control-Allow-Origin': '*' }
 				}
 			);
 		}
+
+		// Initialize D1 utilities
+		const db = new D1Utils(platform.env.DB);
 
 		const gameData = await request.json();
 
@@ -70,20 +74,19 @@ export const POST = async ({ request, platform, url }: RequestEvent) => {
 			}
 		};
 
-		// Save the game to KV
-		await platform.env.GAME_DATA.put(gameId, JSON.stringify(savedGame));
-
-		// Create share data
-		const shareData: GameShareData = {
-			gameId: gameId,
+		// Save the game to D1
+		await db.sessions.createSession({
+			id: gameId,
+			gameId: savedGame.customGameId,
+			gameType: savedGame.gameType,
+			playerId: savedGame.playedBy,
+			playerScore: savedGame.playerScore,
+			maxPossibleScore: savedGame.maxPossibleScore,
+			roundsData: savedGame.rounds,
+			gameSettings: savedGame.gameSettings,
 			shareToken: shareToken,
-			createdAt: new Date().toISOString(),
-			accessCount: 0,
-			createdBy: gameData.playedBy
-		};
-
-		// Save share data separately for easy lookup
-		await platform.env.GAME_DATA.put(`share_${shareToken}`, JSON.stringify(shareData));
+			isShared: savedGame.isShared
+		});
 
 		// If user is logged in, add to their game history
 		if (gameData.playedBy) {

@@ -1,5 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
+import { D1Utils } from '$lib/db/d1-utils';
+import { nanoid } from 'nanoid';
 
 interface AuthenticatedUser {
 	id: string;
@@ -63,7 +65,7 @@ async function verifySupabaseToken(token: string, env: any): Promise<Authenticat
 export const POST = async ({ params, request, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
-		if (!env?.GAME_DATA) {
+		if (!env?.DB) {
 			return json(
 				{ error: 'Server configuration error' },
 				{
@@ -108,7 +110,7 @@ export const POST = async ({ params, request, platform }: RequestEvent) => {
 		}
 
 		// Parse request body
-		const { score, maxPossible, rounds } = await request.json();
+		const { score, maxPossible, rounds, roundData } = await request.json();
 
 		// Validate score data
 		if (
@@ -135,9 +137,11 @@ export const POST = async ({ params, request, platform }: RequestEvent) => {
 			);
 		}
 
+		const db = new D1Utils(env.DB);
+
 		// Verify game exists
-		const gameData = await env.GAME_DATA.get(`game:${gameId}`);
-		if (!gameData) {
+		const game = await db.games.getGameById(gameId);
+		if (!game) {
 			return json(
 				{ error: 'Game not found' },
 				{
@@ -150,7 +154,36 @@ export const POST = async ({ params, request, platform }: RequestEvent) => {
 		const percentage = Math.round((score / maxPossible) * 100);
 		const playedAt = new Date().toISOString();
 
-		// Create score record
+		// Get user's current best score for comparison
+		const existingBestScore = await db.games.getUserBestScore(gameId, user.id);
+		const isNewBest = !existingBestScore || percentage > existingBestScore.percentage;
+
+		// Create game session record
+		const sessionId = nanoid();
+		await db.sessions.createSession({
+			id: sessionId,
+			gameId,
+			gameType: 'custom',
+			playerId: user.id,
+			playerScore: score,
+			maxPossibleScore: maxPossible,
+			roundsData: roundData || [],
+			gameSettings: {
+				numRounds: rounds,
+				gameMode: 'custom'
+			}
+		});
+
+		// Increment play count for the game
+		await db.games.incrementPlayCount(gameId);
+
+		// Update user stats
+		await db.users.incrementUserStats(user.id, {
+			gamesPlayed: 1,
+			totalScore: score
+		});
+
+		// Create score response
 		const gameScore: GameScore = {
 			gameId,
 			userId: user.id,
@@ -162,45 +195,11 @@ export const POST = async ({ params, request, platform }: RequestEvent) => {
 			playedAt
 		};
 
-		// Save user's score (keep their best score for this game)
-		const userScoreKey = `scores:user:${user.id}:${gameId}`;
-		const existingUserScoreData = await env.GAME_DATA.get(userScoreKey);
-
-		if (existingUserScoreData) {
-			const existingScore = JSON.parse(existingUserScoreData);
-			// Only save if this is a better score
-			if (score > existingScore.score) {
-				await env.GAME_DATA.put(userScoreKey, JSON.stringify(gameScore));
-			}
-		} else {
-			// First time playing this game
-			await env.GAME_DATA.put(userScoreKey, JSON.stringify(gameScore));
-		}
-
-		// Add to game leaderboard (keep all attempts for average calculation)
-		const gameLeaderboardKey = `scores:game:${gameId}`;
-		const existingLeaderboardData = await env.GAME_DATA.get(gameLeaderboardKey);
-		const leaderboard = existingLeaderboardData ? JSON.parse(existingLeaderboardData) : [];
-
-		// Add this score with unique ID for tracking
-		const scoreId = `${user.id}:${Date.now()}`;
-		leaderboard.push({
-			...gameScore,
-			id: scoreId
-		});
-
-		// Keep only the last 1000 scores per game to prevent unlimited growth
-		if (leaderboard.length > 1000) {
-			leaderboard.splice(0, leaderboard.length - 1000);
-		}
-
-		await env.GAME_DATA.put(gameLeaderboardKey, JSON.stringify(leaderboard));
-
 		return json(
 			{
 				success: true,
 				score: gameScore,
-				isNewBest: !existingUserScoreData || score > JSON.parse(existingUserScoreData).score
+				isNewBest
 			},
 			{
 				headers: { 'Access-Control-Allow-Origin': '*' }

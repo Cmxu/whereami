@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
+import { D1Utils } from '$lib/db/d1-utils';
 
 interface AuthenticatedUser {
 	id: string;
@@ -52,7 +53,7 @@ async function verifySupabaseToken(token: string, env: any): Promise<Authenticat
 export const POST = async ({ params, request, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
-		if (!env?.GAME_DATA || !env?.USER_DATA) {
+		if (!env?.DB) {
 			return json(
 				{ error: 'Server configuration error' },
 				{
@@ -110,9 +111,11 @@ export const POST = async ({ params, request, platform }: RequestEvent) => {
 			);
 		}
 
-		// Get game metadata
-		const gameData = await env.GAME_DATA.get(`game:${gameId}`);
-		if (!gameData) {
+		const db = new D1Utils(env.DB);
+
+		// Verify game exists
+		const game = await db.games.getGameById(gameId);
+		if (!game) {
 			return json(
 				{ error: 'Game not found' },
 				{
@@ -122,40 +125,8 @@ export const POST = async ({ params, request, platform }: RequestEvent) => {
 			);
 		}
 
-		const game = JSON.parse(gameData);
-
-		// Check if user already rated this game
-		const userRatingKey = `rating:${gameId}:${user.id}`;
-		const existingRatingData = await env.GAME_DATA.get(userRatingKey);
-		const existingRating = existingRatingData ? JSON.parse(existingRatingData) : null;
-
-		// Update game rating statistics
-		let newTotalRating = game.rating || 0;
-		let newRatingCount = game.ratingCount || 0;
-
-		if (existingRating) {
-			// User is updating their existing rating
-			newTotalRating = newTotalRating - existingRating.rating + rating;
-		} else {
-			// User is rating for the first time
-			newTotalRating += rating;
-			newRatingCount += 1;
-		}
-
-		// Update game metadata
-		game.rating = newTotalRating;
-		game.ratingCount = newRatingCount;
-		await env.GAME_DATA.put(`game:${gameId}`, JSON.stringify(game));
-
-		// Save user's rating
-		const userRating = {
-			gameId,
-			userId: user.id,
-			rating,
-			createdAt: existingRating?.createdAt || new Date().toISOString(),
-			updatedAt: new Date().toISOString()
-		};
-		await env.GAME_DATA.put(userRatingKey, JSON.stringify(userRating));
+		// Upsert the rating (handles both create and update)
+		const userRating = await db.games.upsertRating(gameId, user.id, rating);
 
 		return json(
 			{ success: true, rating: userRating },

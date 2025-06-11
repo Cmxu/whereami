@@ -6,9 +6,7 @@
 	import { isAuthenticated } from '$lib/stores/authStore';
 	// Dynamic import for UserGallery to reduce initial bundle size
 	let UserGallery: any;
-	let PublicGallery: any;
 	let userGalleryLoaded = false;
-	let publicGalleryLoaded = false;
 	
 	async function loadUserGallery() {
 		if (!UserGallery && !userGalleryLoaded) {
@@ -17,19 +15,12 @@
 			UserGallery = module.default;
 		}
 	}
-
-	async function loadPublicGallery() {
-		if (!PublicGallery && !publicGalleryLoaded) {
-			publicGalleryLoaded = true;
-			const module = await import('$lib/components/PublicGallery.svelte');
-			PublicGallery = module.default;
-		}
-	}
 	import AuthModal from '$lib/components/AuthModal.svelte';
 	import Map from '$lib/components/Map.svelte';
 	import type { Location } from '$lib/types';
 	import { api } from '$lib/utils/api';
 	import { showSuccess, showError, showWarning, showInfo } from '$lib/stores/toastStore';
+	import { debugAuth } from '$lib/utils/debugAuth';
 
 	interface UploadFile {
 		id: string;
@@ -44,10 +35,10 @@
 		error?: string;
 		retryCount: number;
 		customName?: string;
-		sourceUrl?: string; // Optional source URL for attribution
+		isPublic?: boolean; // Privacy setting for the image
 	}
 
-	type TabType = 'gallery' | 'public' | 'upload';
+	type TabType = 'gallery' | 'upload';
 
 	let activeTab: TabType = 'gallery';
 	let showAuthModal = false;
@@ -62,6 +53,7 @@
 	let exifr: any = null;
 	let fileInputRef: HTMLInputElement;
 	let processingFiles = false;
+	let defaultIsPublic = true; // Default privacy setting for new uploads
 
 	// Constants
 	const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
@@ -86,10 +78,6 @@
 		const tabParam = urlParams.get('tab');
 		if (tabParam === 'upload') {
 			activeTab = 'upload';
-		} else if (tabParam === 'public') {
-			activeTab = 'public';
-			// Load PublicGallery component for public tab
-			await loadPublicGallery();
 		} else {
 			activeTab = 'gallery';
 			// Load UserGallery component for gallery tab
@@ -156,10 +144,6 @@
 		// Only update if URL doesn't match current tab (avoid infinite loops)
 		if (tabParam === 'upload' && activeTab !== 'upload') {
 			activeTab = 'upload';
-		} else if (tabParam === 'public' && activeTab !== 'public') {
-			activeTab = 'public';
-			// Load PublicGallery component when switching to public tab
-			loadPublicGallery();
 		} else if (!tabParam && activeTab !== 'gallery') {
 			activeTab = 'gallery';
 			// Load UserGallery component when switching to gallery tab
@@ -184,9 +168,7 @@
 		goto('/gallery');
 	}
 
-	function handleSwitchToPublic() {
-		goto('/gallery?tab=public');
-	}
+
 
 	// Basic upload functionality
 	function generateId(): string {
@@ -271,7 +253,8 @@
 					uploading: false,
 					progress: 0,
 					retryCount: 0,
-					customName: file.name.split('.').slice(0, -1).join('.')
+					customName: file.name.split('.').slice(0, -1).join('.'),
+					isPublic: defaultIsPublic
 				};
 
 				newFiles.push(uploadFile);
@@ -409,8 +392,8 @@
 				}
 			}, 200);
 
-			// Upload the image with custom name if provided
-			const imageId = await api.uploadImage(file.file, file.location, file.customName || undefined, file.sourceUrl || undefined);
+			// Upload the image with custom name and privacy setting
+			const imageId = await api.uploadImage(file.file, file.location, file.customName || undefined, undefined, file.isPublic);
 
 			clearInterval(progressInterval);
 			file.progress = 100;
@@ -514,6 +497,26 @@
 		showInfo('All photos cleared');
 	}
 
+	function toggleAllPhotosPrivacy() {
+		// Toggle the default setting
+		defaultIsPublic = !defaultIsPublic;
+		
+		// Update all existing photos to match the new default
+		uploadFiles.forEach((file) => {
+			file.isPublic = defaultIsPublic;
+		});
+		uploadFiles = [...uploadFiles];
+		
+		// Show feedback
+		const status = defaultIsPublic ? 'public' : 'private';
+		const count = uploadFiles.length;
+		if (count > 0) {
+			showInfo(`Set all ${count} photo${count !== 1 ? 's' : ''} to ${status}`);
+		} else {
+			showInfo(`New photos will be uploaded as ${status}`);
+		}
+	}
+
 	// Drag and drop handlers
 	function handleDragOver(event: DragEvent) {
 		event.preventDefault();
@@ -576,6 +579,8 @@
 			cancelLocationEdit();
 		}
 	}
+
+
 </script>
 
 <svelte:head>
@@ -633,12 +638,6 @@
 								🖼️ My Photos
 							</button>
 							<button
-								class="tab-button {activeTab === 'public' ? 'active' : ''}"
-								on:click={() => goto('/gallery?tab=public')}
-							>
-								🌍 Curated
-							</button>
-							<button
 								class="tab-button {activeTab === 'upload' ? 'active' : ''}"
 								on:click={() => goto('/gallery?tab=upload')}
 								disabled={!$isAuthenticated}
@@ -671,27 +670,7 @@
 						</div>
 					{/if}
 				</div>
-			{:else if activeTab === 'public'}
-				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-					{#if PublicGallery}
-						<svelte:component 
-							this={PublicGallery}
-							selectable={false}
-							multiSelect={false}
-							on:imageSelect={(_event: any) => {
-								// Single image select - not implementing game creation from single image
-								// User can browse but needs to go to create page for game creation
-							}}
-						/>
-					{:else}
-						<div class="flex items-center justify-center py-12">
-							<div class="text-center">
-								<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-								<p class="mt-2 text-sm text-gray-600">Loading curated gallery...</p>
-							</div>
-						</div>
-					{/if}
-				</div>
+
 			{:else if activeTab === 'upload'}
 				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 					<!-- Upload Statistics -->
@@ -742,6 +721,18 @@
 								<div class="text-3xl font-bold text-red-600 mb-2">{errorCount}</div>
 								<div class="text-sm font-medium" style="color: var(--text-secondary);">Errors</div>
 							</div>
+						</div>
+					{/if}
+
+					<!-- Debug button - show on dev and localhost -->
+					{#if typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('whereami-5kp.pages.dev'))}
+						<div class="debug-section mb-4">
+							<button
+								class="px-4 py-2 bg-yellow-500 text-white text-sm rounded-lg hover:bg-yellow-600 transition-colors"
+								on:click={debugAuth}
+							>
+								🐛 Debug Auth
+							</button>
 						</div>
 					{/if}
 
@@ -827,6 +818,60 @@
 								/>
 							</div>
 
+							<!-- Privacy Settings -->
+							<div
+								class="privacy-settings rounded-2xl p-6 shadow-sm border"
+								style="background-color: var(--bg-primary); border-color: var(--border-color);"
+							>
+								<h4 class="text-lg font-semibold mb-3" style="color: var(--text-primary);">
+									Privacy Settings
+								</h4>
+								
+								<div class="space-y-4">
+									<div class="flex items-center space-x-3">
+										<div class="flex-1">
+											<label class="font-medium" style="color: var(--text-primary);">
+												Apply to all photos:
+											</label>
+											<div class="text-xs mt-1" style="color: var(--text-secondary);">
+												{#if defaultIsPublic}
+													Will set all photos to appear in random games created by all users
+												{:else}
+													Will set all photos to only appear in games you create
+												{/if}
+											</div>
+										</div>
+										<button
+											class="flex items-center space-x-2 px-4 py-2 rounded-lg border transition-colors font-medium"
+											class:bg-green-50={defaultIsPublic}
+											class:border-green-200={defaultIsPublic}
+											class:text-green-700={defaultIsPublic}
+											class:bg-orange-50={!defaultIsPublic}
+											class:border-orange-200={!defaultIsPublic}
+											class:text-orange-700={!defaultIsPublic}
+											on:click={toggleAllPhotosPrivacy}
+											title="Click to toggle privacy for all photos"
+										>
+											<span class="text-sm">
+												{defaultIsPublic ? '🔓' : '🔒'}
+											</span>
+											<span class="font-medium text-sm">
+												{defaultIsPublic ? 'Public' : 'Private'}
+											</span>
+										</button>
+									</div>
+									
+									<div class="text-xs p-3 rounded-lg" style="background-color: var(--bg-secondary); color: var(--text-secondary);">
+										<p class="font-medium mb-1">💡 Privacy Info:</p>
+										<p>
+											Click the button above to toggle privacy for all photos at once.
+											<br>
+											Individual photos can be toggled separately below.
+										</p>
+									</div>
+								</div>
+							</div>
+
 							<!-- Upload Actions -->
 							{#if hasFilesToUpload}
 								<div
@@ -906,174 +951,192 @@
 									</button>
 								</div>
 							{:else}
-								<div class="photo-list space-y-4">
-									{#each uploadFiles as file, index (file.id)}
-										<div
-											class="photo-item rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
-											style="background-color: var(--bg-primary); border-color: var(--border-color);"
-											transition:fly={{ x: -50, duration: 300, delay: index * 50 }}
+															<div class="gallery-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+								{#each uploadFiles as file, index (file.id)}
+									<div
+										class="photo-card rounded-lg border overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 relative"
+										style="background-color: var(--bg-primary); border-color: var(--border-color);"
+										transition:fly={{ y: -20, duration: 300, delay: index * 50 }}
+									>
+																					<!-- Upload Status Indicator -->
+										{#if file.uploaded}
+											<div class="absolute top-2 right-2 bg-green-600 text-white rounded-full p-1 z-10">
+												<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+													<path
+														fill-rule="evenodd"
+														d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+														clip-rule="evenodd"
+													></path>
+												</svg>
+											</div>
+										{:else if file.uploading}
+											<div class="absolute top-2 right-2 bg-blue-600 text-white rounded-full p-1 z-10">
+												<div class="animate-spin w-3 h-3 border border-white border-t-transparent rounded-full"></div>
+											</div>
+										{:else if file.error}
+											<div class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 z-10">
+												<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+													<path
+														fill-rule="evenodd"
+														d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+														clip-rule="evenodd"
+													></path>
+												</svg>
+											</div>
+										{/if}
+
+										<!-- Remove Button -->
+										<button
+											class="absolute top-2 left-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 z-10 transition-colors"
+											on:click={() => removeFile(index)}
+											title="Remove photo"
+											aria-label="Remove photo"
 										>
-											<div class="flex flex-col sm:flex-row">
-												<!-- Photo Preview -->
-												<div
-													class="photo-preview w-full sm:w-24 h-24 bg-gray-100 flex-shrink-0 relative"
-												>
-													<img
-														src={file.preview}
-														alt="Upload preview"
-														class="w-full h-full object-cover"
-														loading="lazy"
-													/>
-													{#if file.uploaded}
-														<div
-															class="absolute top-1 right-1 bg-green-600 text-white rounded-full p-1"
-														>
-															<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-																<path
-																	fill-rule="evenodd"
-																	d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-																	clip-rule="evenodd"
-																></path>
-															</svg>
-														</div>
+											<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+												<path
+													fill-rule="evenodd"
+													d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+													clip-rule="evenodd"
+												></path>
+											</svg>
+										</button>
+
+										<!-- Photo Preview -->
+										<div class="image-container aspect-square bg-gray-100">
+											<img
+												src={file.preview}
+												alt="Upload preview"
+												class="w-full h-full object-cover"
+												loading="lazy"
+											/>
+										</div>
+
+										<!-- Photo Info -->
+										<div class="image-info p-3">
+											<!-- Photo Name -->
+											<div class="mb-2">
+												<input
+													type="text"
+													class="w-full text-sm font-medium border-0 bg-transparent p-0 focus:ring-0 focus:border-b-2 focus:border-blue-500"
+													style="color: var(--text-primary);"
+													placeholder="Photo name..."
+													bind:value={file.customName}
+													on:input={() => (uploadFiles = [...uploadFiles])}
+													title="Edit photo name"
+												/>
+											</div>
+
+											<!-- Location and Privacy -->
+											<div class="flex items-center justify-between mb-2">
+												<div class="flex items-center text-xs" style="color: var(--text-secondary);">
+													<span class="mr-1">📍</span>
+													{#if file.location}
+														<span>{file.location.lat.toFixed(2)}, {file.location.lng.toFixed(2)}</span>
+													{:else}
+														<span class="text-amber-600">No location</span>
 													{/if}
 												</div>
-
-												<!-- Photo Info -->
-												<div class="photo-info flex-1 p-3 sm:p-4">
-													<!-- Photo Name (Combined filename and custom name) -->
-													<div class="flex justify-between items-center mb-3">
-														<div class="flex-1 mr-3">
-															<input
-																type="text"
-																class="input-field text-sm font-medium w-full"
-																placeholder="Photo name..."
-																bind:value={file.customName}
-																on:input={() => (uploadFiles = [...uploadFiles])}
-																title="Edit photo name"
-															/>
-															<p class="text-xs mt-1" style="color: var(--text-secondary);">
-																{(file.file.size / 1024 / 1024).toFixed(1)} MB • {file.file.name}
-															</p>
-														</div>
-														<button
-															class="text-gray-400 hover:text-red-500 transition-colors p-1 flex-shrink-0"
-															on:click={() => removeFile(index)}
-															aria-label="Remove photo"
-														>
-															<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-																<path
-																	fill-rule="evenodd"
-																	d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-																	clip-rule="evenodd"
-																></path>
-															</svg>
-														</button>
-													</div>
-
-													<!-- Location Status -->
-													<div class="location-status mb-3">
-														{#if file.location}
-															<div
-																class="flex items-center text-green-600 text-xs bg-green-50 rounded-md p-2"
-															>
-																<span class="mr-1">📍</span>
-																<div class="flex-1">
-																	<span class="font-medium">
-																		{file.location.lat.toFixed(4)}, {file.location.lng.toFixed(4)}
-																	</span>
-																	{#if file.extractedLocation}
-																		<span class="text-green-700 ml-1">• GPS</span>
-																	{:else}
-																		<span class="text-green-700 ml-1">• Manual</span>
-																	{/if}
-																</div>
-															</div>
-														{:else}
-															<div
-																class="flex items-center text-amber-600 text-xs bg-amber-50 rounded-md p-2"
-															>
-																<span class="mr-1">⚠️</span>
-																<span class="flex-1">No location - click "Add Location"</span>
-															</div>
-														{/if}
-													</div>
-
-													<!-- Source URL (Optional) -->
-													<div class="source-url mb-3">
-														<input
-															type="url"
-															class="input-field text-xs w-full"
-															placeholder="Source URL (optional) - for attribution"
-															bind:value={file.sourceUrl}
-															on:input={() => (uploadFiles = [...uploadFiles])}
-															title="Optional source URL for photo attribution"
-														/>
-													</div>
-
-													<!-- Upload Status & Actions -->
-													<div class="status-actions">
-														{#if file.uploaded}
-															<div class="flex items-center text-green-600 text-sm font-medium">
-																<span class="mr-1">✅</span>
-																<span>Uploaded</span>
-															</div>
-														{:else if file.uploading}
-															<div class="upload-progress">
-																<div class="flex justify-between text-xs text-blue-600 mb-1">
-																	<span>Uploading...</span>
-																	<span>{Math.round(file.progress)}%</span>
-																</div>
-																<div class="bg-gray-200 rounded-full h-1 overflow-hidden">
-																	<div
-																		class="bg-blue-600 h-1 rounded-full transition-all duration-300"
-																		style="width: {file.progress}%"
-																	></div>
-																</div>
-															</div>
-														{:else if file.error}
-															<div class="error-state">
-																<div class="text-red-600 text-xs mb-2 bg-red-50 rounded-md p-2">
-																	<div class="flex items-center mb-1">
-																		<span class="mr-1">❌</span>
-																		<span class="font-medium">Failed</span>
-																	</div>
-																	<div class="text-xs">{file.error}</div>
-																</div>
-																{#if file.retryCount < MAX_RETRY_ATTEMPTS}
-																	<button
-																		class="bg-orange-100 hover:bg-orange-200 text-orange-700 px-3 py-1 rounded-md text-xs font-medium transition-colors"
-																		on:click={() => retryUpload(index)}
-																	>
-																		🔄 Retry ({file.retryCount + 1}/{MAX_RETRY_ATTEMPTS})
-																	</button>
-																{:else}
-																	<div class="text-xs text-gray-500">Max retries reached</div>
-																{/if}
-															</div>
-														{:else}
-															<div class="actions flex gap-2">
-																<button
-																	class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1"
-																	on:click={() => editLocation(index)}
-																>
-																	<span>{file.location ? '✏️' : '📍'}</span>
-																	<span>{file.location ? 'Edit' : 'Add'}</span>
-																</button>
-																{#if file.location}
-																	<button
-																		class="bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1 rounded-md text-xs font-medium transition-colors"
-																		on:click={() => uploadFile(file)}
-																		disabled={isUploading}
-																	>
-																		🚀 Upload
-																	</button>
-																{/if}
-															</div>
-														{/if}
-													</div>
+												<div class="flex items-center gap-1">
+													<!-- Privacy Badge -->
+													<button
+														class="text-xs px-2 py-1 rounded transition-colors border"
+														class:bg-green-50={file.isPublic}
+														class:border-green-200={file.isPublic}
+														class:text-green-700={file.isPublic}
+														class:bg-orange-50={!file.isPublic}
+														class:border-orange-200={!file.isPublic}
+														class:text-orange-700={!file.isPublic}
+														on:click={() => {
+															file.isPublic = !file.isPublic;
+															uploadFiles = [...uploadFiles];
+														}}
+														title="Click to toggle privacy"
+													>
+														{file.isPublic ? '🔓 Public' : '🔒 Private'}
+													</button>
 												</div>
 											</div>
+
+											<!-- File Size -->
+											<div class="text-xs mb-3" style="color: var(--text-secondary);">
+												{(file.file.size / 1024 / 1024).toFixed(1)} MB
+											</div>
+
+											<!-- Upload Progress -->
+											{#if file.uploading}
+												<div class="upload-progress mb-3">
+													<div class="flex justify-between items-center mb-1">
+														<span class="text-blue-600 text-xs font-medium">Uploading...</span>
+														<span class="text-blue-600 text-xs font-medium">{file.progress}%</span>
+													</div>
+													<div class="w-full bg-gray-200 rounded-full h-1.5">
+														<div
+															class="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+															style="width: {file.progress}%"
+														></div>
+													</div>
+												</div>
+											{/if}
+
+											<!-- Error Message -->
+											{#if file.error}
+												<div class="error-status text-red-600 text-xs mb-3">
+													<span class="mr-1">❌</span>
+													<span>{file.error}</span>
+												</div>
+											{/if}
+
+											<!-- Action Buttons -->
+											{#if !file.uploaded}
+												<div class="action-buttons space-y-2">
+													<div class="flex gap-2">
+														<button
+															class="btn-secondary text-xs flex-1"
+															on:click={(e) => {
+																e.stopPropagation();
+																// Focus the name input for editing
+																const target = e.target as HTMLElement;
+																const input = target?.closest('.photo-card')?.querySelector('input[type="text"]') as HTMLInputElement;
+																if (input) input.focus();
+															}}
+														>
+															✏️ Edit Name
+														</button>
+														<button
+															class="btn-secondary text-xs flex-1"
+															on:click={(e) => {
+																e.stopPropagation();
+																editLocation(index);
+															}}
+														>
+															📍 {file.location ? 'Edit' : 'Add'} Location
+														</button>
+													</div>
+													{#if file.location && !file.uploading}
+														<button
+															class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-2 px-3 rounded text-xs font-medium transition-colors"
+															on:click={() => uploadFile(file)}
+															disabled={isUploading}
+														>
+															🚀 Upload Photo
+														</button>
+													{/if}
+													{#if file.error && file.retryCount < MAX_RETRY_ATTEMPTS}
+														<button
+															class="w-full bg-orange-100 hover:bg-orange-200 text-orange-700 py-2 px-3 rounded text-xs font-medium transition-colors"
+															on:click={() => retryUpload(index)}
+														>
+															🔄 Retry ({file.retryCount + 1}/{MAX_RETRY_ATTEMPTS})
+														</button>
+													{/if}
+												</div>
+											{:else}
+												<div class="success-status text-green-600 text-xs font-medium flex items-center">
+													<span class="mr-1">✅</span>
+													<span>Successfully uploaded!</span>
+												</div>
+											{/if}
+										</div>
 										</div>
 									{/each}
 								</div>
@@ -1249,32 +1312,32 @@
 		box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
 	}
 
-	.photo-item:hover {
-		transform: translateY(-1px);
+	.photo-card:hover {
+		transform: translateY(-2px);
 	}
 
 	/* Upload-specific styles */
-	.photo-list {
+	.gallery-grid {
 		max-height: calc(100vh - 300px);
 		overflow-y: auto;
 	}
 
 	/* Custom scrollbar */
-	.photo-list::-webkit-scrollbar {
+	.gallery-grid::-webkit-scrollbar {
 		width: 8px;
 	}
 
-	.photo-list::-webkit-scrollbar-track {
+	.gallery-grid::-webkit-scrollbar-track {
 		background: #f1f5f9;
 		border-radius: 4px;
 	}
 
-	.photo-list::-webkit-scrollbar-thumb {
+	.gallery-grid::-webkit-scrollbar-thumb {
 		background: #cbd5e1;
 		border-radius: 4px;
 	}
 
-	.photo-list::-webkit-scrollbar-thumb:hover {
+	.gallery-grid::-webkit-scrollbar-thumb:hover {
 		background: #94a3b8;
 	}
 

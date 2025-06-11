@@ -3,14 +3,24 @@
 upload_landmark_images.py - Download and upload landmark images to the curated gallery.
 
 This script reads landmark_images.json, downloads each image from Wikimedia Commons,
-validates it, and uploads it to the application's curated images gallery with 
+automatically resizes large images to appropriate dimensions (max 2048px, max 5MB),
+validates them, and uploads them to the application's curated images gallery with 
 location data and source URL.
+
+Features:
+- Automatic image resizing for large images
+- High-quality JPEG compression with 85% quality
+- RGBA to RGB conversion for better compatibility
+- Maintains aspect ratio during resizing
 
 Usage:
     python upload_landmark_images.py [json_file] [auth_token]
 
 Example:
     python upload_landmark_images.py public_images/landmark_images.json "your_supabase_jwt_token"
+
+Requirements:
+    pip install Pillow aiohttp aiofiles
 """
 
 import asyncio
@@ -22,6 +32,8 @@ from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 import logging
 from urllib.parse import urlparse
+from PIL import Image
+import io
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -30,7 +42,7 @@ logger = logging.getLogger(__name__)
 class LandmarkImageUploader:
     """Upload landmark images to the application's curated gallery."""
     
-    def __init__(self, auth_token: str, base_url: str = "https://bbc8934f.whereami-5kp.pages.dev"):
+    def __init__(self, auth_token: str, base_url: str = "https://geo.cmxu.io"):
         self.auth_token = auth_token
         self.base_url = base_url.rstrip('/')
         self.upload_url = f"{self.base_url}/api/images/upload-simple"
@@ -52,6 +64,70 @@ class LandmarkImageUploader:
         if self.session:
             await self.session.close()
     
+    def resize_image_if_needed(self, image_data: bytes, max_size: int = 2048, max_file_size: int = 5 * 1024 * 1024) -> bytes:
+        """Resize image if it's too large or file size is too big.
+        
+        Args:
+            image_data: Raw image bytes
+            max_size: Maximum width/height in pixels (default 2048)
+            max_file_size: Maximum file size in bytes (default 5MB)
+            
+        Returns:
+            Resized image bytes if resizing was needed, otherwise original bytes
+        """
+        try:
+            # Check if file size is within limits
+            if len(image_data) <= max_file_size:
+                # Still check if image dimensions need resizing
+                with Image.open(io.BytesIO(image_data)) as img:
+                    width, height = img.size
+                    if width <= max_size and height <= max_size:
+                        # No resizing needed
+                        return image_data
+            
+            # Load image and resize if needed
+            with Image.open(io.BytesIO(image_data)) as img:
+                # Convert RGBA to RGB if needed (for JPEG compatibility)
+                if img.mode == 'RGBA':
+                    background = Image.new('RGB', img.size, (255, 255, 255))
+                    background.paste(img, mask=img.split()[-1])
+                    img = background
+                elif img.mode not in ('RGB', 'L'):
+                    img = img.convert('RGB')
+                
+                width, height = img.size
+                logger.info(f"Original image size: {width}x{height}, file size: {len(image_data)} bytes")
+                
+                # Calculate new dimensions while maintaining aspect ratio
+                if width > max_size or height > max_size:
+                    ratio = min(max_size / width, max_size / height)
+                    new_width = int(width * ratio)
+                    new_height = int(height * ratio)
+                    
+                    # Resize using high-quality resampling
+                    img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                    logger.info(f"Resized to: {new_width}x{new_height}")
+                
+                # Save with optimized quality
+                output_buffer = io.BytesIO()
+                
+                # Determine output format - prefer JPEG for better compression
+                if img.mode == 'L':
+                    # Grayscale - save as PNG to preserve quality
+                    img.save(output_buffer, format='PNG', optimize=True)
+                else:
+                    # Color image - save as JPEG with high quality
+                    img.save(output_buffer, format='JPEG', quality=85, optimize=True)
+                
+                resized_data = output_buffer.getvalue()
+                logger.info(f"Compressed file size: {len(resized_data)} bytes (reduction: {len(image_data) - len(resized_data)} bytes)")
+                
+                return resized_data
+                
+        except Exception as e:
+            logger.warning(f"Failed to resize image: {str(e)}, using original")
+            return image_data
+    
     async def download_image(self, url: str, landmark_name: str) -> Optional[bytes]:
         """Download image from Wikimedia Commons."""
         try:
@@ -68,52 +144,68 @@ class LandmarkImageUploader:
                     logger.error(f"URL does not point to an image: {content_type}")
                     return None
                 
-                # Check file size (limit to 10MB)
+                # Check file size (warn if very large, but still download and resize)
                 content_length = response.headers.get('content-length')
-                if content_length and int(content_length) > 10 * 1024 * 1024:
-                    logger.error(f"Image too large: {content_length} bytes")
-                    return None
+                if content_length and int(content_length) > 50 * 1024 * 1024:
+                    logger.warning(f"Very large image download: {content_length} bytes - will resize after download")
                 
                 image_data = await response.read()
-                
-                # Double-check size after download
-                if len(image_data) > 10 * 1024 * 1024:
-                    logger.error(f"Downloaded image too large: {len(image_data)} bytes")
-                    return None
-                
                 logger.info(f"Downloaded {len(image_data)} bytes for {landmark_name}")
-                return image_data
+                
+                # Resize image if it's too large
+                resized_image_data = self.resize_image_if_needed(image_data)
+                
+                return resized_image_data
                 
         except Exception as e:
             logger.error(f"Error downloading image for {landmark_name}: {str(e)}")
             return None
     
-    def get_file_extension(self, url: str, content_type: str = '') -> str:
-        """Get appropriate file extension for the image."""
-        # Try to get extension from URL
-        parsed_url = urlparse(url)
-        path = parsed_url.path.lower()
+    def get_file_extension(self, image_data: bytes, url: str = '', content_type: str = '') -> str:
+        """Get appropriate file extension for the image based on actual content."""
+        try:
+            # Try to detect format from image data
+            with Image.open(io.BytesIO(image_data)) as img:
+                if img.format:
+                    format_lower = img.format.lower()
+                    if format_lower in ['jpeg', 'jpg']:
+                        return 'jpg'
+                    elif format_lower == 'png':
+                        return 'png'
+                    elif format_lower == 'webp':
+                        return 'webp'
+                    elif format_lower == 'gif':
+                        return 'gif'
+        except Exception:
+            # Fall back to URL/content-type detection
+            pass
         
-        if path.endswith(('.jpg', '.jpeg')):
-            return 'jpg'
-        elif path.endswith('.png'):
-            return 'png'
-        elif path.endswith('.webp'):
-            return 'webp'
-        elif path.endswith('.gif'):
-            return 'gif'
+        # Try to get extension from URL
+        if url:
+            parsed_url = urlparse(url)
+            path = parsed_url.path.lower()
+            
+            if path.endswith(('.jpg', '.jpeg')):
+                return 'jpg'
+            elif path.endswith('.png'):
+                return 'png'
+            elif path.endswith('.webp'):
+                return 'webp'
+            elif path.endswith('.gif'):
+                return 'gif'
         
         # Fall back to content type
-        if 'jpeg' in content_type or 'jpg' in content_type:
-            return 'jpg'
-        elif 'png' in content_type:
-            return 'png'
-        elif 'webp' in content_type:
-            return 'webp'
-        elif 'gif' in content_type:
-            return 'gif'
+        if content_type:
+            if 'jpeg' in content_type or 'jpg' in content_type:
+                return 'jpg'
+            elif 'png' in content_type:
+                return 'png'
+            elif 'webp' in content_type:
+                return 'webp'
+            elif 'gif' in content_type:
+                return 'gif'
         
-        # Default to jpg
+        # Default to jpg (most common after processing)
         return 'jpg'
     
     async def upload_image(self, image_data: bytes, landmark_data: Dict) -> bool:
@@ -133,6 +225,7 @@ class LandmarkImageUploader:
             
             # Create a temporary file for the image
             file_extension = self.get_file_extension(
+                image_data,
                 landmark_data.get('url', ''),
                 'image/jpeg'  # default
             )

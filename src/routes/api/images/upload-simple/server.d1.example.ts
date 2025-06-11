@@ -1,5 +1,15 @@
+/**
+ * EXAMPLE: Image upload API route migrated to use D1 instead of KV
+ * This is an example of how to migrate your existing KV-based routes to D1
+ * 
+ * Key changes:
+ * 1. Import D1Utils instead of direct KV access
+ * 2. Use structured database operations instead of JSON key-value storage
+ * 3. Leverage relational data and transactions
+ */
+
 import { json } from '@sveltejs/kit';
-import type { RequestEvent } from '@sveltejs/kit';
+import type { RequestEvent } from './$types';
 import { D1Utils } from '$lib/db/d1-utils';
 
 interface AuthenticatedUser {
@@ -10,85 +20,47 @@ interface AuthenticatedUser {
 	username?: string;
 }
 
-// Extract token from Authorization header
 function extractToken(request: Request): string | null {
 	const authHeader = request.headers.get('Authorization');
-	if (!authHeader) return null;
-
-	const parts = authHeader.split(' ');
-	if (parts.length !== 2 || parts[0] !== 'Bearer') return null;
-
-	return parts[1];
+	if (authHeader && authHeader.startsWith('Bearer ')) {
+		return authHeader.substring(7);
+	}
+	return null;
 }
 
-// Verify Supabase JWT token
 async function verifySupabaseToken(token: string, env: any): Promise<AuthenticatedUser | null> {
 	try {
-		// Decode the JWT payload (without verification for now)
-		const parts = token.split('.');
-		if (parts.length !== 3) {
+		const response = await fetch(`${env.PUBLIC_SUPABASE_URL}/auth/v1/user`, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+				apikey: env.PUBLIC_SUPABASE_ANON_KEY
+			}
+		});
+
+		if (!response.ok) {
 			return null;
 		}
 
-		const payload = JSON.parse(atob(parts[1]));
-
-		// Check if token is expired
-		if (payload.exp && payload.exp < Date.now() / 1000) {
-			return null;
-		}
-
-		// Check if it's a Supabase token
-		if (payload.iss !== env.PUBLIC_SUPABASE_URL + '/auth/v1') {
-			return null;
-		}
-
-		// Extract user data from payload
+		const userData = await response.json();
 		return {
-			id: payload.sub,
-			email: payload.email,
-			firstName: payload.user_metadata?.first_name,
-			lastName: payload.user_metadata?.last_name,
-			username: payload.user_metadata?.username || payload.email?.split('@')[0]
+			id: userData.id,
+			email: userData.email,
+			firstName: userData.user_metadata?.first_name,
+			lastName: userData.user_metadata?.last_name,
+			username: userData.user_metadata?.username
 		};
 	} catch (error) {
-		console.error('Token verification failed:', error);
+		console.error('Token verification error:', error);
 		return null;
 	}
 }
 
-// Create or update user profile in D1
-async function upsertUserProfile(user: AuthenticatedUser, db: D1Utils): Promise<void> {
-	try {
-		let userProfile = await db.users.getUserById(user.id);
-		
-		if (!userProfile) {
-			// Create new user
-			await db.users.createUser({
-				id: user.id,
-				username: user.username || user.email?.split('@')[0],
-				email: user.email,
-				avatar: undefined
-			});
-		} else {
-			// Update existing user if needed
-			await db.users.updateUser(user.id, {
-				username: user.username || userProfile.username,
-				email: user.email || userProfile.email
-			});
-		}
-	} catch (error) {
-		console.error('Failed to upsert user profile:', error);
-		throw error;
-	}
-}
-
-// Handle CORS preflight requests
 export const OPTIONS = async () => {
 	return new Response(null, {
 		status: 200,
 		headers: {
 			'Access-Control-Allow-Origin': '*',
-			'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+			'Access-Control-Allow-Methods': 'POST, OPTIONS',
 			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 		}
 	});
@@ -96,14 +68,11 @@ export const OPTIONS = async () => {
 
 export const POST = async ({ request, platform }: RequestEvent) => {
 	try {
-		// Check if R2 bucket is available
 		const env = platform?.env;
-
-		if (!env?.IMAGES_BUCKET) {
-			console.error('IMAGES_BUCKET R2 binding not found');
+		if (!env?.IMAGES_BUCKET || !env?.DB) {
 			return json(
 				{
-					error: 'Server configuration error: R2 bucket not configured'
+					error: 'Server configuration error: Required services not configured'
 				},
 				{
 					status: 500,
@@ -114,20 +83,8 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			);
 		}
 
-		if (!env?.DB) {
-			console.error('D1 database not available');
-			return json(
-				{
-					error: 'Server configuration error: Database not configured'
-				},
-				{
-					status: 500,
-					headers: {
-						'Access-Control-Allow-Origin': '*'
-					}
-				}
-			);
-		}
+		// Initialize D1 utilities
+		const db = new D1Utils(env.DB);
 
 		// Require authentication
 		const token = extractToken(request);
@@ -160,24 +117,18 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			);
 		}
 
-		// Initialize D1 utilities
-		const db = new D1Utils(env.DB);
-		
-		// Ensure user profile exists
-		await upsertUserProfile(user, db);
-
 		// Parse form data
 		const formData = await request.formData();
 		const imageFile = formData.get('image') as File;
 		const locationStr = formData.get('location') as string;
 		const customName = formData.get('customName') as string;
 		const sourceUrl = formData.get('sourceUrl') as string;
-		const isPublicStr = formData.get('isPublic') as string;
 
-		if (!imageFile) {
+		// Validate required fields
+		if (!imageFile || !locationStr) {
 			return json(
 				{
-					error: 'No image file provided'
+					error: 'Image file and location data are required'
 				},
 				{
 					status: 400,
@@ -188,24 +139,13 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			);
 		}
 
-		if (!locationStr) {
-			return json(
-				{
-					error: 'Location data required'
-				},
-				{
-					status: 400,
-					headers: {
-						'Access-Control-Allow-Origin': '*'
-					}
-				}
-			);
-		}
-
-		// Parse location
+		// Parse and validate location
 		let location;
 		try {
 			location = JSON.parse(locationStr);
+			if (!location.lat || !location.lng) {
+				throw new Error('Invalid location format');
+			}
 		} catch {
 			return json(
 				{
@@ -236,8 +176,7 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			);
 		}
 
-		// Check file size (10MB limit)
-		const maxSizeBytes = 10 * 1024 * 1024;
+		const maxSizeBytes = 10 * 1024 * 1024; // 10MB
 		if (imageFile.size > maxSizeBytes) {
 			return json(
 				{
@@ -252,17 +191,12 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			);
 		}
 
-		// Parse privacy setting (defaults to true if not provided)
-		const isPublic = isPublicStr !== null ? isPublicStr === 'true' : true;
-
 		// Generate unique ID and filename
 		const uniqueId = crypto.randomUUID();
 		const fileExtension = imageFile.name.split('.').pop() || 'jpg';
 
-		// Use custom name if provided, otherwise use original filename
 		let filename;
 		if (customName && customName.trim()) {
-			// Sanitize custom name and add extension
 			const sanitizedCustomName = customName.trim().replace(/[^a-zA-Z0-9._\-\s]/g, '');
 			filename = sanitizedCustomName + '.' + fileExtension;
 		} else {
@@ -277,57 +211,54 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			const arrayBuffer = await imageFile.arrayBuffer();
 
 			// Upload original image to R2
-			const uploadResult = await env.IMAGES_BUCKET.put(r2Key, arrayBuffer, {
+			await env.IMAGES_BUCKET.put(r2Key, arrayBuffer, {
 				httpMetadata: {
 					contentType: imageFile.type,
-					cacheControl: 'public, max-age=31536000' // 1 year cache
+					cacheControl: 'public, max-age=31536000'
 				},
 				customMetadata: {
 					originalFilename: imageFile.name,
 					uploadedAt: new Date().toISOString(),
 					locationLat: String(location.lat),
 					locationLng: String(location.lng),
-					uploadedBy: user.id // Track who uploaded this image
+					uploadedBy: user.id
 				}
 			});
 
-			// Construct the image URLs
-			const imageUrl = `/api/images/${uniqueId}/${sanitizedName}`;
-			const thumbnailUrl = `/api/images/${uniqueId}/${sanitizedName}?w=300&h=300&fit=cover&q=80`;
+			// Create or update user in D1 (upsert pattern)
+			let userProfile = await db.users.getUserById(user.id);
+			if (!userProfile) {
+				userProfile = await db.users.createUser({
+					id: user.id,
+					username: user.username || user.email?.split('@')[0],
+					email: user.email,
+					avatar: undefined // Could be set from user data
+				});
+			}
 
-			// Prepare metadata for response and KV storage
-			const metadata = {
+			// Create image record in D1
+			const imageMetadata = await db.images.createImage({
 				id: uniqueId,
 				filename: sanitizedName,
 				r2Key: r2Key,
-				location: location,
-				uploadedAt: new Date().toISOString(),
+				location: { lat: location.lat, lng: location.lng },
 				uploadedBy: user.id,
-				uploadedByUsername: user.username || user.email?.split('@')[0] || 'User',
+				uploadedByUsername: userProfile.username,
 				fileSize: imageFile.size,
 				mimeType: imageFile.type,
-				url: imageUrl,
-				thumbnailUrl: thumbnailUrl,
-				isPublic: isPublic,
-				...(sourceUrl && sourceUrl.trim() && { sourceUrl: sourceUrl.trim() }) // Add sourceUrl if provided
-			};
-
-			// Store image metadata in D1
-			await db.images.createImage({
-				id: uniqueId,
-				filename: sanitizedName,
-				r2Key: r2Key,
-				location: location,
-				uploadedBy: user.id,
-				uploadedByUsername: user.username || user.email?.split('@')[0] || 'User',
-				fileSize: imageFile.size,
-				mimeType: imageFile.type,
-				isPublic: isPublic,
-				sourceUrl: sourceUrl?.trim() || undefined
+				isPublic: true, // Default to public
+				sourceUrl: sourceUrl?.trim() || undefined,
+				tags: [] // Could be extracted from EXIF or user input
 			});
 
-			// Update user image upload count
-			await db.users.incrementUserStats(user.id, { imagesUploaded: 1 });
+			// Update user's image count
+			await db.users.incrementUserStats(user.id, {
+				imagesUploaded: 1
+			});
+
+			// Construct response URLs
+			const imageUrl = `/api/images/${uniqueId}/${sanitizedName}`;
+			const thumbnailUrl = `/api/images/${uniqueId}/${sanitizedName}?w=300&h=300&fit=cover&q=80`;
 
 			return json(
 				{
@@ -335,7 +266,11 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 					message: 'Image uploaded successfully',
 					imageUrl: imageUrl,
 					thumbnailUrl: thumbnailUrl,
-					metadata: metadata
+					metadata: {
+						...imageMetadata,
+						url: imageUrl,
+						thumbnailUrl: thumbnailUrl
+					}
 				},
 				{
 					status: 201,
@@ -344,11 +279,12 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 					}
 				}
 			);
+
 		} catch (uploadError) {
 			console.error('Upload error:', uploadError);
 			return json(
 				{
-					error: 'Failed to upload image to storage',
+					error: 'Failed to upload image',
 					details: uploadError instanceof Error ? uploadError.message : 'Unknown error'
 				},
 				{
@@ -359,6 +295,7 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 				}
 			);
 		}
+
 	} catch (err) {
 		console.error('Server error:', err);
 		return json(
@@ -375,3 +312,34 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 		);
 	}
 };
+
+/*
+KEY DIFFERENCES FROM KV VERSION:
+
+1. DATA STORAGE:
+   - KV: await env.IMAGE_DATA.put(`image:${uniqueId}`, JSON.stringify(metadata));
+   - D1: await db.images.createImage(imageData);
+
+2. USER MANAGEMENT:
+   - KV: Manual JSON manipulation and atomic increment functions
+   - D1: Proper user table with foreign key relationships and atomic SQL operations
+
+3. QUERYING:
+   - KV: await env.USER_DATA.get(`user:${userId}:images`); (requires maintaining lists)
+   - D1: await db.images.getUserImages(userId); (uses SQL with proper indexing)
+
+4. CONSISTENCY:
+   - KV: Manual list management, potential for inconsistency
+   - D1: Relational integrity with foreign keys and transactions
+
+5. PERFORMANCE:
+   - KV: Multiple separate operations for related data
+   - D1: Single transaction for related operations, proper indexing
+
+MIGRATION BENEFITS:
+- Automatic relationship management
+- Better query performance with indexes
+- Atomic transactions ensure data consistency
+- Easier to add new features like image tagging, user statistics, etc.
+- More maintainable code with structured data operations
+*/ 

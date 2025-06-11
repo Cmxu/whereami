@@ -1,6 +1,6 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
-import type { R2Bucket } from '@cloudflare/workers-types';
+import type { R2Bucket, D1Database, KVNamespace } from '@cloudflare/workers-types';
 
 declare global {
 	namespace App {
@@ -11,6 +11,7 @@ declare global {
 		interface Platform {
 			env: {
 				IMAGES_BUCKET: R2Bucket;
+				DB: D1Database;
 				IMAGE_DATA: KVNamespace;
 				USER_DATA: KVNamespace;
 				GAME_DATA: KVNamespace;

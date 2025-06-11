@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
+import { D1Utils } from '$lib/db/d1-utils';
 
 interface AuthenticatedUser {
 	id: string;
@@ -51,26 +52,7 @@ async function verifySupabaseToken(token: string, env: any): Promise<Authenticat
 	}
 }
 
-// Get user data from KV store
-async function getUserData(userId: string, env: any): Promise<any> {
-	try {
-		const userData = await env.USER_DATA.get(`user:${userId}`);
-		return userData ? JSON.parse(userData) : null;
-	} catch (error) {
-		console.error('Failed to get user data:', error);
-		return null;
-	}
-}
 
-// Save user data to KV store
-async function saveUserData(userId: string, data: any, env: any): Promise<void> {
-	try {
-		await env.USER_DATA.put(`user:${userId}`, JSON.stringify(data));
-	} catch (error) {
-		console.error('Failed to save user data:', error);
-		throw error;
-	}
-}
 
 // Handle CORS preflight requests
 export const OPTIONS = async () => {
@@ -88,9 +70,9 @@ export const OPTIONS = async () => {
 export const GET = async ({ request, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
-		if (!env?.USER_DATA || !env?.GAME_DATA || !env?.IMAGE_DATA) {
+		if (!env?.DB) {
 			return json(
-				{ error: 'Server configuration error: KV stores not configured' },
+				{ error: 'Server configuration error: Database not configured' },
 				{
 					status: 500,
 					headers: { 'Access-Control-Allow-Origin': '*' }
@@ -120,71 +102,36 @@ export const GET = async ({ request, platform }: RequestEvent) => {
 			);
 		}
 
-		const userData = await getUserData(user.id, env);
+		// Initialize D1 utilities
+		const db = new D1Utils(env.DB);
 
-		// Calculate actual stats from KV data
-		let actualStats = {
-			gamesCreated: 0,
-			gamesPlayed: 0,
-			imagesUploaded: 0,
-			totalScore: 0,
-			averageScore: 0
-		};
-
-		try {
-			// Count games created by this user
-			const userGamesKey = `user:${user.id}:games`;
-			const userGamesData = await env.USER_DATA.get(userGamesKey);
-			if (userGamesData) {
-				const gameIds = JSON.parse(userGamesData);
-				actualStats.gamesCreated = gameIds.length;
-			}
-
-			// Count images uploaded by this user
-			// We need to get the user's images list
-			const userImagesKey = `user:${user.id}:images`;
-			const userImagesData = await env.USER_DATA.get(userImagesKey);
-			if (userImagesData) {
-				const imageIds = JSON.parse(userImagesData);
-				actualStats.imagesUploaded = imageIds.length;
-			}
-
-			// TODO: Calculate games played and scores from completed games in the future
-			// For now, use stored values if available
-			if (userData) {
-				actualStats.gamesPlayed = userData.gamesPlayed || 0;
-				actualStats.totalScore = userData.totalScore || 0;
-				actualStats.averageScore = userData.averageScore || 0;
-			}
-		} catch (error) {
-			console.error('Error calculating stats:', error);
-			// Fall back to stored values if calculation fails
-			if (userData) {
-				actualStats = {
-					gamesCreated: userData.gamesCreated || 0,
-					gamesPlayed: userData.gamesPlayed || 0,
-					imagesUploaded: userData.imagesUploaded || 0,
-					totalScore: userData.totalScore || 0,
-					averageScore: userData.averageScore || 0
-				};
-			}
+		// Get user profile from D1
+		let userData = await db.users.getUserById(user.id);
+		
+		if (!userData) {
+			// Create user if doesn't exist
+			userData = await db.users.createUser({
+				id: user.id,
+				username: user.username || user.email?.split('@')[0],
+				email: user.email
+			});
 		}
 
-		const profileData = userData || {
-			id: user.id,
-			email: user.email,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			displayName: user.username,
-			profilePicture: null,
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString()
-		};
+		// Get user's games and images counts from D1
+		const userGames = await db.games.getUserGames(user.id, 1000);
+		const userImages = await db.images.getUserImages(user.id, 1000);
 
-		// Merge calculated stats with profile data
 		const profileWithStats = {
-			...profileData,
-			...actualStats
+			id: userData.id,
+			email: userData.email,
+			username: userData.username,
+			avatar: userData.avatar,
+			joinedAt: userData.joinedAt,
+			gamesCreated: userGames.length,
+			gamesPlayed: userData.gamesPlayed || 0,
+			imagesUploaded: userImages.length,
+			totalScore: userData.totalScore || 0,
+			averageScore: userData.averageScore || 0
 		};
 
 		return json(
@@ -212,9 +159,9 @@ export const GET = async ({ request, platform }: RequestEvent) => {
 export const PUT = async ({ request, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
-		if (!env?.USER_DATA) {
+		if (!env?.DB) {
 			return json(
-				{ error: 'Server configuration error: KV stores not configured' },
+				{ error: 'Server configuration error: Database not configured' },
 				{
 					status: 500,
 					headers: { 'Access-Control-Allow-Origin': '*' }
@@ -244,24 +191,19 @@ export const PUT = async ({ request, platform }: RequestEvent) => {
 			);
 		}
 
-		const { displayName } = await request.json();
+		const { username } = await request.json();
 
-		// Get existing user data
-		const existingData = await getUserData(user.id, env);
+		// Initialize D1 utilities
+		const db = new D1Utils(env.DB);
 
-		// Update profile data
-		const updatedProfile = {
-			...existingData,
-			id: user.id,
-			email: user.email,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			displayName: displayName || user.username,
-			updatedAt: new Date().toISOString(),
-			createdAt: existingData?.createdAt || new Date().toISOString()
-		};
+		// Update user profile
+		await db.users.updateUser(user.id, {
+			username: username || user.username,
+			email: user.email
+		});
 
-		await saveUserData(user.id, updatedProfile, env);
+		// Get updated profile
+		const updatedProfile = await db.users.getUserById(user.id);
 
 		return json(
 			{ success: true, profile: updatedProfile },
@@ -285,7 +227,7 @@ export const PUT = async ({ request, platform }: RequestEvent) => {
 export const POST = async ({ request, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
-		if (!env?.USER_DATA || !env?.IMAGES_BUCKET) {
+		if (!env?.DB || !env?.IMAGES_BUCKET) {
 			return json(
 				{ error: 'Server configuration error' },
 				{
@@ -364,20 +306,16 @@ export const POST = async ({ request, platform }: RequestEvent) => {
 			}
 		});
 
-		// Update user profile with profile picture URL
-		const existingData = await getUserData(user.id, env);
-		const updatedProfile = {
-			...existingData,
-			id: user.id,
-			email: user.email,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			profilePicture: fileName,
-			updatedAt: new Date().toISOString(),
-			createdAt: existingData?.createdAt || new Date().toISOString()
-		};
+		// Initialize D1 utilities
+		const db = new D1Utils(env.DB);
 
-		await saveUserData(user.id, updatedProfile, env);
+		// Update user profile with avatar URL
+		await db.users.updateUser(user.id, {
+			avatar: fileName
+		});
+
+		// Get updated profile
+		const updatedProfile = await db.users.getUserById(user.id);
 
 		return json(
 			{

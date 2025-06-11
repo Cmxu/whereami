@@ -1,23 +1,14 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { CustomGame } from '$lib/types';
-
-async function getGameMetadata(gameId: string, env: any): Promise<CustomGame | null> {
-	try {
-		const gameData = await env.GAME_DATA.get(`game:${gameId}`);
-		return gameData ? JSON.parse(gameData) : null;
-	} catch (error) {
-		console.error('Error getting game metadata:', error);
-		return null;
-	}
-}
+import { D1Utils } from '$lib/db/d1-utils';
 
 export const GET = async ({ params, platform, url }: RequestEvent) => {
 	try {
 		const env = platform?.env;
-		if (!env?.IMAGE_DATA || !env?.USER_DATA || !env?.GAME_DATA) {
+		if (!env?.DB) {
 			return json(
-				{ error: 'Server configuration error: KV stores not configured' },
+				{ error: 'Server configuration error: Database not configured' },
 				{
 					status: 500,
 					headers: { 'Access-Control-Allow-Origin': '*' }
@@ -39,46 +30,38 @@ export const GET = async ({ params, platform, url }: RequestEvent) => {
 		// Get query parameters
 		const limitParam = url.searchParams.get('limit') || '50';
 		const offsetParam = url.searchParams.get('offset') || '0';
-		const limit = Math.max(1, parseInt(limitParam)); // No maximum limit
+		const limit = Math.max(1, parseInt(limitParam));
 		const offset = Math.max(0, parseInt(offsetParam));
 
-		// Get user's games list from KV
-		const userGamesKey = `user:${userId}:games`;
-		const userGamesData = await env.USER_DATA.get(userGamesKey);
+		const db = new D1Utils(env.DB);
 
-		if (!userGamesData) {
+		// Verify user exists
+		const user = await db.users.getUserById(userId);
+		if (!user) {
 			return json(
+				{ error: 'User not found' },
 				{
-					games: [],
-					total: 0,
-					limit,
-					offset,
-					hasMore: false
-				},
-				{
+					status: 404,
 					headers: { 'Access-Control-Allow-Origin': '*' }
 				}
 			);
 		}
 
-		const gameIds: string[] = JSON.parse(userGamesData);
+		// Get user's games with pagination
+		const games = await db.games.getUserGames(userId, limit, offset);
 
-		// Apply pagination
-		const paginatedIds = gameIds.slice(offset, offset + limit);
-
-		// Fetch metadata for each game
-		const gamePromises = paginatedIds.map((id) => getGameMetadata(id, env));
-		const gameResults = await Promise.all(gamePromises);
-
-		// Filter out null results (deleted games) and ensure user owns them
-		const validGames = gameResults.filter(
-			(game): game is NonNullable<typeof game> => game !== null && game.createdBy === userId
-		);
+		// Get total count for pagination
+		const totalResult = await env.DB.prepare(`
+			SELECT COUNT(*) as total
+			FROM games 
+			WHERE created_by = ?
+		`).bind(userId).first();
+		const total = (totalResult?.total as number) || 0;
 
 		// Add computed fields
-		const enrichedGames = validGames.map((game) => ({
+		const enrichedGames = games.map((game) => ({
 			...game,
-			averageRating: (game.ratingCount || 0) > 0 ? (game.rating || 0) / (game.ratingCount || 1) : 0,
+			averageRating: (game.ratingCount || 0) > 0 ? (game.rating || 0) : 0,
 			imageCount: game.imageIds.length,
 			url: `/games/${game.id}`
 		}));
@@ -86,10 +69,10 @@ export const GET = async ({ params, platform, url }: RequestEvent) => {
 		return json(
 			{
 				games: enrichedGames,
-				total: gameIds.length,
+				total,
 				limit,
 				offset,
-				hasMore: offset + limit < gameIds.length
+				hasMore: offset + limit < total
 			},
 			{
 				headers: { 'Access-Control-Allow-Origin': '*' }

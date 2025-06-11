@@ -16,7 +16,7 @@
 		"deploy:prod": "./deploy.sh production",
 		"deploy:dev": "./deploy.sh development",
 		"dev:build": "npm run build",
-		"dev:functions": "npm run build && wrangler pages dev .svelte-kit/cloudflare --r2 IMAGES_BUCKET --kv IMAGE_DATA --kv USER_DATA --port 8788",
+		"dev:functions": "npm run build && wrangler pages dev .svelte-kit/cloudflare --d1 DB --r2 IMAGES_BUCKET --kv IMAGE_DATA --kv USER_DATA --kv GAME_DATA --port 8788",
 		"wrangler": "wrangler"
 	},
 	"devDependencies": {

@@ -399,11 +399,9 @@
 										>
 											{game.name}
 										</h3>
-										{#if game.description}
-											<p class="text-sm line-clamp-2 mb-3" style="color: var(--text-secondary);">
-												{game.description}
-											</p>
-										{/if}
+										<p class="text-sm line-clamp-2 mb-3" style="color: var(--text-secondary);">
+											{game.description || 'Where am I?'}
+										</p>
 									</div>
 
 									<!-- Photo Count Badge (Right Side) -->
@@ -575,11 +573,9 @@
 											>
 												{game.name}
 											</h3>
-											{#if game.description}
-												<p class="text-sm line-clamp-2 mb-3" style="color: var(--text-secondary);">
-													{game.description}
-												</p>
-											{/if}
+											<p class="text-sm line-clamp-2 mb-3" style="color: var(--text-secondary);">
+												{game.description || 'Where am I?'}
+											</p>
 										</div>
 
 										<!-- Photo Count Badge (Right Side) -->

@@ -190,3 +190,11 @@ export interface PaginatedResponse<T> {
 	offset: number;
 	hasMore: boolean;
 }
+
+export interface PaginatedImagesResponse {
+	images: ImageMetadata[];
+	total: number;
+	limit: number;
+	offset: number;
+	hasMore: boolean;
+}

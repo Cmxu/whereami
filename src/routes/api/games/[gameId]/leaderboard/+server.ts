@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
+import { D1Utils } from '$lib/db/d1-utils';
 
 interface GameScore {
 	gameId: string;
@@ -33,7 +34,7 @@ interface LeaderboardResponse {
 export const GET = async ({ params, platform }: RequestEvent) => {
 	try {
 		const env = platform?.env;
-		if (!env?.GAME_DATA) {
+		if (!env?.DB) {
 			return json(
 				{ error: 'Server configuration error' },
 				{
@@ -54,9 +55,11 @@ export const GET = async ({ params, platform }: RequestEvent) => {
 			);
 		}
 
+		const db = new D1Utils(env.DB);
+
 		// Verify game exists
-		const gameData = await env.GAME_DATA.get(`game:${gameId}`);
-		if (!gameData) {
+		const game = await db.games.getGameById(gameId);
+		if (!game) {
 			return json(
 				{ error: 'Game not found' },
 				{
@@ -66,63 +69,60 @@ export const GET = async ({ params, platform }: RequestEvent) => {
 			);
 		}
 
-		// Get all scores for this game
-		const gameLeaderboardKey = `scores:game:${gameId}`;
-		const leaderboardData = await env.GAME_DATA.get(gameLeaderboardKey);
+		// Get game statistics
+		const statsResult = await env.DB.prepare(`
+			SELECT 
+				COUNT(*) as totalPlays,
+				COUNT(DISTINCT player_id) as uniquePlayers,
+				AVG(player_score) as averageScore,
+				AVG(ROUND((player_score * 100.0 / max_possible_score), 1)) as averagePercentage
+			FROM game_sessions
+			WHERE game_id = ? AND player_id IS NOT NULL
+		`).bind(gameId).first();
 
-		if (!leaderboardData) {
-			// No scores yet
-			return json(
-				{
-					averageScore: 0,
-					averagePercentage: 0,
-					totalPlays: 0,
-					uniquePlayers: 0,
-					leaderboard: []
-				} as LeaderboardResponse,
-				{
-					headers: { 'Access-Control-Allow-Origin': '*' }
-				}
-			);
-		}
+		// Get leaderboard entries
+		const leaderboardResults = await env.DB.prepare(`
+			WITH player_best_scores AS (
+				SELECT 
+					player_id,
+					MAX(ROUND((player_score * 100.0 / max_possible_score), 1)) as best_percentage,
+					MAX(player_score) as best_score
+				FROM game_sessions
+				WHERE game_id = ? AND player_id IS NOT NULL
+				GROUP BY player_id
+			)
+			SELECT 
+				gs.player_id as userId,
+				u.username,
+				gs.player_score as score,
+				gs.max_possible_score as maxPossible,
+				ROUND((gs.player_score * 100.0 / gs.max_possible_score), 1) as percentage,
+				gs.completed_at as playedAt
+			FROM game_sessions gs
+			LEFT JOIN users u ON gs.player_id = u.id
+			INNER JOIN player_best_scores pbs ON gs.player_id = pbs.player_id
+			WHERE gs.game_id = ? 
+			AND gs.player_id IS NOT NULL
+			AND ROUND((gs.player_score * 100.0 / gs.max_possible_score), 1) = pbs.best_percentage
+			AND gs.player_score = pbs.best_score
+			ORDER BY percentage DESC, score DESC, playedAt ASC
+			LIMIT 20
+		`).bind(gameId, gameId).all();
 
-		const allScores: GameScore[] = JSON.parse(leaderboardData);
-
-		// Calculate statistics
-		const totalPlays = allScores.length;
-		const totalScore = allScores.reduce((sum, score) => sum + score.score, 0);
-		const totalPercentage = allScores.reduce((sum, score) => sum + score.percentage, 0);
-		const averageScore = totalPlays > 0 ? Math.round(totalScore / totalPlays) : 0;
-		const averagePercentage = totalPlays > 0 ? Math.round(totalPercentage / totalPlays) : 0;
-
-		// Get unique players and their best scores
-		const userBestScores = new Map<string, GameScore>();
-
-		allScores.forEach((score) => {
-			const existing = userBestScores.get(score.userId);
-			if (!existing || score.score > existing.score) {
-				userBestScores.set(score.userId, score);
-			}
-		});
-
-		// Create leaderboard from best scores, sorted by score descending
-		const leaderboard: LeaderboardEntry[] = Array.from(userBestScores.values())
-			.sort((a, b) => b.score - a.score)
-			.slice(0, 20) // Top 20 players
-			.map((score, index) => ({
-				userId: score.userId,
-				username: score.username,
-				score: score.score,
-				percentage: score.percentage,
-				playedAt: score.playedAt,
-				rank: index + 1
-			}));
+		const leaderboard: LeaderboardEntry[] = leaderboardResults.results.map((row, index) => ({
+			userId: row.userId as string,
+			username: (row.username as string) || 'Anonymous',
+			score: row.score as number,
+			percentage: row.percentage as number,
+			playedAt: row.playedAt as string,
+			rank: index + 1
+		}));
 
 		const response: LeaderboardResponse = {
-			averageScore,
-			averagePercentage,
-			totalPlays,
-			uniquePlayers: userBestScores.size,
+			averageScore: Math.round((statsResult?.averageScore as number) || 0),
+			averagePercentage: Math.round((statsResult?.averagePercentage as number) || 0),
+			totalPlays: (statsResult?.totalPlays as number) || 0,
+			uniquePlayers: (statsResult?.uniquePlayers as number) || 0,
 			leaderboard
 		};
 
